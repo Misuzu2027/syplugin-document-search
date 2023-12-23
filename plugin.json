@@ -1,36 +1,35 @@
 {
-  "name": "plugin-sample-vite-svelte",
-  "author": "frostime",
-  "url": "https://github.com/siyuan-note/plugin-sample-vite-svelte",
-  "version": "0.2.8",
+  "name": "syplugin-document-search",
+  "author": "misuzu",
+  "url": "https://github.com/Misuzu2027/syplugin-document-search",
+  "version": "0.1.0",
   "minAppVersion": "2.10.14",
   "backends": [
-    "windows",
-    "linux",
-    "darwin"
+    "all"
   ],
   "frontends": [
-    "desktop",
-    "desktop-window"
+    "all"
   ],
   "displayName": {
-    "en_US": "Plugin sample with vite and svelte",
-    "zh_CN": "插件样例 vite + svelte 版"
+    "default": "基于文档搜索",
+    "en_US": "document search",
+    "zh_CN": "基于文档搜索"
   },
   "description": {
-    "en_US": "SiYuan plugin sample with vite and svelte",
-    "zh_CN": "使用 vite 和 svelte 开发的思源插件样例"
+    "en_US": "This plugin operates differently from the built-in block-level queries of the system. It conducts searches on a document basis.",
+    "zh_CN": "这个插件与系统内置的块级别查询不同，它以文档为单位进行查询。"
   },
   "readme": {
+    "default": "README_zh_CN.md",
     "en_US": "README.md",
     "zh_CN": "README_zh_CN.md"
   },
-  "funding": {
-    "custom": [
-      "https://afdian.net/a/frostime"
-    ]
-  },
   "keywords": [
-    "plugin", "sample", "插件样例"
+    "document",
+    "search",
+    "query",
+    "文档",
+    "查询",
+    "搜索"
   ]
 }

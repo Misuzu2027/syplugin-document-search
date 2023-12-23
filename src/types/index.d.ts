@@ -28,9 +28,11 @@ type NotebookConf = {
     dailyNoteTemplatePath: string;
 }
 
-type BlockType = "d" | "s" | "h" | "t" | "i" | "p" | "f" | "audio" | "video" | "other";
+// type BlockType = "d" | "s" | "h" | "t" | "i" | "p" | "f" | "audio" | "video" | "other";
 
-type BlockSubType = "d1" | "d2" | "s1" | "s2" | "s3" | "t1" | "t2" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "table" | "task" | "toggle" | "latex" | "quote" | "html" | "code" | "footnote" | "cite" | "collection" | "bookmark" | "attachment" | "comment" | "mindmap" | "spreadsheet" | "calendar" | "image" | "audio" | "video" | "other";
+type BlockType = "d" | "h" | "l" | "i" | "c" | "m" | "t" | "b" | "av" | "s" | "p" | "tb" | "html" | "video" | "audio" | "widget" | "iframe" | "query_embed";
+
+type BlockSubType = "o" | "u" | "t" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 
 type Block = {
     id: BlockId;

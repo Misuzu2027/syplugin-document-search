@@ -1,6 +1,9 @@
 export function generateDocumentSearchSql(
     keywords: string[],
 ): string {
+    let types = ['d', 'h', 'c', 'm', 't', 'p', 'html'];
+    // types = [];
+    let typeInSql = generateAndInConditions("type", types);
     let aggregatedContentParamSql = generateAndLikeConditions(
         "aggregated_content",
         keywords,
@@ -17,7 +20,7 @@ export function generateDocumentSearchSql(
                 blocks 
             WHERE
                 1 = 1 
-                AND type IN ( 'd', 'h', 'c', 'm', 't', 'p', 'html' ) 
+                ${typeInSql}
             GROUP BY
                 root_id 
             HAVING
@@ -26,8 +29,8 @@ export function generateDocumentSearchSql(
         )
         SELECT * FROM blocks 
         WHERE
-            1 = 1 
-            AND type IN ( 'd', 'h', 'c', 'm', 't', 'p', 'html' )  
+            1 = 1
+            ${typeInSql}
             AND (
                 id IN (SELECT root_id FROM document_id_temp)
                 OR (
@@ -60,14 +63,14 @@ function cleanSpaceText(inputText: string): string {
 
 function generateOrLikeConditions(
     fieldName: string,
-    keywords: string[],
+    params: string[],
 ): string {
-    if (keywords.length === 0) {
-        return "";
+    if (params.length === 0) {
+        return " ";
     }
 
-    const conditions = keywords.map(
-        (keyword) => `${fieldName} LIKE '%${keyword}%'`,
+    const conditions = params.map(
+        (param) => `${fieldName} LIKE '%${param}%'`,
     );
     const result = conditions.join(" OR ");
 
@@ -76,14 +79,14 @@ function generateOrLikeConditions(
 
 function generateAndLikeConditions(
     fieldName: string,
-    keywords: string[],
+    params: string[],
 ): string {
-    if (keywords.length === 0) {
-        return "";
+    if (params.length === 0) {
+        return " ";
     }
 
-    const conditions = keywords.map(
-        (keyword) => `${fieldName}  LIKE '%${keyword}%'`,
+    const conditions = params.map(
+        (param) => `${fieldName}  LIKE '%${param}%'`,
     );
     const result = conditions.join(" AND ");
 
@@ -92,16 +95,16 @@ function generateAndLikeConditions(
 
 function generateAndInConditions(
     fieldName: string,
-    types: string[],
+    params: string[],
 ): string {
-    if (!types || types.length === 0) {
-        return "";
+    if (!params || params.length === 0) {
+        return " ";
     }
-
-    const conditions = types.map(
-        (type) => ` '%${type}%' `,
+    let result = ` AND ${fieldName} in (`
+    const conditions = params.map(
+        (param) => ` '${param}' `,
     );
-    const result = conditions.join(" , ");
+    result = result + conditions.join(" , ") + " ) ";
 
     return result;
 }

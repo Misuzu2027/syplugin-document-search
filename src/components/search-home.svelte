@@ -2,17 +2,27 @@
     import { onDestroy, onMount } from "svelte";
     import { sql as query } from "@/utils/api";
     import { generateDocumentSearchSql } from "@/libs/search-sql";
-    import { showMessage, Protyle, openTab } from "siyuan";
+    import {
+        showMessage,
+        Protyle,
+        openTab,
+        openMobileFileById,
+        getFrontend,
+    } from "siyuan";
     import SearchResultItem from "@/libs/search-result-item.svelte";
     import { DocumentSearchResultItem } from "@/libs/search-data";
 
     export let app;
-    export let isDock;
+    export let showPreview;
+
+    let isMobile: boolean;
+    const frontEnd = getFrontend();
+    isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
 
     // let time: string = "";
 
-    let divProtyle: HTMLDivElement;
-    let protyle: Protyle;
+    let previewDiv: HTMLDivElement;
+    let previewDivProtyle: Protyle;
     let searchInputKey: string = "";
     let lastKeywords: string[] = [];
     let searchResults: DocumentSearchResultItem[] = [];
@@ -21,6 +31,7 @@
     let inputChaneTimeout;
     let searchBlockCount = 0;
     let maxExpandCount = 300;
+    let isSearching = false;
 
     resize();
 
@@ -38,7 +49,7 @@
 
     export function resize() {
         let minHeight = 185;
-        if (isDock) {
+        if (!showPreview) {
             minHeight = 145;
         }
 
@@ -49,7 +60,7 @@
 
     onDestroy(() => {
         showMessage("Hello panel closed");
-        protyle.destroy();
+        previewDivProtyle.destroy();
     });
 
     function searchHidtoryBtnClick() {
@@ -68,10 +79,7 @@
         // 清除之前的定时器
         clearTimeout(inputChaneTimeout);
 
-        // 创建新的定时器，延迟0.3秒执行方法
         inputChaneTimeout = setTimeout(() => {
-            // 在这里执行你的具体方法
-
             refreshSearch(searchInputKey);
         }, 400);
     }
@@ -89,22 +97,27 @@
         lastKeywords = Array.from(uniqueKeywordsSet);
         // console.log("handleDocumetnSearchInput lastKeywords : ", lastKeywords);
 
-        searchBlock(lastKeywords);
+        searchBlockByKeywords(lastKeywords);
     }
 
-    async function searchBlock(keywords: string[]) {
+    async function searchBlockByKeywords(keywords: string[]) {
+        if (!keywords || keywords.length <= 0) {
+            searchResults = [];
+            return;
+        }
+        isSearching = true;
         let sql = generateDocumentSearchSql(keywords);
-
         let queryBlocks: Block[] = await query(sql);
         processSearchResults(queryBlocks);
+        isSearching = false;
     }
 
     function processSearchResults(blocks: Block[]) {
-        searchBlockCount = blocks.length;
         searchResults = [];
         if (!blocks) {
             blocks = [];
         }
+        searchBlockCount = blocks.length;
         const documentBlockMap: Map<string, DocumentSearchResultItem> =
             new Map();
 
@@ -150,10 +163,13 @@
     }
 
     function getHighlightedContent(content: string) {
-        let highlightedContent: string = content;
+        let highlightedContent: string = escapeHtml(content);
 
         if (lastKeywords) {
-            highlightedContent = highlightMatches(lastKeywords, content);
+            highlightedContent = highlightMatches(
+                lastKeywords,
+                highlightedContent,
+            );
         }
         return highlightedContent;
     }
@@ -171,11 +187,23 @@
         return highlightedString;
     }
 
-    function clickItem(block: Block) {
-        let blockId = block.id;
-        let rootId = block.root_id;
+    function escapeHtml(input: string): string {
+        const escapeMap: Record<string, string> = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+        };
 
-        if (isDock) {
+        return input.replace(/[&<>"']/g, (match) => escapeMap[match]);
+    }
+
+    function clickItem(block: Block) {
+        console.log("search-home clickItem : ", block);
+        let blockId = block.id;
+
+        if (!showPreview) {
             openBlockTab(blockId);
         } else {
             itemClickCount++;
@@ -183,7 +211,7 @@
                 // 单击逻辑
                 setTimeout(() => {
                     if (itemClickCount === 1) {
-                        refreshBlockPreviewBox(blockId, rootId);
+                        refreshBlockPreviewBox(blockId);
                     }
                     itemClickCount = 0; // 重置计数
                 }, 180); // 设置一个合适的时间阈值
@@ -193,36 +221,39 @@
         }
     }
 
-    function refreshBlockPreviewBox(blockId: string, rootId: string) {
-        new Protyle(app, divProtyle, {
-            blockId: blockId,
-            scrollAttr: {
-                rootId: rootId,
-                startId: null,
-                endId: null,
-                scrollTop: null,
-                focusId: blockId,
-            },
-            defId: blockId,
-        });
+    function openBlockTab(blockId: string) {
+        let actions = [
+            "cb-get-hl",
+            "cb-get-focus",
+            "cb-get-context",
+            "cb-get-rootscroll",
+        ];
+        if (isMobile === true) {
+            openMobileFileById(app, blockId, actions);
+        } else {
+            openTab({
+                app: app,
+                doc: {
+                    id: blockId,
+                    action: actions,
+                    zoomIn: false,
+                },
+            });
+        }
+        itemClickCount = 0; // 重置计数
     }
 
-    function openBlockTab(blockId: string) {
-        openTab({
-            app: app,
-            doc: {
-                id: blockId,
-                action: [
-                    "cb-get-hl",
-                    "cb-get-focus",
-                    "cb-get-context",
-                    "cb-get-rootscroll",
-                ],
-                zoomIn: false,
-            },
+    function refreshBlockPreviewBox(blockId: string) {
+        new Protyle(app, previewDiv, {
+            action: [
+                "cb-get-hl",
+                "cb-get-focus",
+                "cb-get-context",
+                "cb-get-rootscroll",
+            ],
+            blockId: blockId,
+            defId: blockId,
         });
-
-        itemClickCount = 0; // 重置计数
     }
 
     function toggleCollpsedItem(isCollapsed: boolean) {
@@ -351,11 +382,14 @@
         <div class="search__drag"></div>
         <div
             id="searchPreview"
-            class="search__preview protyle fn__flex-1 {isDock
-                ? 'fn__none'
-                : ''}"
-            data-loading="finished"
-            bind:this={divProtyle}
+            class="search__preview protyle fn__flex-1 {showPreview
+                ? ''
+                : 'fn__none'}"
+            bind:this={previewDiv}
         ></div>
+    </div>
+    <div class="fn__loading fn__loading--top {isSearching ? '' : 'fn__none'}">
+        <!-- svelte-ignore a11y-missing-attribute -->
+        <img width="120px" src="/stage/loading-pure.svg" />
     </div>
 </div>

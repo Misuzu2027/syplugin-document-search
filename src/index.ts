@@ -1,10 +1,10 @@
 import {
     Plugin,
-    showMessage,
     openTab,
     getFrontend,
     getBackend,
     Menu,
+    ITab,
 } from "siyuan";
 // import "@/index.scss";
 
@@ -20,33 +20,27 @@ export default class PluginSample extends Plugin {
 
     private isMobile: boolean;
 
+
+    private documentSearchTab: SearchHomeExample;
+
     async onload() {
         this.data[STORAGE_NAME] = { readonlyText: "Readonly" };
 
         const frontEnd = getFrontend();
         this.isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
-        console.log("CUSTOM_ICON_MAP.iconDcoumentSearch.source : ", CUSTOM_ICON_MAP.iconDcoumentSearch.source)
 
         // 图标的制作参见帮助文档
-        this.addIcons(CUSTOM_ICON_MAP.iconDcoumentSearch.source);
+        this.addIcons(CUSTOM_ICON_MAP.iconDocumentSearch.source);
 
         this.addTopBar({
-            icon: CUSTOM_ICON_MAP.iconDcoumentSearch.id,
+            icon: CUSTOM_ICON_MAP.iconDocumentSearch.id,
             title: this.i18n.documentSearchIconTip,
             position: "right",
             callback: () => {
                 if (this.isMobile) {
                     this.addMobileDocumentSearchMenu();
                 } else {
-                    const tab = openTab({
-                        app: this.app,
-                        custom: {
-                            id: this.name + SEARCH_TAB_TYPE,
-                            icon: CUSTOM_ICON_MAP.iconDcoumentSearch.id,
-                            title: "Document Search Tab",
-                        }
-                    });
-                    console.log("Open Document Search Tab click : ", tab);
+                    this.openDocumentSearchTab();
                 }
             }
         });
@@ -55,22 +49,23 @@ export default class PluginSample extends Plugin {
         this.addDock({
             config: {
                 position: "LeftTop",
-                size: { width: 500, height: 0 },
-                icon: CUSTOM_ICON_MAP.iconDcoumentSearch.id,
+                size: { width: 400, height: 0 },
+                icon: CUSTOM_ICON_MAP.iconDocumentSearch.id,
                 title: this.i18n.documentSearchIconTip,
-                hotkey: "⇧⌘Q"
+                hotkey: "⌥Q",
+                show: false,
             },
-            data: {
-                text: "This is my custom dock"
-            },
+            data: {},
             type: SEARCH_DOCK_TYPE,
             resize() {
-                console.log(SEARCH_DOCK_TYPE + " resize");
                 if (searchHomeExampleDock) {
-                    searchHomeExampleDock.resize();
+                    searchHomeExampleDock.resize(this.element.clientWidth);
                 }
             },
+            update() {
+            },
             init() {
+                console.log("1");
                 searchHomeExampleDock = new SearchHomeExample({
                     target: this.element,
                     props: {
@@ -80,54 +75,68 @@ export default class PluginSample extends Plugin {
                 });
             },
             destroy() {
-                console.log("destroy dock:", SEARCH_DOCK_TYPE);
             }
         });
 
-        console.log(this.i18n.helloPlugin);
+
+        this.addCommand({
+            langKey: "doucmentSearch",
+            hotkey: "⇧⌘Q",
+            globalCallback: () => {
+                this.openDocumentSearchTab();
+            },
+        });
     }
 
     onLayoutReady() {
-        console.log("onLayoutReady start")
         this.loadData(STORAGE_NAME);
 
-        console.log(`frontend: ${getFrontend()}; backend: ${getBackend()}`);
-
         let searchTabDiv = document.createElement("div");
-        let customDcoumentSearchTab: SearchHomeExample = new SearchHomeExample({
+        let documentSearchTab = new SearchHomeExample({
             target: searchTabDiv,
             props: {
                 app: this.app,
                 showPreview: true,
             }
         });
-
+        this.documentSearchTab = documentSearchTab;
         this.addTab({
             type: SEARCH_TAB_TYPE,
             init() {
-                console.log("init tab:", SEARCH_TAB_TYPE);
                 this.element.appendChild(searchTabDiv);
-                customDcoumentSearchTab.openInit();
             },
             beforeDestroy() {
-                console.log("before destroy tab:", SEARCH_TAB_TYPE);
             },
             destroy() {
-                console.log("destroy tab:", SEARCH_TAB_TYPE);
             },
             resize() {
-                customDcoumentSearchTab.resize();
-                console.log("resize tab:", SEARCH_TAB_TYPE);
+                if (documentSearchTab) {
+                    documentSearchTab.resize();
+                }
             },
         });
     }
 
     async onunload() {
-        // console.log(this.i18n.byePlugin);
-        // showMessage("Goodbye SiYuan Plugin");
 
     }
 
+    private openDocumentSearchTab(): ITab {
+        let documentSearchTab = this.documentSearchTab;
+        return openTab({
+            app: this.app,
+            custom: {
+                id: this.name + SEARCH_TAB_TYPE,
+                icon: CUSTOM_ICON_MAP.iconDocumentSearch.id,
+                title: `Document Search`,
+            },
+            afterOpen() {
+                if (documentSearchTab) {
+                    documentSearchTab.resize();
+                }
+            }
+        });
+    }
 
     private addMobileDocumentSearchMenu() {
         if (!this.isMobile) {
@@ -164,9 +173,6 @@ export default class PluginSample extends Plugin {
             });
         }
         menu.fullscreen();
-
-
-
     }
 
     private hiddenElement(element: HTMLElement | Element) {

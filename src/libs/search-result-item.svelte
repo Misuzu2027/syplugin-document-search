@@ -1,17 +1,26 @@
 <script lang="ts">
     import { showMessage } from "siyuan";
     import { DocumentSearchResultItem } from "@/libs/search-data";
-    import { getIconHerf } from "@/libs/icons";
+    import { getBlockTypeIconHerf } from "@/libs/icons";
+
+
+    // import { onMount } from "svelte";
 
     export let searchResults: DocumentSearchResultItem[];
     export let clickCallback: (block: Block) => void;
+    export let selectedIndex: number = 0;
+
+    // $: renderedSearchResultItems = searchResults.slice(0, 10);
 
     function itemClick(block: Block) {
         if (clickCallback) {
             clickCallback(block);
         }
     }
-    function handleKeyPress() {}
+
+    function handleKeyDownDefault(event) {
+        console.log(event.key);
+    }
 
     function toggleItemVisibility(block: Block) {
         if (!block || !block.id) {
@@ -36,6 +45,17 @@
             }
         }
     }
+
+
+    // function loadMore() {
+    //     // 加载更多数据
+    //     const currentIndex = renderedSearchResultItems.length;
+    //     const nextBatch = searchResults.slice(currentIndex, currentIndex + 10);
+    //     renderedSearchResultItems = [
+    //         ...renderedSearchResultItems,
+    //         ...nextBatch,
+    //     ];
+    // }
 </script>
 
 <div
@@ -44,9 +64,13 @@
 >
     {#each searchResults as item}
         <div
-            class="b3-list-item"
+            class="b3-list-item {item.index === selectedIndex
+                ? 'b3-list-item--focus'
+                : ''} "
             on:click={() => itemClick(item.block)}
-            on:keypress={handleKeyPress}
+            on:keydown={handleKeyDownDefault}
+            data-node-id={item.block.id}
+            data-root-id={item.block.root_id}
         >
             <span
                 class="b3-list-item__toggle b3-list-item__toggle--hl
@@ -54,16 +78,25 @@
                 "
                 on:click|stopPropagation={() =>
                     toggleItemVisibility(item.block)}
-                on:keypress={handleKeyPress}
+                on:keydown={handleKeyDownDefault}
             >
                 <svg
                     class="b3-list-item__arrow
-                    {item.isCollapsed ? '' : 'b3-list-item__arrow--open'}"
+                    {item.isCollapsed ? '' : 'b3-list-item__arrow--open'}
+                    {item.subItems && item.subItems.length > 0
+                        ? ''
+                        : 'disabled'}"
                 >
                     <use xlink:href="#iconRight"></use>
                 </svg>
             </span>
-            <span class="b3-list-item__graphic">📔</span>
+            <span class="b3-list-item__graphic">
+                {#if item.icon}
+                    {@html item.icon}
+                {:else}
+                    📄
+                {/if}
+            </span>
             <span
                 class="b3-list-item__text ariaLabel"
                 style="color: var(--b3-theme-on-surface)"
@@ -71,21 +104,25 @@
             >
                 {@html item.htmlContent}
             </span>
+            <div class="protyle-attr--refcount" style="right:0px;top:6px">
+                {item.subItems.length}
+            </div>
         </div>
-        <div class={item.isCollapsed ? "fn__none" : ""}>
+        <div>
             {#each item.subItems as subItem (subItem.block.id)}
                 <div
                     style="padding-left: 36px"
                     data-type="search-item"
-                    class="b3-list-item"
+                    class="b3-list-item {item.isCollapsed ? 'fn__none' : ''}
+                {subItem.index === selectedIndex ? 'b3-list-item--focus' : ''}"
                     data-node-id={subItem.block.id}
                     data-root-id={subItem.block.root_id}
                     on:click={() => itemClick(subItem.block)}
-                    on:keypress={handleKeyPress}
+                    on:keydown={handleKeyDownDefault}
                 >
                     <svg class="b3-list-item__graphic">
                         <use
-                            xlink:href={getIconHerf(
+                            xlink:href={getBlockTypeIconHerf(
                                 subItem.block.type,
                                 subItem.block.subtype,
                             )}

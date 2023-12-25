@@ -3,4 +3,6 @@ export class DocumentSearchResultItem {
     subItems: DocumentSearchResultItem[];
     isCollapsed: boolean;
     htmlContent: string;
+    icon: string;
+    index:number;
 }

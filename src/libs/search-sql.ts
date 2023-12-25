@@ -1,31 +1,23 @@
+
+
 export function generateDocumentSearchSql(
     keywords: string[],
+    types: string[],
+    pages: number[]
 ): string {
-    let types = ['d', 'h', 'c', 'm', 't', 'p', 'html'];
-    // types = [];
+    let columns = ["root_id", "Max(CASE WHEN parent_id = '' THEN content END) documentContent"]
+
+    let tempTableOrderCaseCombinationSql = generateOrderCaseCombination("documentContent", keywords) + " ASC ";
+    let orders = [tempTableOrderCaseCombinationSql]
+    let documentContentLikeSql = generateDocumentContentLikeSql(columns, keywords, types, orders, pages);
+
     let typeInSql = generateAndInConditions("type", types);
-    let aggregatedContentParamSql = generateAndLikeConditions(
-        "aggregated_content",
-        keywords,
-    );
     let contentParamSql = generateOrLikeConditions("content", keywords);
-    let orderCaseCombinationSql = generateOrderCaseCombination(keywords);
+    let orderCaseCombinationSql = generateOrderCaseCombination("content", keywords);
 
     let basicSql = `	
         WITH document_id_temp AS (
-            SELECT
-                root_id,
-                GROUP_CONCAT( content ) AS aggregated_content 
-            FROM
-                blocks 
-            WHERE
-                1 = 1 
-                ${typeInSql}
-            GROUP BY
-                root_id 
-            HAVING
-                1 = 1 
-                AND ( ${aggregatedContentParamSql}   )  
+            ${documentContentLikeSql}
         )
         SELECT * FROM blocks 
         WHERE
@@ -40,12 +32,84 @@ export function generateDocumentSearchSql(
             )
         ORDER BY
             sort ASC,
-            ${orderCaseCombinationSql}
+            ${orderCaseCombinationSql},
             updated DESC
-        LIMIT 99999;
+        LIMIT 99999999;
     `;
     return cleanSpaceText(basicSql);
     // return basicSql;
+}
+
+
+export function generateDocumentCountSql(
+    keywords: string[],
+    types: string[],) {
+    let columns = ["root_id"/*," COUNT(1) AS contentCount", "Max(CASE WHEN parent_id = '' THEN content END) documentContent"*/]
+
+    // let orderCaseCombinationSql = generateOrderCaseCombination("documentContent", keywords) + " ASC ";
+    // let orders = [orderCaseCombinationSql];
+    let pages = [1, 99999999];
+    let documentContentLikeCountSql = generateDocumentContentLikeSql(columns, keywords, types, null, pages);
+
+    let documentCountSql = `SELECT count(1) AS documentCount FROM (${documentContentLikeCountSql})`;
+
+    return cleanSpaceText(documentCountSql);
+}
+
+function generateDocumentContentLikeSql(
+    columns: string[],
+    keywords: string[],
+    types: string[],
+    orders: string[],
+    pages: number[]): string {
+
+    let columnSql = columns.join(",");
+    let typeInSql = generateAndInConditions("type", types);
+    // let contentOrLikeSql = generateOrLikeConditions("content", keywords);
+    // if (contentOrLikeSql) {
+    //     contentOrLikeSql = ` AND ( ${contentOrLikeSql} ) `;
+    // }
+    let aggregatedContentAndLikeSql = generateAndLikeConditions(
+        " GROUP_CONCAT( content ) ",
+        keywords,
+    );
+    if (aggregatedContentAndLikeSql) {
+        aggregatedContentAndLikeSql = ` AND ( ${aggregatedContentAndLikeSql} ) `;
+    }
+
+    let orderSql = '';
+    if (orders) {
+        let orderParam = orders.join(",");
+        orderSql = ` ORDER BY ${orderParam} `;
+    }
+
+    let limitSql = '';
+    if (pages) {
+        const limit = pages[1];
+        if (pages.length == 1) {
+            limitSql = ` LIMIT ${limit} `;
+        } else if (pages.length == 2) {
+            const offset = (pages[0] - 1) * pages[1];
+            limitSql = ` LIMIT ${limit} OFFSET ${offset} `;
+        }
+    }
+
+    let sql = `  
+        SELECT ${columnSql} 
+        FROM
+            blocks 
+        WHERE
+            1 = 1 
+            ${typeInSql}
+        GROUP BY
+            root_id 
+        HAVING
+            1 = 1 
+            ${aggregatedContentAndLikeSql}
+        ${orderSql}
+        ${limitSql}
+    `;
+    return sql;
 }
 
 function cleanSpaceText(inputText: string): string {
@@ -111,11 +175,11 @@ function generateAndInConditions(
 
 
 
-function generateOrderCaseCombination(keywords: string[]): string {
+function generateOrderCaseCombination(columnName: string, keywords: string[]): string {
     let whenCombinationSql = "";
     for (let index = 0; index < keywords.length; index++) {
         let combination = keywords.length - index;
-        whenCombinationSql += generateWhenCombination(keywords, combination) + index;
+        whenCombinationSql += generateWhenCombination(columnName, keywords, combination) + index;
     }
 
     let caseCombinationSql = "";
@@ -124,39 +188,34 @@ function generateOrderCaseCombination(keywords: string[]): string {
         CASE 
             ${whenCombinationSql}
         ELSE 99
-        END,
+        END
     `;
     }
     return caseCombinationSql;
 }
 
-function generateWhenCombination(keywords: string[], combinationCount: number): string {
+function generateWhenCombination(columnName: string, keywords: string[], combinationCount: number): string {
     if (combinationCount < 1 || combinationCount > keywords.length) {
         return "";
     }
-
     const combinations: string[][] = [];
-
     // 生成所有可能的组合
     const generateCombinations = (current: string[], start: number) => {
         if (current.length === combinationCount) {
             combinations.push([...current]);
             return;
         }
-
         for (let i = start; i < keywords.length; i++) {
             current.push(keywords[i]);
             generateCombinations(current, i + 1);
             current.pop();
         }
     };
-
     generateCombinations([], 0);
-
     // 生成查询字符串
     const queryString = combinations
         .map((combination) => {
-            const conditions = combination.map((item) => `content LIKE '%${item}%'`).join(" AND ");
+            const conditions = combination.map((item) => ` ${columnName} LIKE '%${item}%' `).join(" AND ");
             return `(${conditions})`;
         })
         .join(" OR ");

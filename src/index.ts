@@ -82,7 +82,7 @@ export default class PluginSample extends Plugin {
         this.addCommand({
             langKey: "doucmentSearch",
             hotkey: "⇧⌘Q",
-            globalCallback: () => {
+            callback: () => {
                 this.openDocumentSearchTab();
             },
         });

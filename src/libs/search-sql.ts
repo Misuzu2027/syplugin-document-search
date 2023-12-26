@@ -1,5 +1,3 @@
-
-
 export function generateDocumentSearchSql(
     keywords: string[],
     types: string[],

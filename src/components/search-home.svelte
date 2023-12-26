@@ -500,7 +500,7 @@
             return;
         }
         if (previewProtyle) {
-            previewProtyle.destroy();
+            // previewProtyle.destroy();
         }
         previewProtyle = new Protyle(app, previewDiv, {
             blockId: blockId,

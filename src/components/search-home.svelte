@@ -44,7 +44,7 @@
     let totalPage: number = 0;
     let defaultPageSize: number = 10;
     let searchResultItemComponent: SearchResultItem;
-    let showChildDocument: boolean = false;
+    let showChildDocument: boolean = true;
 
     onMount(async () => {
         resize();
@@ -346,14 +346,15 @@
             if (!block) {
                 continue;
             }
-            let htmlContent = getHighlightedContent(block.content, keywords);
-            let rootId = block.root_id;
 
+            highlightBlockContent(block, keywords);
+
+            let rootId = block.root_id;
             let documentItem = new DocumentSearchResultItem();
             documentItem.block = block;
             documentItem.subItems = [];
             documentItem.isCollapsed = true;
-            documentItem.htmlContent = htmlContent;
+            // documentItem.block.content = contentHtml;
 
             let curParentItem: DocumentSearchResultItem = null;
             if (documentBlockMap.has(rootId)) {
@@ -400,7 +401,24 @@
         searchResults = searchResults;
     }
 
+    function highlightBlockContent(block: Block, keywords: string[]) {
+        if (!block) {
+            return;
+        }
+        let contentHtml = getHighlightedContent(block.content, keywords);
+        let nameHml = getHighlightedContent(block.name, keywords);
+        let aliasHtml = getHighlightedContent(block.alias, keywords);
+        let memoHtml = getHighlightedContent(block.memo, keywords);
+        block.content = contentHtml;
+        block.name = nameHml;
+        block.alias = aliasHtml;
+        block.memo = memoHtml;
+    }
+
     function getHighlightedContent(content: string, keywords: string[]) {
+        if (!content) {
+            return content;
+        }
         let highlightedContent: string = escapeHtml(content);
 
         if (keywords) {

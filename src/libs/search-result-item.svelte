@@ -3,7 +3,6 @@
     import { DocumentSearchResultItem } from "@/libs/search-data";
     import { getBlockTypeIconHerf } from "@/libs/icons";
 
-
     // import { onMount } from "svelte";
 
     export let searchResults: DocumentSearchResultItem[];
@@ -46,7 +45,6 @@
         }
     }
 
-
     // function loadMore() {
     //     // 加载更多数据
     //     const currentIndex = renderedSearchResultItems.length;
@@ -63,22 +61,22 @@
     class="fn__flex-1 search__list b3-list b3-list--background"
 >
     {#each searchResults as item}
+        <!-- on:click={() => itemClick(item.block)} -->
         <div
             class="b3-list-item {item.index === selectedIndex
                 ? 'b3-list-item--focus'
                 : ''} "
-            on:click={() => itemClick(item.block)}
+            on:click|stopPropagation={() => toggleItemVisibility(item.block)}
             on:keydown={handleKeyDownDefault}
             data-node-id={item.block.id}
             data-root-id={item.block.root_id}
         >
+            <!-- 按钮折叠改为移动到整个文档标签。                on:click|stopPropagation={() =>
+                    toggleItemVisibility(item.block)} -->
             <span
                 class="b3-list-item__toggle b3-list-item__toggle--hl
                 {item.subItems && item.subItems.length > 0 ? '' : 'disabled'}
                 "
-                on:click|stopPropagation={() =>
-                    toggleItemVisibility(item.block)}
-                on:keydown={handleKeyDownDefault}
             >
                 <svg
                     class="b3-list-item__arrow
@@ -102,7 +100,7 @@
                 style="color: var(--b3-theme-on-surface)"
                 aria-label={item.block.hpath}
             >
-                {@html item.htmlContent}
+                {@html item.block.content}
             </span>
             <div class="protyle-attr--refcount" style="right:0px;top:6px">
                 {item.subItems.length}
@@ -129,8 +127,45 @@
                         ></use>
                     </svg>
                     <span class="b3-list-item__text"
-                        >{@html subItem.htmlContent}
+                        >{@html subItem.block.content}
                     </span>
+
+                    {#if subItem.block.name}
+                        <span
+                            class="b3-list-item__meta fn__flex"
+                            style="max-width: 30%"
+                        >
+                            <svg class="b3-list-item__hinticon">
+                                <use xlink:href="#iconN"></use>
+                            </svg><span class="b3-list-item__hinttext">
+                                {@html subItem.block.name}
+                            </span>
+                        </span>
+                    {/if}
+                    {#if subItem.block.alias}
+                        <span
+                            class="b3-list-item__meta fn__flex"
+                            style="max-width: 30%"
+                        >
+                            <svg class="b3-list-item__hinticon">
+                                <use xlink:href="#iconA"></use>
+                            </svg><span class="b3-list-item__hinttext">
+                                {@html subItem.block.alias}
+                            </span>
+                        </span>
+                    {/if}
+                    {#if subItem.block.memo}
+                        <span
+                            class="b3-list-item__meta fn__flex"
+                            style="max-width: 30%"
+                        >
+                            <svg class="b3-list-item__hinticon"
+                                ><use xlink:href="#iconM"></use></svg
+                            ><span class="b3-list-item__hinttext">
+                                {@html subItem.block.memo}
+                            </span>
+                        </span>
+                    {/if}
                 </div>
             {/each}
         </div>

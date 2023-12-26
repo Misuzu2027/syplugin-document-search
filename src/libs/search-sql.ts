@@ -5,21 +5,24 @@ export function generateDocumentSearchSql(
     types: string[],
     pages: number[]
 ): string {
-    let columns = ["root_id", "Max(CASE WHEN parent_id = '' THEN content END) documentContent"]
+    let concatContentFields: string[] = ["content", "name", "alias", "memo"];
+    let concatDocumentConcatFieldSql = getConcatFieldSql(null, concatContentFields);
+    let columns = ["root_id", `Max(CASE WHEN parent_id = '' THEN ${concatDocumentConcatFieldSql} END) documentContent`]
+    let contentLikeField = `GROUP_CONCAT( ${concatDocumentConcatFieldSql} )`;
 
     let tempTableOrderCaseCombinationSql = generateOrderCaseCombination("documentContent", keywords) + " ASC ";
     let orders = [tempTableOrderCaseCombinationSql]
-    let documentContentLikeSql = generateDocumentContentLikeSql(columns, keywords, types, orders, pages);
+    let documentContentLikeSql = generateDocumentContentLikeSql(columns, keywords, contentLikeField, types, orders, pages);
 
+    let concatConcatFieldSql = getConcatFieldSql("concatContent", concatContentFields);
     let typeInSql = generateAndInConditions("type", types);
-    let contentParamSql = generateOrLikeConditions("content", keywords);
-    let orderCaseCombinationSql = generateOrderCaseCombination("content", keywords);
-
+    let contentParamSql = generateOrLikeConditions("concatContent", keywords);
+    let orderCaseCombinationSql = generateOrderCaseCombination("concatContent", keywords);
     let basicSql = `	
         WITH document_id_temp AS (
             ${documentContentLikeSql}
         )
-        SELECT * FROM blocks 
+        SELECT *,${concatConcatFieldSql} FROM blocks 
         WHERE
             1 = 1
             ${typeInSql}
@@ -44,12 +47,17 @@ export function generateDocumentSearchSql(
 export function generateDocumentCountSql(
     keywords: string[],
     types: string[],) {
-    let columns = ["root_id"/*," COUNT(1) AS contentCount", "Max(CASE WHEN parent_id = '' THEN content END) documentContent"*/]
+
+    let concatContentFields: string[] = ["content", "name", "alias", "memo"];
+    let concatConcatFieldSql = getConcatFieldSql("documentContent", concatContentFields);
+
+    let columns = ["root_id", concatConcatFieldSql];
 
     // let orderCaseCombinationSql = generateOrderCaseCombination("documentContent", keywords) + " ASC ";
     // let orders = [orderCaseCombinationSql];
+    let contentLikeField = "GROUP_CONCAT( documentContent )";
     let pages = [1, 99999999];
-    let documentContentLikeCountSql = generateDocumentContentLikeSql(columns, keywords, types, null, pages);
+    let documentContentLikeCountSql = generateDocumentContentLikeSql(columns, keywords, contentLikeField, types, null, pages);
 
     let documentCountSql = `SELECT count(1) AS documentCount FROM (${documentContentLikeCountSql})`;
 
@@ -59,6 +67,7 @@ export function generateDocumentCountSql(
 function generateDocumentContentLikeSql(
     columns: string[],
     keywords: string[],
+    contentLikeField: string,
     types: string[],
     orders: string[],
     pages: number[]): string {
@@ -70,7 +79,7 @@ function generateDocumentContentLikeSql(
     //     contentOrLikeSql = ` AND ( ${contentOrLikeSql} ) `;
     // }
     let aggregatedContentAndLikeSql = generateAndLikeConditions(
-        " GROUP_CONCAT( content ) ",
+        ` ${contentLikeField} `,
         keywords,
     );
     if (aggregatedContentAndLikeSql) {
@@ -109,6 +118,18 @@ function generateDocumentContentLikeSql(
         ${orderSql}
         ${limitSql}
     `;
+    return sql;
+}
+
+function getConcatFieldSql(asFieldName: string, fields: string[]): string {
+    if (!fields || fields.length <= 0) {
+        return "";
+    }
+    let sql = ` ( ${fields.join(" || ' '  || ")} ) `
+    if (asFieldName) {
+        sql += ` AS ${asFieldName} `;
+    }
+
     return sql;
 }
 

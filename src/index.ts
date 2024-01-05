@@ -2,7 +2,6 @@ import {
     Plugin,
     openTab,
     getFrontend,
-    getBackend,
     Menu,
     ITab,
 } from "siyuan";
@@ -10,9 +9,9 @@ import {
 
 import SearchHomeExample from "@/components/search-home.svelte";
 import { CUSTOM_ICON_MAP } from "./libs/icons";
+import { SettingConfig } from "./libs/setting-config";
 
 
-const STORAGE_NAME = "menu-config";
 const SEARCH_TAB_TYPE = "search_home_tab";
 const SEARCH_DOCK_TYPE = "search_dock_tab";
 
@@ -20,11 +19,10 @@ export default class PluginSample extends Plugin {
 
     private isMobile: boolean;
 
-
     private documentSearchTab: SearchHomeExample;
 
     async onload() {
-        this.data[STORAGE_NAME] = { readonlyText: "Readonly" };
+        SettingConfig.ins.load(this);
 
         const frontEnd = getFrontend();
         this.isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
@@ -65,7 +63,6 @@ export default class PluginSample extends Plugin {
             update() {
             },
             init() {
-                console.log("1");
                 searchHomeExampleDock = new SearchHomeExample({
                     target: this.element,
                     props: {
@@ -80,16 +77,16 @@ export default class PluginSample extends Plugin {
 
 
         this.addCommand({
-            langKey: "doucmentSearch",
+            langKey: "打开文档搜索页签",
             hotkey: "⇧⌘Q",
             callback: () => {
                 this.openDocumentSearchTab();
             },
         });
+
     }
 
     onLayoutReady() {
-        this.loadData(STORAGE_NAME);
 
         let searchTabDiv = document.createElement("div");
         let documentSearchTab = new SearchHomeExample({

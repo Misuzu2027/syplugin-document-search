@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
-    import { sql as query } from "@/utils/api";
+    import { lsNotebooks, sql as query } from "@/utils/api";
     import {
         generateDocumentCountSql,
         generateDocumentSearchSql,
@@ -15,6 +15,7 @@
     import SearchResultItem from "@/libs/search-result-item.svelte";
     import { DocumentSearchResultItem } from "@/libs/search-data";
     import { convertIalStringToObject, convertIconInIal } from "@/libs/icons";
+    import { SettingConfig } from "@/libs/setting-config";
 
     export let app;
     export let showPreview;
@@ -23,7 +24,6 @@
     const frontEnd = getFrontend();
     isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
 
-    // let time: string = "";
     let element: HTMLElement;
 
     let previewDiv: HTMLDivElement;
@@ -31,20 +31,16 @@
     let searchInputKey: string = "";
     let searchResults: DocumentSearchResultItem[] = [];
     let selectedIndex: number = 0;
-    // let renderedSearchResultItems: DocumentSearchResultItem[] = [];
     let itemClickCount = 0;
     let searchResultDivHeight: number;
-    let inputChaneTimeout;
-    let maxExpandCount: number = 300;
+    let inputChangeTimeoutId;
     let isSearching: number = 0;
     let hiddenSearchResult: boolean = false;
     let searchResultDocumentCount: number = null;
     // let searchResultTotalCount: number = null;
     let curPage: number = 0;
     let totalPage: number = 0;
-    let defaultPageSize: number = 10;
-    let searchResultItemComponent: SearchResultItem;
-    let showChildDocument: boolean = true;
+    let notebookMap: Map<string, Notebook> = new Map();
 
     onMount(async () => {
         resize();
@@ -233,10 +229,10 @@
         // 更新输入值
         searchInputKey = inputValue;
         // 清除之前的定时器
-        clearTimeout(inputChaneTimeout);
+        clearTimeout(inputChangeTimeoutId);
 
-        inputChaneTimeout = setTimeout(() => {
-            refreshSearch(inputValue, 1, defaultPageSize);
+        inputChangeTimeoutId = setTimeout(() => {
+            refreshSearch(inputValue, 1);
         }, 400);
     }
 
@@ -244,14 +240,10 @@
         if (page < 1 || page > totalPage) {
             return;
         }
-        refreshSearch(searchInputKey, page, defaultPageSize);
+        refreshSearch(searchInputKey, page);
     }
 
-    function refreshSearch(
-        searchKey: string,
-        pageNum: number,
-        pageSize: number,
-    ) {
+    function refreshSearch(searchKey: string, pageNum: number) {
         // 去除多余的空格，并将输入框的值按空格分割成数组
         const keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
 
@@ -263,14 +255,10 @@
         // 将 Set 转换为数组
         let uniqueKeywords = Array.from(uniqueKeywordsSet);
 
-        searchBlockByKeywords(uniqueKeywords, pageNum, pageSize);
+        searchBlockByKeywords(uniqueKeywords, pageNum);
     }
 
-    async function searchBlockByKeywords(
-        keywords: string[],
-        pageNum: number,
-        pageSize: number,
-    ) {
+    async function searchBlockByKeywords(keywords: string[], pageNum: number) {
         if (!keywords || keywords.length <= 0) {
             searchResultDocumentCount = 0;
             // searchResultTotalCount = 0;
@@ -280,11 +268,21 @@
             return;
         }
 
-        let types = ["d", "h", "c", "m", "t", "p", "html"];
+        updateBoxMap();
+
+        let pageSize = SettingConfig.ins.pageSize;
+        let types = SettingConfig.ins.includeTypes;
+        let contentFields = SettingConfig.ins.includeConcats;
+        let excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
         let pages = [pageNum, pageSize];
 
         isSearching++;
-        let documentCountSql = generateDocumentCountSql(keywords, types);
+        let documentCountSql = generateDocumentCountSql(
+            keywords,
+            types,
+            contentFields,
+            excludeNotebookIds,
+        );
         let queryDocumentCountPromise: Promise<any[]> = query(documentCountSql);
         queryDocumentCountPromise
             .then((documentCountResults: any[]) => {
@@ -301,8 +299,10 @@
         isSearching++;
         let documentSearchSql = generateDocumentSearchSql(
             keywords,
-            types,
             pages,
+            types,
+            contentFields,
+            excludeNotebookIds,
         );
         let documentSearchPromise: Promise<Block[]> = query(documentSearchSql);
         documentSearchPromise
@@ -365,7 +365,7 @@
                 documentBlockMap.set(rootId, curParentItem);
             }
 
-            if (showChildDocument) {
+            if (SettingConfig.ins.showChildDocument) {
                 curParentItem.subItems.push(documentItem);
             } else if (block.type !== "d") {
                 curParentItem.subItems.push(documentItem);
@@ -375,7 +375,7 @@
                 if (curParentItem.subItems) {
                     documentItem.subItems = curParentItem.subItems;
                 }
-                if (blocks.length > maxExpandCount) {
+                if (blocks.length > SettingConfig.ins.maxExpandCount) {
                     documentItem.isCollapsed = true;
                 } else {
                     documentItem.isCollapsed = false;
@@ -384,6 +384,8 @@
                     let ial = convertIalStringToObject(block.ial);
                     documentItem.icon = convertIconInIal(ial.icon);
                 }
+                documentItem.path =
+                    notebookMap.get(block.box).name + block.hpath;
                 searchResults.push(documentItem);
                 documentBlockMap.set(rootId, documentItem);
             }
@@ -510,7 +512,7 @@
             },
             action: [
                 "cb-get-hl",
-                // "cb-get-focus",
+                "cb-get-focus",
                 "cb-get-context",
                 "cb-get-rootscroll",
             ],
@@ -541,6 +543,13 @@
             item.isCollapsed = isCollapsed;
         }
         searchResults = searchResults;
+    }
+
+    async function updateBoxMap() {
+        let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
+        for (const notebook of notebooks) {
+            notebookMap.set(notebook.id, notebook);
+        }
     }
 </script>
 
@@ -644,7 +653,7 @@
                     style="right: 8px;height:42px"
                     on:click|stopPropagation={() => {
                         searchInputKey = "";
-                        refreshSearch(searchInputKey, 1, defaultPageSize);
+                        refreshSearch(searchInputKey, 1);
                     }}
                     on:keydown={handleKeyDownDefault}
                 >
@@ -658,7 +667,7 @@
                     class="block__icon ariaLabel"
                     data-position="9bottom"
                     on:click|stopPropagation={() => {
-                        refreshSearch(searchInputKey, 1, defaultPageSize);
+                        refreshSearch(searchInputKey, 1);
                     }}
                     on:keydown={handleKeyDownDefault}
                 >
@@ -706,7 +715,6 @@
                     {searchResults}
                     {selectedIndex}
                     clickCallback={clickItem}
-                    bind:this={searchResultItemComponent}
                 />
             {/if}
             <div

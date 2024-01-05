@@ -4,5 +4,6 @@ export class DocumentSearchResultItem {
     isCollapsed: boolean;
     htmlContent: string;
     icon: string;
-    index:number;
+    index: number;
+    path: string;
 }

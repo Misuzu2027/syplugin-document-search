@@ -1,19 +1,22 @@
 export function generateDocumentSearchSql(
     keywords: string[],
-    types: string[],
-    pages: number[]
+    pages: number[],
+    includeTypes: string[],
+    includeConcatFields: string[],
+    excludeNotebookIds: string[],
 ): string {
-    let concatContentFields: string[] = ["content", "name", "alias", "memo"];
+    let concatContentFields: string[] = includeConcatFields;
     let concatDocumentConcatFieldSql = getConcatFieldSql(null, concatContentFields);
     let columns = ["root_id", `Max(CASE WHEN parent_id = '' THEN ${concatDocumentConcatFieldSql} END) documentContent`]
     let contentLikeField = `GROUP_CONCAT( ${concatDocumentConcatFieldSql} )`;
 
     let tempTableOrderCaseCombinationSql = generateOrderCaseCombination("documentContent", keywords) + " ASC ";
     let orders = [tempTableOrderCaseCombinationSql]
-    let documentContentLikeSql = generateDocumentContentLikeSql(columns, keywords, contentLikeField, types, orders, pages);
+    let documentContentLikeSql = generateDocumentContentLikeSql(
+        columns, keywords, contentLikeField, includeTypes, excludeNotebookIds, orders, pages);
 
     let concatConcatFieldSql = getConcatFieldSql("concatContent", concatContentFields);
-    let typeInSql = generateAndInConditions("type", types);
+    let typeInSql = generateAndInConditions("type", includeTypes);
     let contentParamSql = generateOrLikeConditions("concatContent", keywords);
     let orderCaseCombinationSql = generateOrderCaseCombination("concatContent", keywords);
     let basicSql = `	
@@ -44,9 +47,11 @@ export function generateDocumentSearchSql(
 
 export function generateDocumentCountSql(
     keywords: string[],
-    types: string[],) {
+    includeTypes: string[],
+    includeConcatFields: string[],
+    excludeNotebookIds: string[],) {
 
-    let concatContentFields: string[] = ["content", "name", "alias", "memo"];
+    let concatContentFields: string[] = includeConcatFields;
     let concatConcatFieldSql = getConcatFieldSql("documentContent", concatContentFields);
 
     let columns = ["root_id", concatConcatFieldSql];
@@ -55,7 +60,8 @@ export function generateDocumentCountSql(
     // let orders = [orderCaseCombinationSql];
     let contentLikeField = "GROUP_CONCAT( documentContent )";
     let pages = [1, 99999999];
-    let documentContentLikeCountSql = generateDocumentContentLikeSql(columns, keywords, contentLikeField, types, null, pages);
+    let documentContentLikeCountSql = generateDocumentContentLikeSql(
+        columns, keywords, contentLikeField, includeTypes, excludeNotebookIds, null, pages);
 
     let documentCountSql = `SELECT count(1) AS documentCount FROM (${documentContentLikeCountSql})`;
 
@@ -67,11 +73,13 @@ function generateDocumentContentLikeSql(
     keywords: string[],
     contentLikeField: string,
     types: string[],
+    excludeNotebookIds: string[],
     orders: string[],
     pages: number[]): string {
 
     let columnSql = columns.join(",");
     let typeInSql = generateAndInConditions("type", types);
+    let boxNotInSql = generateAndNotInConditions("box", excludeNotebookIds);
     // let contentOrLikeSql = generateOrLikeConditions("content", keywords);
     // if (contentOrLikeSql) {
     //     contentOrLikeSql = ` AND ( ${contentOrLikeSql} ) `;
@@ -108,6 +116,7 @@ function generateDocumentContentLikeSql(
         WHERE
             1 = 1 
             ${typeInSql}
+            ${boxNotInSql}
         GROUP BY
             root_id 
         HAVING
@@ -183,7 +192,23 @@ function generateAndInConditions(
     if (!params || params.length === 0) {
         return " ";
     }
-    let result = ` AND ${fieldName} in (`
+    let result = ` AND ${fieldName} IN (`
+    const conditions = params.map(
+        (param) => ` '${param}' `,
+    );
+    result = result + conditions.join(" , ") + " ) ";
+
+    return result;
+}
+
+function generateAndNotInConditions(
+    fieldName: string,
+    params: string[],
+): string {
+    if (!params || params.length === 0) {
+        return " ";
+    }
+    let result = ` AND ${fieldName} NOT IN (`
     const conditions = params.map(
         (param) => ` '${param}' `,
     );
@@ -196,7 +221,11 @@ function generateAndInConditions(
 
 function generateOrderCaseCombination(columnName: string, keywords: string[]): string {
     let whenCombinationSql = "";
-    for (let index = 0; index < keywords.length; index++) {
+    let index = 0;
+    // if (keywords.length > 5) {
+    //     index = keywords.length - 5;
+    // }
+    for (; index < keywords.length; index++) {
         let combination = keywords.length - index;
         whenCombinationSql += generateWhenCombination(columnName, keywords, combination) + index;
     }

@@ -98,7 +98,7 @@
             <span
                 class="b3-list-item__text ariaLabel"
                 style="color: var(--b3-theme-on-surface)"
-                aria-label={item.block.hpath}
+                aria-label={item.path}
             >
                 {@html item.block.content}
             </span>

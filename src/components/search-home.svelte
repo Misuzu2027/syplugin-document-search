@@ -11,11 +11,13 @@
         openTab,
         openMobileFileById,
         getFrontend,
+        Dialog,
     } from "siyuan";
     import SearchResultItem from "@/libs/search-result-item.svelte";
     import { DocumentSearchResultItem } from "@/libs/search-data";
     import { convertIalStringToObject, convertIconInIal } from "@/libs/icons";
     import { SettingConfig } from "@/libs/setting-config";
+    import SettingTypes from "@/libs/setting-types.svelte";
 
     export let app;
     export let showPreview;
@@ -551,6 +553,23 @@
             notebookMap.set(notebook.id, notebook);
         }
     }
+
+    function clickTypeIcon() {
+        let dialog = new Dialog({
+            title: "类型",
+            content: `<div id="settingType" class="b3-dialog__content" ></div>`,
+            width: this.isMobile ? "92vw" : "520px",
+            height: "70vh",
+            destroyCallback: (options) => {
+                console.log("destroyCallback", options);
+                //You'd better destroy the component when the dialog is closed
+                pannel.$destroy();
+            },
+        });
+        let pannel = new SettingTypes({
+            target: dialog.element.querySelector("#settingType"),
+        });
+    }
 </script>
 
 <div class="b3-dialog__content" bind:this={element}>
@@ -615,6 +634,8 @@
                 aria-label="类型"
                 class="block__icon block__icon--show ariaLabel"
                 data-position="9bottom"
+                on:click={clickTypeIcon}
+                on:keydown={handleKeyDownDefault}
             >
                 <svg><use xlink:href="#iconFilter"></use></svg>
             </span>

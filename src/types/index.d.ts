@@ -30,7 +30,25 @@ type NotebookConf = {
 
 // type BlockType = "d" | "s" | "h" | "t" | "i" | "p" | "f" | "audio" | "video" | "other";
 
-type BlockType = "d" | "h" | "l" | "i" | "c" | "m" | "t" | "b" | "av" | "s" | "p" | "tb" | "html" | "video" | "audio" | "widget" | "iframe" | "query_embed";
+type BlockType = "d"  // 文档
+    | "h" // 标题
+    | "l" // 列表
+    | "i" // 列表项
+    | "c" // 代码块
+    | "m" // 数学公式
+    | "t" // 表格
+    | "b" // 引述
+    | "av" // 属性视图（数据库）
+    | "s" // 超级块
+    | "p" // 段落
+    | "tb" // 表格
+    | "html" // HTML
+    | "video" // 视频
+    | "audio" // 音频
+    | "widget" // 挂件
+    | "iframe" // iframe
+    | "query_embed" // 嵌入块
+    ;
 
 type BlockSubType = "o" | "u" | "t" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 

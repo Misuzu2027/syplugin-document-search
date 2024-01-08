@@ -36,7 +36,7 @@ export default class PluginSample extends Plugin {
             position: "right",
             callback: () => {
                 if (this.isMobile) {
-                    this.addMobileDocumentSearchMenu();
+                    // this.addMobileDocumentSearchMenu();
                 } else {
                     this.openDocumentSearchTab();
                 }
@@ -135,42 +135,44 @@ export default class PluginSample extends Plugin {
         });
     }
 
-    private addMobileDocumentSearchMenu() {
-        if (!this.isMobile) {
-            return;
-        }
-        let mobileDocSearchClassName = "mobile-document-search"
-        const menu = new Menu("mobileDocumentSearchMenu", () => {
-            let existingSearchDiv = menu.element.querySelector('.' + mobileDocSearchClassName);
-            this.hiddenElement(existingSearchDiv);
-            // if (existingSearchDiv) {
-            //     existingSearchDiv.remove();
-            // }
-        });
-        const menuElement = menu.element;
+    // private addMobileDocumentSearchMenu() {
+    //     console.log("addMobileDocumentSearchMenu");
+    //     if (!this.isMobile) {
+    //         return;
+    //     }
 
-        // 检查是否已经存在 Svelte div
-        let existingSearchDiv = menuElement.querySelector('.' + mobileDocSearchClassName);
-        if (existingSearchDiv) {
-            this.showElement(existingSearchDiv);
-        } else {
-            // 创建搜索组件的容器元素
-            let searchContainerDiv = document.createElement('div');
-            searchContainerDiv.className = mobileDocSearchClassName;
-            // 在 b3-menu__title 后面插入 
-            let b3MenuTitle = menuElement.querySelector('.b3-menu__title');
-            menuElement.insertBefore(searchContainerDiv, b3MenuTitle.nextSibling);
+    //     let mobileDocSearchClassName = "mobile-document-search"
+    //     const menu = new Menu("mobileDocumentSearchMenu", () => {
+    //         let existingSearchDiv = menu.element.querySelector('.' + mobileDocSearchClassName);
+    //         this.hiddenElement(existingSearchDiv);
+    //         // if (existingSearchDiv) {
+    //         //     existingSearchDiv.remove();
+    //         // }
+    //     });
+    //     const menuElement = menu.element;
 
-            new SearchHomeExample({
-                target: searchContainerDiv,
-                props: {
-                    app: this.app,
-                    showPreview: false,
-                }
-            });
-        }
-        menu.fullscreen();
-    }
+    //     // 检查是否已经存在 Svelte div
+    //     let existingSearchDiv = menuElement.querySelector('.' + mobileDocSearchClassName);
+    //     if (existingSearchDiv) {
+    //         this.showElement(existingSearchDiv);
+    //     } else {
+    //         // 创建搜索组件的容器元素
+    //         let searchContainerDiv = document.createElement('div');
+    //         searchContainerDiv.className = mobileDocSearchClassName;
+    //         // 在 b3-menu__title 后面插入 
+    //         let b3MenuTitle = menuElement.querySelector('.b3-menu__title');
+    //         menuElement.insertBefore(searchContainerDiv, b3MenuTitle.nextSibling);
+
+    //         new SearchHomeExample({
+    //             target: searchContainerDiv,
+    //             props: {
+    //                 app: this.app,
+    //                 showPreview: false,
+    //             }
+    //         });
+    //     }
+    //     menu.fullscreen();
+    // }
 
     private hiddenElement(element: HTMLElement | Element) {
         if (element) {

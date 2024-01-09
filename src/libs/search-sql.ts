@@ -10,7 +10,7 @@ export function generateDocumentSearchSql(
     let columns = ["root_id", `Max(CASE WHEN parent_id = '' THEN ${concatDocumentConcatFieldSql} END) documentContent`]
     let contentLikeField = `GROUP_CONCAT( ${concatDocumentConcatFieldSql} )`;
 
-    let tempTableOrderCaseCombinationSql = generateOrderCaseCombination("documentContent", keywords) + " ASC ";
+    let tempTableOrderCaseCombinationSql = generateRelevanceOrderSql("documentContent", keywords, false);
     let orders = [tempTableOrderCaseCombinationSql]
     let documentContentLikeSql = generateDocumentContentLikeSql(
         columns, keywords, contentLikeField, includeTypes, excludeNotebookIds, orders, pages);
@@ -18,7 +18,8 @@ export function generateDocumentSearchSql(
     let concatConcatFieldSql = getConcatFieldSql("concatContent", concatContentFields);
     let typeInSql = generateAndInConditions("type", includeTypes);
     let contentParamSql = generateOrLikeConditions("concatContent", keywords);
-    let orderCaseCombinationSql = generateOrderCaseCombination("concatContent", keywords);
+    let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", keywords, false);
+    orderCaseCombinationSql = orderCaseCombinationSql ? orderCaseCombinationSql + ',' : '';
     let basicSql = `	
         WITH document_id_temp AS (
             ${documentContentLikeSql}
@@ -36,7 +37,7 @@ export function generateDocumentSearchSql(
             )
         ORDER BY
             sort ASC,
-            ${orderCaseCombinationSql},
+            ${orderCaseCombinationSql}
             updated DESC
         LIMIT 99999999;
     `;
@@ -94,8 +95,11 @@ function generateDocumentContentLikeSql(
 
     let orderSql = '';
     if (orders) {
+        orders = orders.filter((order) => order);
         let orderParam = orders.join(",");
-        orderSql = ` ORDER BY ${orderParam} `;
+        if (orderParam) {
+            orderSql = ` ORDER BY ${orderParam} `;
+        }
     }
 
     let limitSql = '';
@@ -218,25 +222,29 @@ function generateAndNotInConditions(
 }
 
 
-
-function generateOrderCaseCombination(columnName: string, keywords: string[]): string {
+function generateOrderCaseCombination(columnName: string, keywords: string[], orderAsc: boolean, index?: number, iterationOffset?: number): string {
     let whenCombinationSql = "";
-    let index = 0;
-    // if (keywords.length > 5) {
-    //     index = keywords.length - 5;
-    // }
-    for (; index < keywords.length; index++) {
+    if (!index) {
+        index = 0;
+    }
+    let endIndex = keywords.length;
+    if (iterationOffset != null) {
+        endIndex = endIndex - Math.abs(iterationOffset);
+    }
+
+    for (; index < endIndex; index++) {
         let combination = keywords.length - index;
         whenCombinationSql += generateWhenCombination(columnName, keywords, combination) + index;
     }
 
     let caseCombinationSql = "";
     if (whenCombinationSql) {
-        caseCombinationSql = `
+        let sortDirection = orderAsc ? " ASC " : " DESC ";
+        caseCombinationSql = `(
         CASE 
             ${whenCombinationSql}
         ELSE 99
-        END
+        END ) ${sortDirection}
     `;
     }
     return caseCombinationSql;
@@ -269,4 +277,24 @@ function generateWhenCombination(columnName: string, keywords: string[], combina
         .join(" OR ");
 
     return ` WHEN ${queryString} THEN `;
+}
+
+
+function generateRelevanceOrderSql(columnName: string, keywords: string[], orderAsc: boolean): string {
+    let subSql = "";
+
+    for (let i = 0; i < keywords.length; i++) {
+        let key = keywords[i];
+        subSql += ` (${columnName} LIKE '%${key}%') `;
+        if (i < keywords.length - 1) {
+            subSql += ' + ';
+        }
+    }
+
+    let orderSql = "";
+    if (subSql) {
+        let sortDirection = orderAsc ? " ASC " : " DESC ";
+        orderSql = `( ${subSql} ) ${sortDirection}`;
+    }
+    return orderSql;
 }

@@ -18,6 +18,9 @@
     import { convertIalStringToObject, convertIconInIal } from "@/libs/icons";
     import { SettingConfig } from "@/libs/setting-config";
     import SettingTypes from "@/libs/setting-types.svelte";
+    import SettingNotebook from "@/libs/setting-notebook.svelte";
+    import SettingAttr from "@/libs/setting-attr.svelte";
+    import SettingOther from "@/libs/setting-other.svelte";
 
     export let app;
     export let showPreview;
@@ -141,9 +144,9 @@
         if (!document) {
             return;
         }
-        let minHeight = 240;
+        let minHeight = 210;
         if (!showPreview) {
-            minHeight = 199;
+            minHeight = 172;
         }
 
         searchResultDivHeight = document.body.scrollHeight - minHeight;
@@ -270,11 +273,11 @@
             return;
         }
 
-        updateBoxMap();
+        updateNotebookMap();
 
         let pageSize = SettingConfig.ins.pageSize;
         let types = SettingConfig.ins.includeTypes;
-        let contentFields = SettingConfig.ins.includeConcats;
+        let queryFields = SettingConfig.ins.includeQueryFields;
         let excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
         let pages = [pageNum, pageSize];
 
@@ -282,7 +285,7 @@
         let documentCountSql = generateDocumentCountSql(
             keywords,
             types,
-            contentFields,
+            queryFields,
             excludeNotebookIds,
         );
         let queryDocumentCountPromise: Promise<any[]> = query(documentCountSql);
@@ -303,7 +306,7 @@
             keywords,
             pages,
             types,
-            contentFields,
+            queryFields,
             excludeNotebookIds,
         );
         let documentSearchPromise: Promise<Block[]> = query(documentSearchSql);
@@ -547,14 +550,32 @@
         searchResults = searchResults;
     }
 
-    async function updateBoxMap() {
+    async function updateNotebookMap() {
         let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
         for (const notebook of notebooks) {
             notebookMap.set(notebook.id, notebook);
         }
     }
 
-    function clickTypeIcon() {
+    function clickSearchNotebookFilter() {
+        let dialog = new Dialog({
+            title: "笔记本",
+            content: `<div id="settingNotebook" class="b3-dialog__content" ></div>`,
+            width: this.isMobile ? "92vw" : "520px",
+            height: "70vh",
+            destroyCallback: (options) => {
+                console.log("destroyCallback", options);
+                // refreshSearch(searchInputKey, 1);
+                //You'd better destroy the component when the dialog is closed
+                pannel.$destroy();
+            },
+        });
+        let pannel = new SettingNotebook({
+            target: dialog.element.querySelector("#settingNotebook"),
+        });
+    }
+
+    function clickSearchTypeFilter() {
         let dialog = new Dialog({
             title: "类型",
             content: `<div id="settingType" class="b3-dialog__content" ></div>`,
@@ -562,6 +583,7 @@
             height: "70vh",
             destroyCallback: (options) => {
                 console.log("destroyCallback", options);
+                // refreshSearch(searchInputKey, 1);
                 //You'd better destroy the component when the dialog is closed
                 pannel.$destroy();
             },
@@ -570,193 +592,252 @@
             target: dialog.element.querySelector("#settingType"),
         });
     }
+
+    function clickSearchAttrFilter() {
+        let dialog = new Dialog({
+            title: "属性",
+            content: `<div id="settingAttr" class="b3-dialog__content" ></div>`,
+            width: this.isMobile ? "92vw" : "520px",
+            height: "70vh",
+            destroyCallback: (options) => {
+                console.log("destroyCallback", options);
+                // refreshSearch(searchInputKey, 1);
+                //You'd better destroy the component when the dialog is closed
+                pannel.$destroy();
+            },
+        });
+        let pannel = new SettingAttr({
+            target: dialog.element.querySelector("#settingAttr"),
+        });
+    }
+
+    function clickSearchSettingOther() {
+        let dialog = new Dialog({
+            title: "其他设置",
+            content: `<div id="settingOther" class="b3-dialog__content" ></div>`,
+            width: this.isMobile ? "92vw" : "520px",
+            height: "70vh",
+            destroyCallback: (options) => {
+                console.log("destroyCallback", options);
+                // refreshSearch(searchInputKey, 1);
+                //You'd better destroy the component when the dialog is closed
+                pannel.$destroy();
+            },
+        });
+        let pannel = new SettingOther({
+            target: dialog.element.querySelector("#settingOther"),
+        });
+    }
 </script>
 
-<div class="b3-dialog__content" bind:this={element}>
-    <div>
-        <div class="block__icons" style="overflow: auto">
-            <span
-                data-position="9bottom"
-                data-type="previous"
-                class="block__icon block__icon--show ariaLabel
-            {curPage <= 1 ? 'disabled' : ''}"
-                aria-label="上一页"
-                on:click={() => {
-                    pageTurning(curPage - 1);
-                }}
-                on:keydown={handleKeyDownDefault}
-                ><svg><use xlink:href="#iconLeft"></use></svg></span
-            >
-            <span class="fn__space"></span>
-            <span
-                data-position="9bottom"
-                data-type="next"
-                class="block__icon block__icon--show ariaLabel
-            {curPage >= totalPage ? 'disabled' : ''}"
-                aria-label="下一页"
-                on:click={() => {
-                    pageTurning(curPage + 1);
-                }}
-                on:keydown={handleKeyDownDefault}
-                ><svg><use xlink:href="#iconRight"></use></svg></span
-            >
+<div
+    class="fn__flex-column"
+    style="height: 100%; width:calc(100% - 7px);"
+    bind:this={element}
+>
+    <!-- <div class="layout-tab-container fn__flex-1" bind:this={element}> -->
 
-            <span class="fn__space"></span>
-            <span
-                class="fn__flex-shrink ft__selectnone
+    <div class="block__icons" style="overflow: auto">
+        <span
+            data-position="9bottom"
+            data-type="previous"
+            class="block__icon block__icon--show ariaLabel
+            {curPage <= 1 ? 'disabled' : ''}"
+            aria-label="上一页"
+            on:click={() => {
+                pageTurning(curPage - 1);
+            }}
+            on:keydown={handleKeyDownDefault}
+            ><svg><use xlink:href="#iconLeft"></use></svg></span
+        >
+        <span class="fn__space"></span>
+        <span
+            data-position="9bottom"
+            data-type="next"
+            class="block__icon block__icon--show ariaLabel
+            {curPage >= totalPage ? 'disabled' : ''}"
+            aria-label="下一页"
+            on:click={() => {
+                pageTurning(curPage + 1);
+            }}
+            on:keydown={handleKeyDownDefault}
+            ><svg><use xlink:href="#iconRight"></use></svg></span
+        >
+
+        <span class="fn__space"></span>
+        <span
+            class="fn__flex-shrink ft__selectnone
             {searchResultDocumentCount == null || searchResultDocumentCount == 0
+                ? 'fn__none'
+                : ''}"
+        >
+            {curPage}/{totalPage}
+            <span class="fn__space"></span>
+
+            <span class="ft__on-surface">
+                匹配到 {searchResultDocumentCount} 个文档
+                <!-- 中匹配 {searchResultTotalCount}块 -->
+            </span>
+        </span>
+        <span class="fn__space"></span>
+        <span class="fn__flex-1" style="min-height: 100%"></span>
+
+        <span class="fn__space"></span>
+        <span
+            id="searchNotebookFilter"
+            aria-label="笔记本"
+            class="block__icon block__icon--show ariaLabel"
+            data-position="9bottom"
+            on:click={clickSearchNotebookFilter}
+            on:keydown={handleKeyDownDefault}
+        >
+            <svg><use xlink:href="#iconFolder"></use></svg>
+        </span>
+        <span class="fn__space"></span>
+        <span
+            id="searchTypeFilter"
+            aria-label="类型"
+            class="block__icon block__icon--show ariaLabel"
+            data-position="9bottom"
+            on:click={clickSearchTypeFilter}
+            on:keydown={handleKeyDownDefault}
+        >
+            <svg><use xlink:href="#iconFilter"></use></svg>
+        </span>
+        <span class="fn__space"></span>
+        <span
+            id="searchAttrFilter"
+            aria-label="属性"
+            class="block__icon block__icon--show ariaLabel"
+            data-position="9bottom"
+            on:click={clickSearchAttrFilter}
+            on:keydown={handleKeyDownDefault}
+        >
+            <svg><use xlink:href="#iconA"></use></svg>
+        </span>
+
+        <span class="fn__space"></span>
+        <span
+            id="searchSettingOther"
+            aria-label="其他"
+            class="block__icon block__icon--show ariaLabel"
+            data-position="9bottom"
+            on:click={clickSearchSettingOther}
+            on:keydown={handleKeyDownDefault}
+        >
+            <svg><use xlink:href="#iconSearchSettingOther"></use></svg>
+        </span>
+    </div>
+    <div
+        class="b3-form__icon search__header"
+        on:keydown={handleKeyDownSelectItem}
+    >
+        <div style="position: relative" class="fn__flex-1">
+            <span
+                class="search__history-icon"
+                id="searchHistoryBtn"
+                on:click={searchHidtoryBtnClick}
+                on:keydown={handleKeyDownDefault}
+                aria-label="Alt+↓"
+            >
+                <svg data-menu="true" class="b3-form__icon-icon">
+                    <use xlink:href="#iconSearch"></use>
+                </svg>
+                <svg class="search__arrowdown"
+                    ><use xlink:href="#iconDown"></use>
+                </svg>
+            </span>
+            <input
+                id="documentSearchInput"
+                class="b3-text-field b3-text-field--text"
+                style="padding-right: 32px !important;"
+                on:input={handleSearchInputChange}
+                bind:value={searchInputKey}
+            />
+            <svg
+                class="b3-form__icon-clear ariaLabel {searchInputKey == ''
                     ? 'fn__none'
                     : ''}"
-            >
-                {curPage}/{totalPage}
-                <span class="fn__space"></span>
-
-                <span class="ft__on-surface">
-                    匹配到 {searchResultDocumentCount} 个文档
-                    <!-- 中匹配 {searchResultTotalCount}块 -->
-                </span>
-            </span>
-            <span class="fn__space"></span>
-            <span class="fn__flex-1" style="min-height: 100%"></span>
-
-            <span class="fn__space"></span>
-            <span
-                id="searchPath"
-                aria-label="指定路径"
-                class="block__icon block__icon--show ariaLabel"
-                data-position="9bottom"
-            >
-                <svg><use xlink:href="#iconFolder"></use></svg>
-            </span>
-            <span class="fn__space"></span>
-            <span
-                id="searchFilter"
-                aria-label="类型"
-                class="block__icon block__icon--show ariaLabel"
-                data-position="9bottom"
-                on:click={clickTypeIcon}
+                aria-label="清空"
+                style="right: 8px;height:42px"
+                on:click|stopPropagation={() => {
+                    searchInputKey = "";
+                    refreshSearch(searchInputKey, 1);
+                }}
                 on:keydown={handleKeyDownDefault}
             >
-                <svg><use xlink:href="#iconFilter"></use></svg>
+                <use xlink:href="#iconCloseRound"></use>
+            </svg>
+        </div>
+        <div class="block__icons">
+            <span
+                id="searchRefresh"
+                aria-label="刷新"
+                class="block__icon ariaLabel"
+                data-position="9bottom"
+                on:click|stopPropagation={() => {
+                    refreshSearch(searchInputKey, curPage);
+                }}
+                on:keydown={handleKeyDownDefault}
+            >
+                <svg><use xlink:href="#iconRefresh"></use></svg>
             </span>
-        </div>
-        <div
-            class="b3-form__icon search__header"
-            on:keydown={handleKeyDownSelectItem}
-        >
-            <div style="position: relative" class="fn__flex-1">
+
+            <div class="fn__flex">
+                <span class="fn__space"></span>
                 <span
-                    class="search__history-icon"
-                    id="searchHistoryBtn"
-                    on:click={searchHidtoryBtnClick}
-                    on:keydown={handleKeyDownDefault}
-                    aria-label="Alt+↓"
-                >
-                    <svg data-menu="true" class="b3-form__icon-icon">
-                        <use xlink:href="#iconSearch"></use>
-                    </svg>
-                    <svg class="search__arrowdown"
-                        ><use xlink:href="#iconDown"></use>
-                    </svg>
-                </span>
-                <input
-                    id="documentSearchInput"
-                    class="b3-text-field b3-text-field--text"
-                    style="padding-right: 32px !important;"
-                    on:input={handleSearchInputChange}
-                    bind:value={searchInputKey}
-                />
-                <svg
-                    class="b3-form__icon-clear ariaLabel {searchInputKey == ''
-                        ? 'fn__none'
-                        : ''}"
-                    aria-label="清空"
-                    style="right: 8px;height:42px"
-                    on:click|stopPropagation={() => {
-                        searchInputKey = "";
-                        refreshSearch(searchInputKey, 1);
-                    }}
-                    on:keydown={handleKeyDownDefault}
-                >
-                    <use xlink:href="#iconCloseRound"></use>
-                </svg>
-            </div>
-            <div class="block__icons">
-                <span
-                    id="searchRefresh"
-                    aria-label="刷新"
-                    class="block__icon ariaLabel"
+                    id="searchExpand"
+                    class="block__icon block__icon--show ariaLabel"
                     data-position="9bottom"
-                    on:click|stopPropagation={() => {
-                        refreshSearch(searchInputKey, 1);
+                    aria-label="展开"
+                    on:click={() => {
+                        toggleAllCollpsedItem(false);
                     }}
                     on:keydown={handleKeyDownDefault}
                 >
-                    <svg><use xlink:href="#iconRefresh"></use></svg>
+                    <svg><use xlink:href="#iconExpand"></use></svg>
                 </span>
-
-                <div class="fn__flex">
-                    <span class="fn__space"></span>
-                    <span
-                        id="searchExpand"
-                        class="block__icon block__icon--show ariaLabel"
-                        data-position="9bottom"
-                        aria-label="展开"
-                        on:click={() => {
-                            toggleAllCollpsedItem(false);
-                        }}
-                        on:keydown={handleKeyDownDefault}
-                    >
-                        <svg><use xlink:href="#iconExpand"></use></svg>
-                    </span>
-                    <span class="fn__space"></span>
-                    <span
-                        id="searchCollapse"
-                        class="block__icon block__icon--show ariaLabel"
-                        data-position="9bottom"
-                        aria-label="折叠"
-                        on:click={() => {
-                            toggleAllCollpsedItem(true);
-                        }}
-                        on:keydown={handleKeyDownDefault}
-                    >
-                        <svg><use xlink:href="#iconContract"></use></svg>
-                    </span>
-                </div>
+                <span class="fn__space"></span>
+                <span
+                    id="searchCollapse"
+                    class="block__icon block__icon--show ariaLabel"
+                    data-position="9bottom"
+                    aria-label="折叠"
+                    on:click={() => {
+                        toggleAllCollpsedItem(true);
+                    }}
+                    on:keydown={handleKeyDownDefault}
+                >
+                    <svg><use xlink:href="#iconContract"></use></svg>
+                </span>
             </div>
-        </div>
-
-        <div
-            class="search__layout search__layout--row"
-            style="height:{searchResultDivHeight}px;"
-            on:keydown={handleKeyDownSelectItem}
-        >
-            {#if !hiddenSearchResult}
-                <SearchResultItem
-                    {searchResults}
-                    {selectedIndex}
-                    clickCallback={clickItem}
-                />
-            {/if}
-            <div
-                class="search__drag"
-                on:mousedown={handleSearchDragMousdown}
-            ></div>
-            <div
-                id="searchPreview"
-                class="search__preview protyle fn__flex-1 {showPreview
-                    ? ''
-                    : 'fn__none'}"
-                bind:this={previewDiv}
-            ></div>
         </div>
     </div>
     <div
-        class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}"
+        class="search__layout search__layout--row"
+        on:keydown={handleKeyDownSelectItem}
     >
-        <!-- svelte-ignore a11y-missing-attribute -->
-        <img width="120px" src="/stage/loading-pure.svg" />
+        {#if !hiddenSearchResult}
+            <SearchResultItem
+                {searchResults}
+                {selectedIndex}
+                clickCallback={clickItem}
+                {searchResultDivHeight}
+            />
+        {/if}
+        <div class="search__drag" on:mousedown={handleSearchDragMousdown}></div>
+        <div
+            id="searchPreview"
+            class="search__preview protyle fn__flex-1 {showPreview
+                ? ''
+                : 'fn__none'}"
+            bind:this={previewDiv}
+        ></div>
     </div>
+</div>
+<div class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}">
+    <!-- svelte-ignore a11y-missing-attribute -->
+    <img width="120px" src="/stage/loading-pure.svg" />
 </div>
 
 <style>

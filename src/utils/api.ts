@@ -6,7 +6,7 @@
  * API 文档见 [API_zh_CN.md](https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md)
  */
 
-import { fetchSyncPost, IWebSocketData } from "siyuan";
+import { fetchPost, fetchSyncPost, IWebSocketData } from "siyuan";
 
 
 async function request(url: string, data: any) {
@@ -248,6 +248,21 @@ export async function transferBlockRef(fromID: BlockId, toID: BlockId, refIDs: B
         refIDs: refIDs
     }
     let url = '/api/block/transferBlockRef';
+    return request(url, data);
+}
+
+export async function getBlockIndex(id: BlockId): Promise<number> {
+    let data = {
+        id: id
+    }
+    let url = '/api/block/getBlockIndex';
+
+    // fetchPost(url, { id }, (response) => {
+    //     if (!response.data) {
+    //         return;
+    //     }
+    //     console.log("getBlockIndex : " + response);
+    // });
     return request(url, data);
 }
 

@@ -6,10 +6,13 @@ import { Plugin } from 'siyuan';
 const SettingFile = 'search-setting.json';
 
 export class SettingConfig {
+    private defaultSettings = {
+        defaultConentFields: ["content", "tag"],
+    }
     private settings = {
         pageSize: 10 as number, // 每页的文档数
-        includeTypes: ["d", "h", "c", "m", "t", "p", "html"] as BlockType[], // 查询的类型
-        includeConcatFields: ["content", "name", "alias", "memo"] as string[], // 查询的内容字段
+        includeTypes: ["d", "h", "c", "m", "t", "p", "html", "av"] as BlockType[], // 查询的类型
+        includeAttrFields: ["name", "alias", "memo"] as string[], // 查询的属性字段
         excludeNotebookIds: [] as string[], // 排除的笔记本ID
         maxExpandCount: 100 as number,  // 最大展开数量，查询结果超过这个数量会自动折叠
         showChildDocument: true as boolean, // 是否再分组下面显示文档块，主要是方便复制文档块的id或引用块。
@@ -21,20 +24,6 @@ export class SettingConfig {
 
     private plugin: Plugin;
 
-    // setPlugin(plugin: Plugin) {
-    //     this.plugin = plugin;
-    // }
-
-
-    // types: Map<string, object> = new Map();
-    // contents: Map<string, object> = new Map();
-    // orderBys: Map<string, object> = new Map();
-
-
-    // constructor(plugin: Plugin) {
-    //     this.plugin = plugin;
-    //     this.file = this.name.endsWith('.json') ? this.name : `${this.name}.json`;
-    // }
     /**
      * 导入的时候，需要先加载设置；如果没有设置，则使用默认设置
      */
@@ -96,8 +85,13 @@ export class SettingConfig {
         return this.settings.includeTypes;
     }
 
-    get includeConcats(): string[] {
-        return this.settings.includeConcatFields;
+    get includeAttrFields(): string[] {
+        return this.settings.includeAttrFields;
+    }
+
+    get includeQueryFields(): string[] {
+        let queryFields = [...this.defaultSettings.defaultConentFields, ...this.settings.includeAttrFields];
+        return queryFields;
     }
 
     get excludeNotebookIds(): string[] {
@@ -122,13 +116,23 @@ export class SettingConfig {
         this.save();
     }
 
-    updateIncludeConcats(concats: string[]) {
-        this.settings.includeConcatFields = concats;
+    updateIncludeAttrFields(includeAttrFields: string[]) {
+        this.settings.includeAttrFields = includeAttrFields;
         this.save();
     }
 
     updateExcludeNotebookIds(notebookIds: string[]) {
         this.settings.excludeNotebookIds = notebookIds;
+        this.save();
+    }
+
+    updateMaxExpandCount(maxExpandCount: number) {
+        this.settings.maxExpandCount = maxExpandCount;
+        this.save();
+    }
+
+    updateShowChildDocument(showChildDocument: boolean) {
+        this.settings.showChildDocument = showChildDocument;
         this.save();
     }
 

@@ -10,6 +10,7 @@ import {
 import SearchHomeExample from "@/components/search-home.svelte";
 import { CUSTOM_ICON_MAP } from "./libs/icons";
 import { SettingConfig } from "./libs/setting-config";
+import { getBlockIndex } from "./utils/api";
 
 
 const SEARCH_TAB_TYPE = "search_home_tab";
@@ -28,20 +29,24 @@ export default class PluginSample extends Plugin {
         this.isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
 
         // 图标的制作参见帮助文档
-        this.addIcons(CUSTOM_ICON_MAP.iconDocumentSearch.source);
+        for (const key in CUSTOM_ICON_MAP) {
+            if (Object.prototype.hasOwnProperty.call(CUSTOM_ICON_MAP, key)) {
+                const item = CUSTOM_ICON_MAP[key];
+                this.addIcons(item.source);
+            }
+        }
+        // this.addIcons(CUSTOM_ICON_MAP.iconDocumentSearch.source);
 
-        this.addTopBar({
-            icon: CUSTOM_ICON_MAP.iconDocumentSearch.id,
-            title: this.i18n.documentSearchIconTip,
-            position: "right",
-            callback: () => {
-                if (this.isMobile) {
-                    // this.addMobileDocumentSearchMenu();
-                } else {
+        if (!this.isMobile) {
+            this.addTopBar({
+                icon: CUSTOM_ICON_MAP.iconDocumentSearch.id,
+                title: this.i18n.documentSearchIconTip,
+                position: "right",
+                callback: () => {
                     this.openDocumentSearchTab();
                 }
-            }
-        });
+            });
+        }
 
         let searchHomeExampleDock: SearchHomeExample;
         this.addDock({

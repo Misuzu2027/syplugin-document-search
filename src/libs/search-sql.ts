@@ -7,11 +7,11 @@ export function generateDocumentSearchSql(
 ): string {
     let concatContentFields: string[] = includeConcatFields;
     let concatDocumentConcatFieldSql = getConcatFieldSql(null, concatContentFields);
-    let columns = ["root_id", `Max(CASE WHEN parent_id = '' THEN ${concatDocumentConcatFieldSql} END) documentContent`]
+    let columns = ["root_id", `Max(CASE WHEN type = 'd' THEN ${concatDocumentConcatFieldSql} END) documentContent`]
     let contentLikeField = `GROUP_CONCAT( ${concatDocumentConcatFieldSql} )`;
 
     let tempTableOrderCaseCombinationSql = generateRelevanceOrderSql("documentContent", keywords, false);
-    let orders = [tempTableOrderCaseCombinationSql]
+    let orders = [tempTableOrderCaseCombinationSql, " MAX(updated) DESC "]
     let documentContentLikeSql = generateDocumentContentLikeSql(
         columns, keywords, contentLikeField, includeTypes, excludeNotebookIds, orders, pages);
 
@@ -136,7 +136,8 @@ function getConcatFieldSql(asFieldName: string, fields: string[]): string {
     if (!fields || fields.length <= 0) {
         return "";
     }
-    let sql = ` ( ${fields.join(" || ' '  || ")} ) `
+    // let sql = ` ( ${fields.join(" || ' '  || ")} ) `;
+    let sql = ` ( ${fields.join(" || ")} ) `
     if (asFieldName) {
         sql += ` AS ${asFieldName} `;
     }

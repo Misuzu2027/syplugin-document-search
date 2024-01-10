@@ -8,7 +8,6 @@
     export let searchResults: DocumentSearchResultItem[];
     export let clickCallback: (block: Block) => void;
     export let selectedIndex: number = 0;
-    export let searchResultDivHeight: number = 0;
 
     // $: renderedSearchResultItems = searchResults.slice(0, 10);
 
@@ -60,7 +59,6 @@
 <div
     id="searchList"
     class="fn__flex-1 search__list b3-list b3-list--background"
-    style="height:{searchResultDivHeight}px"
 >
     {#each searchResults as item}
         <!-- on:click={() => itemClick(item.block)} -->

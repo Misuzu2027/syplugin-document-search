@@ -11,7 +11,6 @@
     });
 
     async function updateNotebookMap() {
-        console.log("updateNotebookMap ");
         let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
         for (const notebook of notebooks) {
             notebook.icon = convertIconInIal(notebook.icon);

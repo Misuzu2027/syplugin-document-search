@@ -37,7 +37,6 @@
     let searchResults: DocumentSearchResultItem[] = [];
     let selectedIndex: number = 0;
     let itemClickCount = 0;
-    let searchResultDivHeight: number;
     let inputChangeTimeoutId;
     let isSearching: number = 0;
     let hiddenSearchResult: boolean = false;
@@ -49,17 +48,14 @@
 
     onMount(async () => {
         resize();
-        // previewDivProtyle = new Protyle(
-        //     app,
-        //     element.querySelector("#searchPreview") as HTMLElement,
-        //     {
-        //         blockId: "",
-        //         render: {
-        //             gutter: true,
-        //             breadcrumbDocName: true,
-        //         },
-        //     },
-        // );
+        previewProtyle = new Protyle(app, previewDiv, {
+            blockId: "",
+            render: {
+                gutter: true,
+                breadcrumbDocName: true,
+            },
+        });
+        previewProtyle.protyle.element.style.width = element.offsetWidth / 2 + "px";
     });
 
     function handleSearchDragMousdown(event: MouseEvent) {
@@ -144,12 +140,6 @@
         if (!document) {
             return;
         }
-        let minHeight = 210;
-        if (!showPreview) {
-            minHeight = 172;
-        }
-
-        searchResultDivHeight = document.body.scrollHeight - minHeight;
 
         inputCursorInit();
 
@@ -460,7 +450,6 @@
     }
 
     function clickItem(block: Block) {
-        console.log("search-home clickItem : ", block);
         let blockId = block.id;
 
         if (!showPreview) {
@@ -630,11 +619,7 @@
     }
 </script>
 
-<div
-    class="fn__flex-column"
-    style="height: 100%; width:calc(100% - 7px);"
-    bind:this={element}
->
+<div class="fn__flex-column" style="height: 100%;" bind:this={element}>
     <!-- <div class="layout-tab-container fn__flex-1" bind:this={element}> -->
 
     <div class="block__icons" style="overflow: auto">
@@ -822,15 +807,12 @@
                 {searchResults}
                 {selectedIndex}
                 clickCallback={clickItem}
-                {searchResultDivHeight}
             />
         {/if}
         <div class="search__drag" on:mousedown={handleSearchDragMousdown}></div>
         <div
             id="searchPreview"
-            class="search__preview protyle fn__flex-1 {showPreview
-                ? ''
-                : 'fn__none'}"
+            class="search__preview {showPreview ? '' : 'fn__none'}"
             bind:this={previewDiv}
         ></div>
     </div>

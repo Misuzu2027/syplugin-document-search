@@ -10,7 +10,6 @@ import {
 import SearchHomeExample from "@/components/search-home.svelte";
 import { CUSTOM_ICON_MAP } from "./libs/icons";
 import { SettingConfig } from "./libs/setting-config";
-import { getBlockIndex } from "./utils/api";
 
 
 const SEARCH_TAB_TYPE = "search_home_tab";
@@ -93,19 +92,28 @@ export default class PluginSample extends Plugin {
 
     onLayoutReady() {
 
-        let searchTabDiv = document.createElement("div");
-        let documentSearchTab = new SearchHomeExample({
-            target: searchTabDiv,
-            props: {
-                app: this.app,
-                showPreview: true,
-            }
-        });
-        this.documentSearchTab = documentSearchTab;
+        // let searchTabDiv = document.createElement("div");
+        // let documentSearchTab = new SearchHomeExample({
+        //     target: searchTabDiv,
+        //     props: {
+        //         app: this.app,
+        //         showPreview: true,
+        //     }
+        // });
+        // this.documentSearchTab = documentSearchTab;
+        let documentSearchTab;
         this.addTab({
             type: SEARCH_TAB_TYPE,
             init() {
-                this.element.appendChild(searchTabDiv);
+                documentSearchTab = new SearchHomeExample({
+                    target: this.element,
+                    props: {
+                        app: this.app,
+                        showPreview: true,
+                    }
+                });
+
+                // this.element.replaceChildren(searchTabDiv.childNodes);
             },
             beforeDestroy() {
             },

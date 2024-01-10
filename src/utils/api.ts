@@ -257,12 +257,6 @@ export async function getBlockIndex(id: BlockId): Promise<number> {
     }
     let url = '/api/block/getBlockIndex';
 
-    // fetchPost(url, { id }, (response) => {
-    //     if (!response.data) {
-    //         return;
-    //     }
-    //     console.log("getBlockIndex : " + response);
-    // });
     return request(url, data);
 }
 

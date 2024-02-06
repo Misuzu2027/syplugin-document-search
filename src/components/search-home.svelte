@@ -30,12 +30,13 @@
     isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
 
     let element: HTMLElement;
+    let documentSearchInputElement: HTMLInputElement;
 
-    let previewDiv: HTMLDivElement;
+    let previewDivElement: HTMLDivElement;
     let previewProtyle: Protyle;
     let searchInputKey: string = "";
     let searchResults: DocumentSearchResultItem[] = [];
-    let selectedIndex: number = 0;
+    let selectedIndex: number = -1;
     let itemClickCount = 0;
     let inputChangeTimeoutId;
     let isSearching: number = 0;
@@ -48,14 +49,13 @@
 
     onMount(async () => {
         resize();
-        previewProtyle = new Protyle(app, previewDiv, {
+        previewProtyle = new Protyle(app, previewDivElement, {
             blockId: "",
             render: {
                 gutter: true,
                 breadcrumbDocName: true,
             },
         });
-        previewProtyle.protyle.element.style.width = element.offsetWidth / 2 + "px";
     });
 
     function handleSearchDragMousdown(event: MouseEvent) {
@@ -140,7 +140,10 @@
         if (!document) {
             return;
         }
-
+        if (previewProtyle) {
+            previewProtyle.protyle.element.style.width =
+                element.offsetWidth / 2 + "px";
+        }
         inputCursorInit();
 
         if (clientWidth) {
@@ -153,13 +156,10 @@
     }
 
     function inputCursorInit() {
-        let searchInputElement = document.getElementById(
-            "documentSearchInput",
-        ) as HTMLInputElement;
-        if (!searchInputElement) {
+        if (!documentSearchInputElement) {
             return;
         }
-        searchInputElement.focus();
+        documentSearchInputElement.focus();
     }
 
     function searchHidtoryBtnClick() {
@@ -204,12 +204,15 @@
             }
             for (const subItem of item.subItems) {
                 if (selectedIndex == subItem.index) {
-                    selectedItem = item;
+                    selectedItem = subItem;
                     break;
                 }
             }
         }
 
+        if (!selectedItem) {
+            return;
+        }
         // refreshBlockPreviewBox(selectedItem.block.id);
         inputCursorInit();
 
@@ -270,6 +273,7 @@
         let queryFields = SettingConfig.ins.includeQueryFields;
         let excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
         let pages = [pageNum, pageSize];
+        selectedIndex = -1;
 
         isSearching++;
         let documentCountSql = generateDocumentCountSql(
@@ -360,11 +364,7 @@
                 documentBlockMap.set(rootId, curParentItem);
             }
 
-            if (SettingConfig.ins.showChildDocument) {
-                curParentItem.subItems.push(documentItem);
-            } else if (block.type !== "d") {
-                curParentItem.subItems.push(documentItem);
-            }
+            curParentItem.subItems.push(documentItem);
 
             if (block.type === "d") {
                 if (curParentItem.subItems) {
@@ -388,8 +388,16 @@
 
         let index = 0;
         for (const item of searchResults) {
+            if (!SettingConfig.ins.showChildDocument) {
+                if (item.subItems.length > 1) {
+                    item.subItems.shift();
+                }
+            }
             item.index = index;
             for (const subItem of item.subItems) {
+                if (item.block.id === subItem.block.id) {
+                    continue;
+                }
                 index++;
                 subItem.index = index;
             }
@@ -449,8 +457,10 @@
         return input.replace(/[&<>"']/g, (match) => escapeMap[match]);
     }
 
-    function clickItem(block: Block) {
+    function clickItem(item: DocumentSearchResultItem) {
+        let block = item.block;
         let blockId = block.id;
+        selectedIndex = item.index;
 
         if (!showPreview) {
             openBlockTab(blockId);
@@ -475,7 +485,8 @@
             "cb-get-hl",
             "cb-get-focus",
             "cb-get-context",
-            "cb-get-rootscroll",
+            // "cb-get-rootscroll",
+            // "cb-get-scroll",
         ];
         if (isMobile === true) {
             openMobileFileById(app, blockId, actions);
@@ -498,7 +509,7 @@
         if (previewProtyle) {
             // previewProtyle.destroy();
         }
-        previewProtyle = new Protyle(app, previewDiv, {
+        previewProtyle = new Protyle(app, previewDivElement, {
             blockId: blockId,
             render: {
                 gutter: true,
@@ -734,6 +745,7 @@
             </span>
             <input
                 id="documentSearchInput"
+                bind:this={documentSearchInputElement}
                 class="b3-text-field b3-text-field--text"
                 style="padding-right: 32px !important;"
                 on:input={handleSearchInputChange}
@@ -813,7 +825,7 @@
         <div
             id="searchPreview"
             class="search__preview {showPreview ? '' : 'fn__none'}"
-            bind:this={previewDiv}
+            bind:this={previewDivElement}
         ></div>
     </div>
 </div>

@@ -6,14 +6,14 @@
     // import { onMount } from "svelte";
 
     export let searchResults: DocumentSearchResultItem[];
-    export let clickCallback: (block: Block) => void;
+    export let clickCallback: (item: DocumentSearchResultItem) => void;
     export let selectedIndex: number = 0;
 
     // $: renderedSearchResultItems = searchResults.slice(0, 10);
 
-    function itemClick(block: Block) {
+    function itemClick(item: DocumentSearchResultItem) {
         if (clickCallback) {
-            clickCallback(block);
+            clickCallback(item);
         }
     }
 
@@ -115,7 +115,7 @@
                 {subItem.index === selectedIndex ? 'b3-list-item--focus' : ''}"
                     data-node-id={subItem.block.id}
                     data-root-id={subItem.block.root_id}
-                    on:click={() => itemClick(subItem.block)}
+                    on:click={() => itemClick(subItem)}
                     on:keydown={handleKeyDownDefault}
                 >
                     <svg class="b3-list-item__graphic">

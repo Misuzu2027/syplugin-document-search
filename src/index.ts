@@ -101,11 +101,11 @@ export default class PluginSample extends Plugin {
         //     }
         // });
         // this.documentSearchTab = documentSearchTab;
-        let documentSearchTab;
+        let _this = this;
         this.addTab({
             type: SEARCH_TAB_TYPE,
             init() {
-                documentSearchTab = new SearchHomeExample({
+                _this.documentSearchTab = new SearchHomeExample({
                     target: this.element,
                     props: {
                         app: this.app,
@@ -120,8 +120,8 @@ export default class PluginSample extends Plugin {
             destroy() {
             },
             resize() {
-                if (documentSearchTab) {
-                    documentSearchTab.resize();
+                if (_this.documentSearchTab) {
+                    _this.documentSearchTab.resize();
                 }
             },
         });
@@ -132,7 +132,7 @@ export default class PluginSample extends Plugin {
     }
 
     private openDocumentSearchTab(): ITab {
-        let documentSearchTab = this.documentSearchTab;
+        let documentSearchTab: SearchHomeExample = this.documentSearchTab;
         return openTab({
             app: this.app,
             custom: {

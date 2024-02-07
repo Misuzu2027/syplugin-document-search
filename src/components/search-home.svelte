@@ -43,12 +43,12 @@
     let hiddenSearchResult: boolean = false;
     let searchResultDocumentCount: number = null;
     // let searchResultTotalCount: number = null;
+    let lastKeywords: string[];
     let curPage: number = 0;
     let totalPage: number = 0;
     let notebookMap: Map<string, Notebook> = new Map();
 
     onMount(async () => {
-        resize();
         previewProtyle = new Protyle(app, previewDivElement, {
             blockId: "",
             render: {
@@ -56,6 +56,7 @@
                 breadcrumbDocName: true,
             },
         });
+        resize();
     });
 
     function handleSearchDragMousdown(event: MouseEvent) {
@@ -257,6 +258,7 @@
     }
 
     async function searchBlockByKeywords(keywords: string[], pageNum: number) {
+        lastKeywords = keywords;
         if (!keywords || keywords.length <= 0) {
             searchResultDocumentCount = 0;
             // searchResultTotalCount = 0;
@@ -521,7 +523,89 @@
                 "cb-get-context",
                 "cb-get-rootscroll",
             ],
+            after: (protyle: Protyle) => {
+                const start = performance.now(); // 记录开始时间
+                let protyleContentElement = protyle.protyle.contentElement;
+                htmlHighlight(protyleContentElement, lastKeywords);
+                const end = performance.now(); // 记录结束时间
+                const executionTime = end - start; // 计算执行时间，单位为毫秒
+                console.log("Execution time:", executionTime, "milliseconds");
+            },
         });
+    }
+    function htmlHighlight(contentElement: HTMLElement, keywords: string[]) {
+        if (!contentElement || !keywords) {
+            return;
+        }
+        // If the CSS Custom Highlight API is not supported,
+        // display a message and bail-out.
+        if (!CSS.highlights) {
+            console.log("CSS Custom Highlight API not supported.");
+            return;
+        }
+
+        // Find all text nodes in the article. We'll search within
+        // these text nodes.
+        const treeWalker = document.createTreeWalker(
+            contentElement,
+            NodeFilter.SHOW_TEXT,
+        );
+        const allTextNodes = [];
+        let currentNode = treeWalker.nextNode();
+        while (currentNode) {
+            allTextNodes.push(currentNode);
+            currentNode = treeWalker.nextNode();
+        }
+
+        // Clear the HighlightRegistry to remove the
+        // previous search results.
+        CSS.highlights.clear();
+
+        // Clean-up the search query and bail-out if
+        // if it's empty.
+
+        let ranges = [];
+        for (const str of keywords) {
+            if (!str) {
+                continue;
+            }
+            // Iterate over all text nodes and find matches.
+            allTextNodes
+                .map((el) => {
+                    return { el, text: el.textContent.toLowerCase() };
+                })
+                .map(({ text, el }) => {
+                    const indices = [];
+                    let startPos = 0;
+                    while (startPos < text.length) {
+                        const index = text.indexOf(str, startPos);
+                        if (index === -1) break;
+                        indices.push(index);
+                        startPos = index + str.length;
+                    }
+
+                    // Create a range object for each instance of
+                    // str we found in the text node.
+                    return indices.map((index) => {
+                        const range = new Range();
+                        range.setStart(el, index);
+                        range.setEnd(el, index + str.length);
+                        ranges.push(range);
+
+                        // return range;
+                    });
+                });
+
+            // Create a Highlight object for the ranges.
+        }
+        ranges = ranges.flat();
+        if (!ranges || ranges.length <= 0) {
+            return;
+        }
+        const searchResultsHighlight = new Highlight(...ranges);
+
+        // Register the Highlight object in the registry.
+        CSS.highlights.set("search-result-mark", searchResultsHighlight);
     }
 
     function toggleAllCollpsedItem(isCollapsed: boolean) {
@@ -838,5 +922,10 @@
     .block__icon--show.block__icon.disabled {
         opacity: 0.38;
         cursor: not-allowed;
+    }
+
+    ::highlight(search-result-mark) {
+        background-color: var(--b3-protyle-inline-mark-background);
+        color: var(--b3-protyle-inline-mark-color);
     }
 </style>

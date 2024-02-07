@@ -475,7 +475,7 @@
                         refreshBlockPreviewBox(blockId);
                     }
                     itemClickCount = 0; // 重置计数
-                }, 200); // 设置一个合适的时间阈值
+                }, 190); // 设置一个合适的时间阈值
             } else if (itemClickCount === 2) {
                 openBlockTab(blockId);
             }
@@ -508,9 +508,19 @@
         if (!showPreview) {
             return;
         }
-        if (previewProtyle) {
-            // previewProtyle.destroy();
+        if (!blockId) {
+            return;
         }
+
+        // if (
+        //     previewProtyle &&
+        //     previewProtyle.protyle &&
+        //     previewProtyle.protyle.block &&
+        //     previewProtyle.protyle.block.id == blockId
+        // ) {
+        //     return;
+        // }
+
         previewProtyle = new Protyle(app, previewDivElement, {
             blockId: blockId,
             render: {
@@ -519,7 +529,7 @@
             },
             action: [
                 "cb-get-hl",
-                "cb-get-focus",
+                // "cb-get-focus",
                 "cb-get-context",
                 "cb-get-rootscroll",
             ],
@@ -564,7 +574,8 @@
         // Clean-up the search query and bail-out if
         // if it's empty.
 
-        let ranges = [];
+        let ranges: Range[] = [];
+        let matchElement = null;
         for (const str of keywords) {
             if (!str) {
                 continue;
@@ -580,19 +591,18 @@
                     while (startPos < text.length) {
                         const index = text.indexOf(str, startPos);
                         if (index === -1) break;
+                        if (!matchElement) matchElement = el.parentElement;
                         indices.push(index);
                         startPos = index + str.length;
                     }
 
                     // Create a range object for each instance of
                     // str we found in the text node.
-                    return indices.map((index) => {
+                    indices.map((index) => {
                         const range = new Range();
                         range.setStart(el, index);
                         range.setEnd(el, index + str.length);
                         ranges.push(range);
-
-                        // return range;
                     });
                 });
 
@@ -602,11 +612,41 @@
         if (!ranges || ranges.length <= 0) {
             return;
         }
+
         const searchResultsHighlight = new Highlight(...ranges);
 
         // Register the Highlight object in the registry.
         CSS.highlights.set("search-result-mark", searchResultsHighlight);
+        renderNextSearchMark(previewProtyle, matchElement);
     }
+
+    const renderNextSearchMark = (edit: Protyle, matchElement) => {
+        // const allMatchElements = Array.from(
+        //     options.edit.protyle.wysiwyg.element.querySelectorAll(
+        //         `div[data-node-id="${options.id}"] span[data-type~="search-mark"]`,
+        //     ),
+        // );
+        // allMatchElements.find((item, itemIndex) => {
+        //     if (item.classList.contains("search-mark--hl")) {
+        //         item.classList.remove("search-mark--hl");
+        //         matchElement = allMatchElements[itemIndex + 1];
+        //         return;
+        //     }
+        // });
+        // if (!matchElement) {
+        //     matchElement = allMatchElements[0];
+        // }
+        if (matchElement) {
+            // matchElement.classList.add("search-mark--hl");
+            const contentRect =
+                edit.protyle.contentElement.getBoundingClientRect();
+            edit.protyle.contentElement.scrollTop =
+                edit.protyle.contentElement.scrollTop +
+                matchElement.getBoundingClientRect().top -
+                contentRect.top -
+                contentRect.height / 2;
+        }
+    };
 
     function toggleAllCollpsedItem(isCollapsed: boolean) {
         if (!isCollapsed) {

@@ -447,6 +447,19 @@
         return highlightedString;
     }
 
+    function highlightContentMatches(searchString: string, array: string[]) {
+        if (!array.length || !searchString) {
+            return searchString; // 返回原始字符串，因为没有需要匹配的内容
+        }
+
+        const regexPattern = new RegExp(`(${array.join("|")})`, "gi");
+        const highlightedString = searchString.replace(
+            regexPattern,
+            "<span data-type='search-mark'>$1</span>",
+        );
+        return highlightedString;
+    }
+
     function escapeHtml(input: string): string {
         const escapeMap: Record<string, string> = {
             "&": "&amp;",
@@ -534,12 +547,12 @@
                 "cb-get-rootscroll",
             ],
             after: (protyle: Protyle) => {
-                const start = performance.now(); // 记录开始时间
+                // const start = performance.now(); // 记录开始时间
                 let protyleContentElement = protyle.protyle.contentElement;
                 htmlHighlight(protyleContentElement, lastKeywords);
-                const end = performance.now(); // 记录结束时间
-                const executionTime = end - start; // 计算执行时间，单位为毫秒
-                console.log("Execution time:", executionTime, "milliseconds");
+                // const end = performance.now(); // 记录结束时间
+                // const executionTime = end - start; // 计算执行时间，单位为毫秒
+                // console.log("Execution time:", executionTime, "milliseconds");
             },
         });
     }
@@ -612,12 +625,53 @@
         if (!ranges || ranges.length <= 0) {
             return;
         }
-
         const searchResultsHighlight = new Highlight(...ranges);
 
         // Register the Highlight object in the registry.
         CSS.highlights.set("search-result-mark", searchResultsHighlight);
         renderNextSearchMark(previewProtyle, matchElement);
+    }
+
+    /**
+     * 官方规则高亮方法。
+     * 但是对于加粗、引用等有行内样式的文本，高亮标签会嵌套在行内样式标签内，造成DOM结构变化，同时不符合官方的规律。
+     * 暂时不用。如果需要重复点击相同项实现定位下一个搜索结果，则必须使用这种方式。
+     * @param contentElement
+     * @param keywords
+     */
+    function protyleHighlightQueryStr(
+        contentElement: HTMLElement,
+        keywords: string[],
+    ) {
+        if (!contentElement || !keywords) {
+            return;
+        }
+
+        // Find all text nodes in the article. We'll search within
+        // these text nodes.
+        const treeWalker = document.createTreeWalker(
+            contentElement,
+            NodeFilter.SHOW_TEXT,
+        );
+        const allTextNodes: Node[] = [];
+        let currentNode = treeWalker.nextNode();
+        while (currentNode) {
+            allTextNodes.push(currentNode);
+            currentNode = treeWalker.nextNode();
+        }
+
+        for (const textNode of allTextNodes) {
+            if (!textNode || !textNode.parentElement) {
+                continue;
+            }
+            const regexPattern = new RegExp(`(${keywords.join("|")})`, "gi");
+            if (textNode.textContent.match(regexPattern)) {
+                textNode.parentElement.innerHTML = highlightContentMatches(
+                    textNode.textContent,
+                    keywords,
+                );
+            }
+        }
     }
 
     const renderNextSearchMark = (edit: Protyle, matchElement) => {

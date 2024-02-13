@@ -21,7 +21,9 @@
         let tempExcludeNotebookIds = excludeNotebookIds.filter((id) =>
             notebookMap.has(id),
         );
-        SettingConfig.ins.updateExcludeNotebookIds(tempExcludeNotebookIds);
+        if (tempExcludeNotebookIds.length != excludeNotebookIds.length) {
+            SettingConfig.ins.updateExcludeNotebookIds(tempExcludeNotebookIds);
+        }
         excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
     }
 
@@ -35,8 +37,9 @@
         } else {
             tempExcludeNotebookIds = [...excludeNotebookIds, value];
         }
+        console.log(`tempExcludeNotebookIds ${tempExcludeNotebookIds}`);
         SettingConfig.ins.updateExcludeNotebookIds(tempExcludeNotebookIds);
-        excludeNotebookIds = SettingConfig.ins.includeTypes;
+        excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
     }
 </script>
 

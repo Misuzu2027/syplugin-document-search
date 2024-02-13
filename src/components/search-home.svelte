@@ -737,7 +737,7 @@
 
     function clickSearchNotebookFilter() {
         let dialog = new Dialog({
-            title: "笔记本",
+            title: "笔记本过滤",
             content: `<div id="settingNotebook" class="b3-dialog__content" ></div>`,
             width: this.isMobile ? "92vw" : "520px",
             height: "70vh",
@@ -859,13 +859,13 @@
         <span class="fn__space"></span>
         <span
             id="searchNotebookFilter"
-            aria-label="笔记本"
+            aria-label="笔记本过滤"
             class="block__icon block__icon--show ariaLabel"
             data-position="9bottom"
             on:click={clickSearchNotebookFilter}
             on:keydown={handleKeyDownDefault}
         >
-            <svg><use xlink:href="#iconFolder"></use></svg>
+            <svg><use xlink:href="#iconSearchSettingExcludeNotebook"></use></svg>
         </span>
         <span class="fn__space"></span>
         <span

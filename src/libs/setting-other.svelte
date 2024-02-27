@@ -1,8 +1,56 @@
 <script lang="ts">
     import { SettingConfig } from "@/libs/setting-config";
+    let documentSortMethod: string = SettingConfig.ins.documentSortMethod;
+    let contentBlockSortMethod: string =
+        SettingConfig.ins.contentBlockSortMethod;
     let pageSize: number = SettingConfig.ins.pageSize;
     let maxExpandCount: number = SettingConfig.ins.maxExpandCount;
     let showChildDocument: boolean = SettingConfig.ins.showChildDocument;
+
+    let documentSortMethodElement = [
+        {
+            text: "相关度升序",
+            value: "rankAsc",
+        },
+        {
+            text: "相关度降序",
+            value: "rankDesc",
+        },
+        {
+            text: "修改时间升序",
+            value: "modifiedAsc",
+        },
+        {
+            text: "修改时间降序",
+            value: "modifiedDesc",
+        },
+        {
+            text: "创建时间升序",
+            value: "createdAsc",
+        },
+        {
+            text: "创建时间降序",
+            value: "createdDesc",
+        },
+    ];
+
+    let contentBlockSortMethodElement = [
+        {
+            text: "类型",
+            value: "type",
+        },
+        ...documentSortMethodElement,
+    ];
+
+    function documentSortMethodChange(event) {
+        documentSortMethod = event.target.value;
+        SettingConfig.ins.updateDocumentSortMethod(documentSortMethod);
+    }
+
+    function contentBlockSortMethodChange(event) {
+        contentBlockSortMethod = event.target.value;
+        SettingConfig.ins.updateContentBlockSortMethod(contentBlockSortMethod);
+    }
 
     function pageSizeChange(event) {
         pageSize = event.target.value;
@@ -27,6 +75,50 @@
 </script>
 
 <div id="document-search-setting-other">
+    <label class="fn__flex b3-label config__item">
+        <svg class="ft__on-surface svg fn__flex-center"
+            ><use xlink:href="#iconSort"></use></svg
+        >
+        <span class="fn__space"></span>
+        <div class="fn__flex-1 fn__flex-center">文档排序方式</div>
+        <span class="fn__space"></span>
+        <select
+            class="b3-select fn__flex-center fn__size200"
+            on:change={documentSortMethodChange}
+        >
+            {#each documentSortMethodElement as element}
+                <option
+                    value={element.value}
+                    selected={element.value == documentSortMethod}
+                >
+                    {element.text}
+                </option>
+            {/each}
+        </select>
+    </label>
+
+    <label class="fn__flex b3-label config__item">
+        <svg class="ft__on-surface svg fn__flex-center"
+            ><use xlink:href="#iconSort"></use></svg
+        >
+        <span class="fn__space"></span>
+        <div class="fn__flex-1 fn__flex-center">内容块排序方式</div>
+        <span class="fn__space"></span>
+        <select
+            class="b3-select fn__flex-center fn__size200"
+            on:change={contentBlockSortMethodChange}
+        >
+            {#each contentBlockSortMethodElement as element}
+                <option
+                    value={element.value}
+                    selected={element.value == contentBlockSortMethod}
+                >
+                    {element.text}
+                </option>
+            {/each}
+        </select>
+    </label>
+
     <label class="fn__flex b3-label config__item">
         <svg class="ft__on-surface svg fn__flex-center"
             ><use xlink:href="#iconFile"></use></svg

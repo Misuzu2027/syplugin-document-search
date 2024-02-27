@@ -46,7 +46,7 @@ export default class PluginSample extends Plugin {
                 }
             });
         }
-
+        let app = this.app;
         let searchHomeExampleDock: SearchHomeExample;
         this.addDock({
             config: {
@@ -70,7 +70,7 @@ export default class PluginSample extends Plugin {
                 searchHomeExampleDock = new SearchHomeExample({
                     target: this.element,
                     props: {
-                        app: this.app,
+                        app: app,
                         showPreview: false,
                     }
                 });
@@ -131,9 +131,9 @@ export default class PluginSample extends Plugin {
 
     }
 
-    private openDocumentSearchTab(): ITab {
+    private openDocumentSearchTab() {
         let documentSearchTab: SearchHomeExample = this.documentSearchTab;
-        return openTab({
+        openTab({
             app: this.app,
             custom: {
                 id: this.name + SEARCH_TAB_TYPE,

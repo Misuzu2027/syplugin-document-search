@@ -2,6 +2,7 @@
     import { onDestroy, onMount } from "svelte";
     import { lsNotebooks, sql as query } from "@/utils/api";
     import {
+        DocumentQueryCriteria,
         generateDocumentCountSql,
         generateDocumentSearchSql,
     } from "@/libs/search-sql";
@@ -141,7 +142,7 @@
         if (!document) {
             return;
         }
-        if (previewProtyle) {
+        if (previewProtyle && element.offsetWidth) {
             previewProtyle.protyle.element.style.width =
                 element.offsetWidth / 2 + "px";
         }
@@ -275,14 +276,24 @@
         let queryFields = SettingConfig.ins.includeQueryFields;
         let excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
         let pages = [pageNum, pageSize];
+        let documentSortMethod = SettingConfig.ins.documentSortMethod;
+        let contentBlockSortMethod = SettingConfig.ins.contentBlockSortMethod;
         selectedIndex = -1;
+
+        let documentSearchCriterion: DocumentQueryCriteria =
+            new DocumentQueryCriteria(
+                keywords,
+                pages,
+                documentSortMethod,
+                contentBlockSortMethod,
+                types,
+                queryFields,
+                excludeNotebookIds,
+            );
 
         isSearching++;
         let documentCountSql = generateDocumentCountSql(
-            keywords,
-            types,
-            queryFields,
-            excludeNotebookIds,
+            documentSearchCriterion,
         );
         let queryDocumentCountPromise: Promise<any[]> = query(documentCountSql);
         queryDocumentCountPromise
@@ -298,12 +309,9 @@
             });
 
         isSearching++;
+
         let documentSearchSql = generateDocumentSearchSql(
-            keywords,
-            pages,
-            types,
-            queryFields,
-            excludeNotebookIds,
+            documentSearchCriterion,
         );
         let documentSearchPromise: Promise<Block[]> = query(documentSearchSql);
         documentSearchPromise
@@ -355,7 +363,6 @@
             documentItem.block = block;
             documentItem.subItems = [];
             documentItem.isCollapsed = true;
-            // documentItem.block.content = contentHtml;
 
             let curParentItem: DocumentSearchResultItem = null;
             if (documentBlockMap.has(rootId)) {
@@ -388,11 +395,84 @@
             }
         }
 
+        let documentSortMethod = SettingConfig.ins.documentSortMethod;
+        let documentSortFun: (
+            a: DocumentSearchResultItem,
+            b: DocumentSearchResultItem,
+        ) => number;
+        if (documentSortMethod == "modifiedAsc") {
+            documentSortFun = function (
+                a: DocumentSearchResultItem,
+                b: DocumentSearchResultItem,
+            ): number {
+                return Number(a.block.updated) - Number(b.block.updated);
+            };
+        } else if (documentSortMethod == "modifiedDesc") {
+            documentSortFun = function (
+                a: DocumentSearchResultItem,
+                b: DocumentSearchResultItem,
+            ): number {
+                return Number(b.block.updated) - Number(a.block.updated);
+            };
+        } else if (documentSortMethod == "createdAsc") {
+            documentSortFun = function (
+                a: DocumentSearchResultItem,
+                b: DocumentSearchResultItem,
+            ): number {
+                return Number(a.block.created) - Number(b.block.created);
+            };
+        } else if (documentSortMethod == "createdDesc") {
+            documentSortFun = function (
+                a: DocumentSearchResultItem,
+                b: DocumentSearchResultItem,
+            ): number {
+                return Number(b.block.created) - Number(a.block.created);
+            };
+        } else if (documentSortMethod == "rankAsc") {
+            documentSortFun = function (
+                a: DocumentSearchResultItem,
+                b: DocumentSearchResultItem,
+            ): number {
+                let aRank: number = a.block.content.split("<mark>").length - 1;
+                let bRank: number = b.block.content.split("<mark>").length - 1;
+                let result = aRank - bRank;
+                result =
+                    result == 0
+                        ? Number(b.block.updated) - Number(a.block.updated)
+                        : result;
+                return result;
+            };
+        } else {
+            documentSortFun = function (
+                a: DocumentSearchResultItem,
+                b: DocumentSearchResultItem,
+            ): number {
+                let aRank: number = a.block.content.split("<mark>").length - 1;
+                let bRank: number = b.block.content.split("<mark>").length - 1;
+                let result = bRank - aRank;
+                result =
+                    result == 0
+                        ? Number(b.block.updated) - Number(a.block.updated)
+                        : result;
+                return result;
+            };
+        }
+
+        searchResults.sort(documentSortFun);
+
         let index = 0;
         for (const item of searchResults) {
             if (!SettingConfig.ins.showChildDocument) {
                 if (item.subItems.length > 1) {
-                    item.subItems.shift();
+                    let documentItemIndex = 0;
+                    for (let i: number = 0; i < item.subItems.length; i++) {
+                        let subItem = item.subItems[i];
+                        if (subItem.block.type === "d") {
+                            documentItemIndex = i;
+                            break;
+                        }
+                    }
+                    item.subItems.splice(documentItemIndex, 1);
                 }
             }
             item.index = index;
@@ -634,8 +714,8 @@
 
     /**
      * 官方规则高亮方法。
-     * 但是对于加粗、引用等有行内样式的文本，高亮标签会嵌套在行内样式标签内，造成DOM结构变化，同时不符合官方的规律。
-     * 暂时不用。如果需要重复点击相同项实现定位下一个搜索结果，则必须使用这种方式。
+     * 但是对于加粗、引用等有行内样式的文本，高亮标签会嵌套在行内样式标签内，造成DOM结构变化，并且不符合官方的规律。
+     * 暂时不用。
      * @param contentElement
      * @param keywords
      */
@@ -865,7 +945,8 @@
             on:click={clickSearchNotebookFilter}
             on:keydown={handleKeyDownDefault}
         >
-            <svg><use xlink:href="#iconSearchSettingExcludeNotebook"></use></svg>
+            <svg><use xlink:href="#iconSearchSettingExcludeNotebook"></use></svg
+            >
         </span>
         <span class="fn__space"></span>
         <span
@@ -912,7 +993,6 @@
                 id="searchHistoryBtn"
                 on:click={searchHidtoryBtnClick}
                 on:keydown={handleKeyDownDefault}
-                aria-label="Alt+↓"
             >
                 <svg data-menu="true" class="b3-form__icon-icon">
                     <use xlink:href="#iconSearch"></use>
@@ -988,10 +1068,7 @@
             </div>
         </div>
     </div>
-    <div
-        class="search__layout search__layout--row"
-        on:keydown={handleKeyDownSelectItem}
-    >
+    <div class="search__layout search__layout--row">
         {#if !hiddenSearchResult}
             <SearchResultItem
                 {searchResults}

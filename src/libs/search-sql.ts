@@ -1,28 +1,73 @@
+export class DocumentQueryCriteria {
+    keywords: string[];
+    pages: number[];
+    documentSortMethod: string;
+    contentBlockSortMethod: string;
+    includeTypes: string[];
+    includeConcatFields: string[];
+    excludeNotebookIds: string[];
+
+    constructor(
+        keywords: string[],
+        pages: number[],
+        documentSortMethod: string,
+        contentBlockSortMethod: string,
+        includeTypes: string[],
+        includeConcatFields: string[],
+        excludeNotebookIds: string[],
+    ) {
+        this.keywords = keywords;
+        this.pages = pages;
+        this.documentSortMethod = documentSortMethod;
+        this.contentBlockSortMethod = contentBlockSortMethod;
+        this.includeTypes = includeTypes;
+        this.includeConcatFields = includeConcatFields;
+        this.excludeNotebookIds = excludeNotebookIds;
+    }
+}
+
+
 export function generateDocumentSearchSql(
-    keywords: string[],
-    pages: number[],
-    includeTypes: string[],
-    includeConcatFields: string[],
-    excludeNotebookIds: string[],
+    queryCriteria: DocumentQueryCriteria,
 ): string {
-    let concatContentFields: string[] = includeConcatFields;
-    let concatDocumentConcatFieldSql = getConcatFieldSql(null, concatContentFields);
-    let columns = ["root_id", `Max(CASE WHEN type = 'd' THEN ${concatDocumentConcatFieldSql} END) documentContent`]
-    let contentLikeField = `GROUP_CONCAT( ${concatDocumentConcatFieldSql} )`;
 
-    let tempTableOrderCaseCombinationSql = generateRelevanceOrderSql("documentContent", keywords, false);
-    let orders = [tempTableOrderCaseCombinationSql, " MAX(updated) DESC "]
-    let documentContentLikeSql = generateDocumentContentLikeSql(
-        columns, keywords, contentLikeField, includeTypes, excludeNotebookIds, orders, pages);
+    let keywords = queryCriteria.keywords;
+    let contentBlockSortMethod = queryCriteria.contentBlockSortMethod;
+    let includeTypes = queryCriteria.includeTypes;
+    let includeConcatFields = queryCriteria.includeConcatFields;
 
-    let concatConcatFieldSql = getConcatFieldSql("concatContent", concatContentFields);
+    let documentIdContentTableSql
+        = generateDocumentIdContentTableSql(queryCriteria);
+
+    let concatConcatFieldSql = getConcatFieldSql("concatContent", includeConcatFields);
     let typeInSql = generateAndInConditions("type", includeTypes);
     let contentParamSql = generateOrLikeConditions("concatContent", keywords);
-    let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", keywords, false);
-    orderCaseCombinationSql = orderCaseCombinationSql ? orderCaseCombinationSql + ',' : '';
+
+    let orders = [];
+    if (contentBlockSortMethod == 'modifiedAsc') {
+        orders = [" updated ASC "]
+    } else if (contentBlockSortMethod == 'modifiedDesc') {
+        orders = [" updated DESC "]
+    } else if (contentBlockSortMethod == 'createdAsc') {
+        orders = [" created ASC "]
+    } else if (contentBlockSortMethod == 'createdDesc') {
+        orders = [" created DESC "]
+    } else if (contentBlockSortMethod == 'rankAsc') {
+        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", keywords, true);
+        orders = [orderCaseCombinationSql, " sort ASC ", " updated DESC "]
+    } else if (contentBlockSortMethod == 'rankDesc') {
+        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", keywords, false);
+        orders = [orderCaseCombinationSql, " sort ASC ", " updated DESC "]
+    } else { // type 类型
+        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", keywords, false);
+        orders = [" sort ASC ", orderCaseCombinationSql, " updated DESC "];
+    }
+    let orderSql = generateOrderSql(orders);
+
+
     let basicSql = `	
         WITH document_id_temp AS (
-            ${documentContentLikeSql}
+            ${documentIdContentTableSql}
         )
         SELECT *,${concatConcatFieldSql} FROM blocks 
         WHERE
@@ -35,10 +80,7 @@ export function generateDocumentSearchSql(
                     AND (  ${contentParamSql} ) 
                 )
             )
-        ORDER BY
-            sort ASC,
-            ${orderCaseCombinationSql}
-            updated DESC
+        ${orderSql}
         LIMIT 99999999;
     `;
     return cleanSpaceText(basicSql);
@@ -46,13 +88,12 @@ export function generateDocumentSearchSql(
 }
 
 
-export function generateDocumentCountSql(
-    keywords: string[],
-    includeTypes: string[],
-    includeConcatFields: string[],
-    excludeNotebookIds: string[],) {
+export function generateDocumentCountSql(queryCriteria: DocumentQueryCriteria) {
+    let keywords = queryCriteria.keywords;
+    let includeTypes = queryCriteria.includeTypes;
+    let excludeNotebookIds = queryCriteria.excludeNotebookIds;
 
-    let concatContentFields: string[] = includeConcatFields;
+    let concatContentFields: string[] = queryCriteria.includeConcatFields;
     let concatConcatFieldSql = getConcatFieldSql("documentContent", concatContentFields);
 
     let columns = ["root_id", concatConcatFieldSql];
@@ -67,6 +108,44 @@ export function generateDocumentCountSql(
     let documentCountSql = `SELECT count(1) AS documentCount FROM (${documentContentLikeCountSql})`;
 
     return cleanSpaceText(documentCountSql);
+}
+
+function generateDocumentIdContentTableSql(
+    queryCriteria: DocumentQueryCriteria
+): string {
+    let keywords = queryCriteria.keywords;
+    let pages = queryCriteria.pages;
+    let documentSortMethod = queryCriteria.documentSortMethod;
+    let includeTypes = queryCriteria.includeTypes;
+    let includeConcatFields = queryCriteria.includeConcatFields;
+    let excludeNotebookIds = queryCriteria.excludeNotebookIds;
+
+    let concatDocumentConcatFieldSql = getConcatFieldSql(null, includeConcatFields);
+    let columns = ["root_id", `Max(CASE WHEN type = 'd' THEN ${concatDocumentConcatFieldSql} END) documentContent`]
+    let contentLikeField = `GROUP_CONCAT( ${concatDocumentConcatFieldSql} )`;
+
+    let orders = [];
+
+    if (documentSortMethod == 'modifiedAsc') {
+        orders = [" MAX(updated) ASC "]
+    } else if (documentSortMethod == 'modifiedDesc') {
+        orders = [" MAX(updated) DESC "]
+    } else if (documentSortMethod == 'createdAsc') {
+        orders = [" MIN(created) ASC "]
+    } else if (documentSortMethod == 'createdDesc') {
+        orders = [" MIN(created) DESC "]
+    } else if (documentSortMethod == 'rankAsc') {
+        let tempTableOrderCaseCombinationSql = generateRelevanceOrderSql("documentContent", keywords, true);
+        orders = [tempTableOrderCaseCombinationSql, " MAX(updated) DESC "]
+    } else { // rankDesc 相关度降序
+        let tempTableOrderCaseCombinationSql = generateRelevanceOrderSql("documentContent", keywords, false);
+        orders = [tempTableOrderCaseCombinationSql, " MAX(updated) DESC "]
+    }
+
+    let documentIdContentTableSql = generateDocumentContentLikeSql(
+        columns, keywords, contentLikeField, includeTypes, excludeNotebookIds, orders, pages);
+
+    return documentIdContentTableSql;
 }
 
 function generateDocumentContentLikeSql(
@@ -93,14 +172,7 @@ function generateDocumentContentLikeSql(
         aggregatedContentAndLikeSql = ` AND ( ${aggregatedContentAndLikeSql} ) `;
     }
 
-    let orderSql = '';
-    if (orders) {
-        orders = orders.filter((order) => order);
-        let orderParam = orders.join(",");
-        if (orderParam) {
-            orderSql = ` ORDER BY ${orderParam} `;
-        }
-    }
+    let orderSql = generateOrderSql(orders);
 
     let limitSql = '';
     if (pages) {
@@ -296,6 +368,19 @@ function generateRelevanceOrderSql(columnName: string, keywords: string[], order
     if (subSql) {
         let sortDirection = orderAsc ? " ASC " : " DESC ";
         orderSql = `( ${subSql} ) ${sortDirection}`;
+    }
+    return orderSql;
+}
+
+
+function generateOrderSql(orders: string[]): string {
+    let orderSql = '';
+    if (orders) {
+        orders = orders.filter((order) => order);
+        let orderParam = orders.join(",");
+        if (orderParam) {
+            orderSql = ` ORDER BY ${orderParam} `;
+        }
     }
     return orderSql;
 }

@@ -16,8 +16,9 @@ export class SettingConfig {
         excludeNotebookIds: [] as string[], // 排除的笔记本ID
         maxExpandCount: 100 as number,  // 最大展开数量，查询结果超过这个数量会自动折叠
         showChildDocument: true as boolean, // 是否再分组下面显示文档块，主要是方便复制文档块的id或引用块。
-        documentSortMethod: "rankDesc", // 文档排序方式，默认：相关度降序
-        contentBlockSortMethod: "type", // 内容块排序方式，默认：类型
+        documentSortMethod: "rankDesc" as string, // 文档排序方式，默认：相关度降序
+        contentBlockSortMethod: "type" as string, // 内容块排序方式，默认：类型
+        doubleClickTimeout: 190 as number, // 双击阈值
     };
 
     public static get ins(): SettingConfig {
@@ -115,6 +116,10 @@ export class SettingConfig {
         return this.settings.contentBlockSortMethod;
     }
 
+    get doubleClickTimeout(): number {
+        return this.settings.doubleClickTimeout;
+    }
+
     updatePageSize(pageSize: number) {
         this.settings.pageSize = pageSize;
         this.save();
@@ -152,6 +157,11 @@ export class SettingConfig {
 
     updateContentBlockSortMethod(contentBlockSortMethod: string) {
         this.settings.contentBlockSortMethod = contentBlockSortMethod;
+        this.save();
+    }
+
+    updateDoubleClickTimeout(doubleClickTimeout: number) {
+        this.settings.doubleClickTimeout = doubleClickTimeout;
         this.save();
     }
 }

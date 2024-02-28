@@ -558,6 +558,7 @@
         let block = item.block;
         let blockId = block.id;
         selectedIndex = item.index;
+        let doubleClickTimeout = SettingConfig.ins.doubleClickTimeout;
 
         if (!showPreview) {
             openBlockTab(blockId);
@@ -570,9 +571,10 @@
                         refreshBlockPreviewBox(blockId);
                     }
                     itemClickCount = 0; // 重置计数
-                }, 190); // 设置一个合适的时间阈值
+                }, doubleClickTimeout);
             } else if (itemClickCount === 2) {
                 openBlockTab(blockId);
+                itemClickCount = 0; // 重置计数
             }
         }
     }
@@ -607,8 +609,6 @@
             .catch((error) => {
                 console.error("Error:", error);
             });
-
-        itemClickCount = 0; // 重置计数
     }
 
     function refreshBlockPreviewBox(blockId: string) {
@@ -631,10 +631,7 @@
         checkBlockFold(blockId)
             .then((zoomIn: boolean) => {
                 let actions: TProtyleAction[] = zoomIn
-                    ? [
-                          Constants.CB_GET_HL,
-                          Constants.CB_GET_ALL,
-                      ]
+                    ? [Constants.CB_GET_HL, Constants.CB_GET_ALL]
                     : [
                           Constants.CB_GET_HL,
                           Constants.CB_GET_CONTEXT,

@@ -1,11 +1,11 @@
 <script lang="ts">
     import { SettingConfig } from "@/libs/setting-config";
     let documentSortMethod: string = SettingConfig.ins.documentSortMethod;
-    let contentBlockSortMethod: string =
-        SettingConfig.ins.contentBlockSortMethod;
+    let contentBlockSortMethod: string = SettingConfig.ins.contentBlockSortMethod;
     let pageSize: number = SettingConfig.ins.pageSize;
     let maxExpandCount: number = SettingConfig.ins.maxExpandCount;
     let showChildDocument: boolean = SettingConfig.ins.showChildDocument;
+    let doubleClickTimeout = SettingConfig.ins.doubleClickTimeout;
 
     let documentSortMethodElement = [
         {
@@ -72,6 +72,12 @@
         SettingConfig.ins.updateShowChildDocument(tempShowChildDocument);
         showChildDocument = SettingConfig.ins.showChildDocument;
     }
+
+    function doubleClickTimeoutChange(event) {
+        doubleClickTimeout = event.target.value;
+        SettingConfig.ins.updateDoubleClickTimeout(doubleClickTimeout);
+    }
+
 </script>
 
 <div id="document-search-setting-other">
@@ -167,6 +173,21 @@
             type="checkbox"
             checked={showChildDocument}
             on:change={showChildDocumentChange}
+        />
+    </label>
+    <label class="fn__flex b3-label config__item">
+        <svg class="ft__on-surface svg fn__flex-center"
+            ><use xlink:href="#iconClock"></use></svg
+        >
+        <span class="fn__space"></span>
+        <div class="fn__flex-1 fn__flex-center">双击时间阈值(毫秒)</div>
+        <span class="fn__space"></span>
+        <input
+            class="b3-text-field fn__flex-center fn__size200"
+            type="number"
+            min="0"
+            bind:value={doubleClickTimeout}
+            on:change={doubleClickTimeoutChange}
         />
     </label>
 </div>

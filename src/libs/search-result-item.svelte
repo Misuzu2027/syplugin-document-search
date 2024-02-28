@@ -57,7 +57,7 @@
 </script>
 
 <div
-    id="searchList"
+    id="documentSearchList"
     class="fn__flex-1 search__list b3-list b3-list--background"
 >
     {#each searchResults as item}

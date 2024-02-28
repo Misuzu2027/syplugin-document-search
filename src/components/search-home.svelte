@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
-    import { lsNotebooks, sql as query } from "@/utils/api";
+    import { checkBlockFold, lsNotebooks, sql as query } from "@/utils/api";
     import {
         DocumentQueryCriteria,
         generateDocumentCountSql,
@@ -13,6 +13,8 @@
         openMobileFileById,
         getFrontend,
         Dialog,
+        Constants,
+        TProtyleAction,
     } from "siyuan";
     import SearchResultItem from "@/libs/search-result-item.svelte";
     import { DocumentSearchResultItem } from "@/libs/search-data";
@@ -576,24 +578,36 @@
     }
 
     function openBlockTab(blockId: string) {
-        let actions = [
-            "cb-get-hl",
-            "cb-get-focus",
-            "cb-get-context",
-            // "cb-get-rootscroll",
-            // "cb-get-scroll",
-        ];
-        if (isMobile === true) {
-            openMobileFileById(app, blockId, actions);
-        } else {
-            openTab({
-                app: app,
-                doc: {
-                    id: blockId,
-                    action: actions,
-                },
+        checkBlockFold(blockId)
+            .then((zoomIn: boolean) => {
+                let actions: TProtyleAction[] = zoomIn
+                    ? [
+                          Constants.CB_GET_HL,
+                          Constants.CB_GET_FOCUS,
+                          Constants.CB_GET_ALL,
+                      ]
+                    : [
+                          Constants.CB_GET_HL,
+                          Constants.CB_GET_FOCUS,
+                          Constants.CB_GET_CONTEXT,
+                          Constants.CB_GET_ROOTSCROLL,
+                      ];
+                if (isMobile === true) {
+                    openMobileFileById(app, blockId, actions);
+                } else {
+                    openTab({
+                        app: app,
+                        doc: {
+                            id: blockId,
+                            action: actions,
+                        },
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error("Error:", error);
             });
-        }
+
         itemClickCount = 0; // 重置计数
     }
 
@@ -614,27 +628,36 @@
         //     return;
         // }
 
-        previewProtyle = new Protyle(app, previewDivElement, {
-            blockId: blockId,
-            render: {
-                gutter: true,
-                breadcrumbDocName: true,
-            },
-            action: [
-                "cb-get-hl",
-                // "cb-get-focus",
-                "cb-get-context",
-                "cb-get-rootscroll",
-            ],
-            after: (protyle: Protyle) => {
-                // const start = performance.now(); // 记录开始时间
-                let protyleContentElement = protyle.protyle.contentElement;
-                htmlHighlight(protyleContentElement, lastKeywords);
-                // const end = performance.now(); // 记录结束时间
-                // const executionTime = end - start; // 计算执行时间，单位为毫秒
-                // console.log("Execution time:", executionTime, "milliseconds");
-            },
-        });
+        checkBlockFold(blockId)
+            .then((zoomIn: boolean) => {
+                let actions: TProtyleAction[] = zoomIn
+                    ? [
+                          Constants.CB_GET_HL,
+                          Constants.CB_GET_ALL,
+                      ]
+                    : [
+                          Constants.CB_GET_HL,
+                          Constants.CB_GET_CONTEXT,
+                          Constants.CB_GET_ROOTSCROLL,
+                      ];
+
+                previewProtyle = new Protyle(app, previewDivElement, {
+                    blockId: blockId,
+                    render: {
+                        gutter: true,
+                        breadcrumbDocName: true,
+                    },
+                    action: actions,
+                    after: (protyle: Protyle) => {
+                        let protyleContentElement =
+                            protyle.protyle.contentElement;
+                        htmlHighlight(protyleContentElement, lastKeywords);
+                    },
+                });
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+            });
     }
     function htmlHighlight(contentElement: HTMLElement, keywords: string[]) {
         if (!contentElement || !keywords) {
@@ -938,7 +961,7 @@
 
         <span class="fn__space"></span>
         <span
-            id="searchNotebookFilter"
+            id="documentSearchNotebookFilter"
             aria-label="笔记本过滤"
             class="block__icon block__icon--show ariaLabel"
             data-position="9bottom"
@@ -950,7 +973,7 @@
         </span>
         <span class="fn__space"></span>
         <span
-            id="searchTypeFilter"
+            id="documentSearchTypeFilter"
             aria-label="类型"
             class="block__icon block__icon--show ariaLabel"
             data-position="9bottom"
@@ -961,7 +984,7 @@
         </span>
         <span class="fn__space"></span>
         <span
-            id="searchAttrFilter"
+            id="documentSearchAttrFilter"
             aria-label="属性"
             class="block__icon block__icon--show ariaLabel"
             data-position="9bottom"
@@ -973,7 +996,7 @@
 
         <span class="fn__space"></span>
         <span
-            id="searchSettingOther"
+            id="documentSearchSettingOther"
             aria-label="其他"
             class="block__icon block__icon--show ariaLabel"
             data-position="9bottom"
@@ -990,7 +1013,7 @@
         <div style="position: relative" class="fn__flex-1">
             <span
                 class="search__history-icon"
-                id="searchHistoryBtn"
+                id="documentSearchHistoryBtn"
                 on:click={searchHidtoryBtnClick}
                 on:keydown={handleKeyDownDefault}
             >
@@ -1026,7 +1049,7 @@
         </div>
         <div class="block__icons">
             <span
-                id="searchRefresh"
+                id="documentSearchRefresh"
                 aria-label="刷新"
                 class="block__icon ariaLabel"
                 data-position="9bottom"
@@ -1041,7 +1064,7 @@
             <div class="fn__flex">
                 <span class="fn__space"></span>
                 <span
-                    id="searchExpand"
+                    id="documentSearchExpand"
                     class="block__icon block__icon--show ariaLabel"
                     data-position="9bottom"
                     aria-label="展开"
@@ -1054,7 +1077,7 @@
                 </span>
                 <span class="fn__space"></span>
                 <span
-                    id="searchCollapse"
+                    id="documentSearchCollapse"
                     class="block__icon block__icon--show ariaLabel"
                     data-position="9bottom"
                     aria-label="折叠"
@@ -1078,7 +1101,7 @@
         {/if}
         <div class="search__drag" on:mousedown={handleSearchDragMousdown}></div>
         <div
-            id="searchPreview"
+            id="documentSearchPreview"
             class="search__preview {showPreview ? '' : 'fn__none'}"
             bind:this={previewDivElement}
         ></div>

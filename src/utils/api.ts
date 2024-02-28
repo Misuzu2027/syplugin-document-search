@@ -260,6 +260,19 @@ export async function getBlockIndex(id: BlockId): Promise<number> {
     return request(url, data);
 }
 
+export async function checkBlockFold(id: string): Promise<boolean> {
+    if (!id) {
+        // 参数校验失败，返回拒绝
+        return Promise.reject(new Error('参数错误'));
+    }
+    let data = {
+        id: id
+    }
+    let url = '/api/block/checkBlockFold';
+
+    return request(url, data);
+};
+
 // **************************************** Attributes ****************************************
 export async function setBlockAttrs(id: BlockId, attrs: { [key: string]: string }) {
     let data = {

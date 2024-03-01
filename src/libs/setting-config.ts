@@ -15,10 +15,12 @@ export class SettingConfig {
         includeAttrFields: ["name", "alias", "memo"] as string[], // 查询的属性字段
         excludeNotebookIds: [] as string[], // 排除的笔记本ID
         maxExpandCount: 100 as number,  // 最大展开数量，查询结果超过这个数量会自动折叠
-        showChildDocument: true as boolean, // 是否再分组下面显示文档块，主要是方便复制文档块的id或引用块。
+        showChildDocument: true as boolean, // 是否在分组下面显示文档块，主要是方便复制文档块的id或引用块。
         documentSortMethod: "rankDesc" as string, // 文档排序方式，默认：相关度降序
         contentBlockSortMethod: "type" as string, // 内容块排序方式，默认：类型
+
         doubleClickTimeout: 190 as number, // 双击阈值
+        refreshPreviewHighlightTimeout: 200 as number, // 刷新预览区高亮延迟，太短可能会高亮失败，不需要可以设置为0
     };
 
     public static get ins(): SettingConfig {
@@ -120,6 +122,10 @@ export class SettingConfig {
         return this.settings.doubleClickTimeout;
     }
 
+    get refreshPreviewHighlightTimeout(): number {
+        return this.settings.refreshPreviewHighlightTimeout;
+    }
+
     updatePageSize(pageSize: number) {
         this.settings.pageSize = pageSize;
         this.save();
@@ -162,6 +168,11 @@ export class SettingConfig {
 
     updateDoubleClickTimeout(doubleClickTimeout: number) {
         this.settings.doubleClickTimeout = doubleClickTimeout;
+        this.save();
+    }
+
+    updateRefreshPreviewHighlightTimeout(refreshPreviewHighlightTimeout: number) {
+        this.settings.refreshPreviewHighlightTimeout = refreshPreviewHighlightTimeout;
         this.save();
     }
 }

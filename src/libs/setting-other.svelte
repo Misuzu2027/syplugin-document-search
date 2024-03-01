@@ -1,11 +1,14 @@
 <script lang="ts">
     import { SettingConfig } from "@/libs/setting-config";
     let documentSortMethod: string = SettingConfig.ins.documentSortMethod;
-    let contentBlockSortMethod: string = SettingConfig.ins.contentBlockSortMethod;
+    let contentBlockSortMethod: string =
+        SettingConfig.ins.contentBlockSortMethod;
     let pageSize: number = SettingConfig.ins.pageSize;
     let maxExpandCount: number = SettingConfig.ins.maxExpandCount;
     let showChildDocument: boolean = SettingConfig.ins.showChildDocument;
     let doubleClickTimeout = SettingConfig.ins.doubleClickTimeout;
+    let refreshPreviewHighlightTimeout =
+        SettingConfig.ins.refreshPreviewHighlightTimeout;
 
     let documentSortMethodElement = [
         {
@@ -78,6 +81,12 @@
         SettingConfig.ins.updateDoubleClickTimeout(doubleClickTimeout);
     }
 
+    function refreshPreviewHighlightTimeoutChange(event) {
+        refreshPreviewHighlightTimeout = event.target.value;
+        SettingConfig.ins.updateRefreshPreviewHighlightTimeout(
+            refreshPreviewHighlightTimeout,
+        );
+    }
 </script>
 
 <div id="document-search-setting-other">
@@ -188,6 +197,27 @@
             min="0"
             bind:value={doubleClickTimeout}
             on:change={doubleClickTimeoutChange}
+        />
+    </label>
+
+    <label class="fn__flex b3-label config__item">
+        <svg class="ft__on-surface svg fn__flex-center"
+            ><use xlink:href="#iconClock"></use></svg
+        >
+        <span class="fn__space"></span>
+        <div
+            class="fn__flex-1 fn__flex-center ariaLabel"
+            aria-label="用于代码块、数据库这种需要时间渲染的块高亮，太短可能会失败，不需要可以设置为0"
+        >
+            刷新预览区高亮延迟(毫秒)
+        </div>
+        <span class="fn__space"></span>
+        <input
+            class="b3-text-field fn__flex-center fn__size200"
+            type="number"
+            min="0"
+            bind:value={refreshPreviewHighlightTimeout}
+            on:change={refreshPreviewHighlightTimeoutChange}
         />
     </label>
 </div>

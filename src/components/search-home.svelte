@@ -648,7 +648,26 @@
                     after: (protyle: Protyle) => {
                         let protyleContentElement =
                             protyle.protyle.contentElement;
-                        htmlHighlight(protyleContentElement, lastKeywords);
+                        htmlHighlight(
+                            protyleContentElement,
+                            lastKeywords,
+                            blockId,
+                        );
+                        // 延迟刷新一次，目前用于代码块、或挂件内容高亮
+                        let refreshPreviewHighlightTimeout =
+                            SettingConfig.ins.refreshPreviewHighlightTimeout;
+                        if (
+                            refreshPreviewHighlightTimeout &&
+                            refreshPreviewHighlightTimeout > 0
+                        ) {
+                            setTimeout(() => {
+                                htmlHighlight(
+                                    protyleContentElement,
+                                    lastKeywords,
+                                    blockId,
+                                );
+                            }, refreshPreviewHighlightTimeout);
+                        }
                     },
                 });
             })
@@ -656,7 +675,12 @@
                 console.error("Error:", error);
             });
     }
-    function htmlHighlight(contentElement: HTMLElement, keywords: string[]) {
+
+    async function htmlHighlight(
+        contentElement: HTMLElement,
+        keywords: string[],
+        targetBlockId: string,
+    ) {
         if (!contentElement || !keywords) {
             return;
         }
@@ -673,7 +697,7 @@
             contentElement,
             NodeFilter.SHOW_TEXT,
         );
-        const allTextNodes = [];
+        const allTextNodes: Node[] = [];
         let currentNode = treeWalker.nextNode();
         while (currentNode) {
             allTextNodes.push(currentNode);
@@ -689,24 +713,33 @@
 
         let ranges: Range[] = [];
         let matchElement = null;
-        for (const str of keywords) {
-            if (!str) {
+        for (const queryStr of keywords) {
+            if (!queryStr) {
                 continue;
             }
             // Iterate over all text nodes and find matches.
             allTextNodes
-                .map((el) => {
+                .map((el: Node) => {
                     return { el, text: el.textContent.toLowerCase() };
                 })
-                .map(({ text, el }) => {
+                .map(({ el, text }) => {
                     const indices = [];
                     let startPos = 0;
                     while (startPos < text.length) {
-                        const index = text.indexOf(str, startPos);
+                        const index = text.indexOf(
+                            queryStr.toLowerCase(),
+                            startPos,
+                        );
                         if (index === -1) break;
-                        if (!matchElement) matchElement = el.parentElement;
+                        if (!matchElement) {
+                            let nodeId = getNodeID(el);
+                            if (targetBlockId == nodeId) {
+                                matchElement = el.parentElement;
+                            }
+                        }
+
                         indices.push(index);
-                        startPos = index + str.length;
+                        startPos = index + queryStr.length;
                     }
 
                     // Create a range object for each instance of
@@ -714,7 +747,7 @@
                     indices.map((index) => {
                         const range = new Range();
                         range.setStart(el, index);
-                        range.setEnd(el, index + str.length);
+                        range.setEnd(el, index + queryStr.length);
                         ranges.push(range);
                     });
                 });
@@ -730,6 +763,20 @@
         // Register the Highlight object in the registry.
         CSS.highlights.set("search-result-mark", searchResultsHighlight);
         renderNextSearchMark(previewProtyle, matchElement);
+    }
+
+    function getNodeID(node: Node | null): string | null {
+        if (!node) {
+            return null;
+        }
+        if (node instanceof Element) {
+            const nodeId = (node as HTMLElement).getAttribute("data-node-id");
+            if (nodeId) {
+                return nodeId;
+            }
+        }
+        // 递归查找父节点
+        return getNodeID(node.parentNode);
     }
 
     /**

@@ -227,6 +227,9 @@
 
     function handleSearchInputChange(event) {
         let inputValue = event.target.value;
+        if (searchInputKey == inputValue) {
+            return;
+        }
 
         // 更新输入值
         searchInputKey = inputValue;
@@ -235,7 +238,7 @@
 
         inputChangeTimeoutId = setTimeout(() => {
             refreshSearch(inputValue, 1);
-        }, 400);
+        }, 500);
     }
 
     function pageTurning(page: number) {
@@ -273,6 +276,8 @@
 
         updateNotebookMap();
 
+        initDocumentCount();
+
         let pageSize = SettingConfig.ins.pageSize;
         let types = SettingConfig.ins.includeTypes;
         let queryFields = SettingConfig.ins.includeQueryFields;
@@ -294,14 +299,48 @@
             );
 
         isSearching++;
+
+        let documentSearchSql = generateDocumentSearchSql(
+            documentSearchCriterion,
+        );
+        let documentSearchPromise: Promise<any[]> = query(documentSearchSql);
+        documentSearchPromise
+            .then((documentSearchResults: any[]) => {
+                let documentCount: number;
+                if (documentSearchResults && documentSearchResults[0]) {
+                    documentCount = documentSearchResults[0].documentCount;
+                }
+                processSearchResults(documentSearchResults, keywords);
+                
+                // 查询完内容后后再查询文档分页数量信息，可以通过防止并发降低sql的查询速度。
+                // refershSearchDocumentCount(documentSearchCriterion);
+                console.log("documentSearchPromise");
+                processSearchResultCount(documentCount, pageNum, pageSize);
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+            });
+    }
+
+    function initDocumentCount() {
+        curPage = 0;
+        totalPage = 0;
+    }
+
+    function refershSearchDocumentCount(
+        documentSearchCriterion: DocumentQueryCriteria,
+    ) {
         let documentCountSql = generateDocumentCountSql(
             documentSearchCriterion,
         );
+        let pageNum = documentSearchCriterion.pages[0];
+        let pageSize = documentSearchCriterion.pages[1];
+
         let queryDocumentCountPromise: Promise<any[]> = query(documentCountSql);
         queryDocumentCountPromise
             .then((documentCountResults: any[]) => {
                 processSearchResultCount(
-                    documentCountResults,
+                    documentCountResults.length,
                     pageNum,
                     pageSize,
                 );
@@ -309,24 +348,10 @@
             .catch((error) => {
                 console.error("Error:", error);
             });
-
-        isSearching++;
-
-        let documentSearchSql = generateDocumentSearchSql(
-            documentSearchCriterion,
-        );
-        let documentSearchPromise: Promise<Block[]> = query(documentSearchSql);
-        documentSearchPromise
-            .then((documentSearchResults: Block[]) => {
-                processSearchResults(documentSearchResults, keywords);
-            })
-            .catch((error) => {
-                console.error("Error:", error);
-            });
     }
 
     function processSearchResultCount(
-        documentCountResults: any[],
+        documentCount: number,
         pageNum: number,
         pageSize: number,
     ) {
@@ -335,8 +360,8 @@
         // for (const item of documentCountResults) {
         //     searchResultTotalCount += item.contentCount;
         // }
-        if (documentCountResults && documentCountResults.length > 0) {
-            searchResultDocumentCount = documentCountResults[0].documentCount;
+        if (documentCount && documentCount > 0) {
+            searchResultDocumentCount = documentCount;
             curPage = pageNum;
             totalPage = Math.ceil(searchResultDocumentCount / pageSize);
         }
@@ -653,7 +678,7 @@
                             lastKeywords,
                             blockId,
                         );
-                        // 延迟刷新一次，目前用于代码块、或挂件内容高亮
+                        // 延迟刷新一次，目前用于代码块、数据库块内容高亮
                         let refreshPreviewHighlightTimeout =
                             SettingConfig.ins.refreshPreviewHighlightTimeout;
                         if (

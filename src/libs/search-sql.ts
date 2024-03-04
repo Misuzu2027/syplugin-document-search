@@ -32,13 +32,15 @@ export function generateDocumentSearchSql(
 ): string {
 
     let keywords = queryCriteria.keywords;
+    let pages = queryCriteria.pages;
     let contentBlockSortMethod = queryCriteria.contentBlockSortMethod;
     let includeTypes = queryCriteria.includeTypes;
     let includeConcatFields = queryCriteria.includeConcatFields;
 
     let documentIdContentTableSql
         = generateDocumentIdContentTableSql(queryCriteria);
-
+    let documentCountColumnSql = " (SELECT count( 1 ) FROM document_id_temp) as documentCount "
+    let documentTableIdPageSql = " SELECT root_id FROM document_id_temp " + generateLimitSql(pages);
     let concatConcatFieldSql = getConcatFieldSql("concatContent", includeConcatFields);
     let typeInSql = generateAndInConditions("type", includeTypes);
     let contentParamSql = generateOrLikeConditions("concatContent", keywords);
@@ -69,14 +71,15 @@ export function generateDocumentSearchSql(
         WITH document_id_temp AS (
             ${documentIdContentTableSql}
         )
-        SELECT *,${concatConcatFieldSql} FROM blocks 
+        SELECT *, ${concatConcatFieldSql}, ${documentCountColumnSql}
+        FROM blocks
         WHERE
             1 = 1
             ${typeInSql}
             AND (
-                id IN (SELECT root_id FROM document_id_temp)
+                id IN (${documentTableIdPageSql})
                 OR (
-                    root_id IN (SELECT root_id FROM document_id_temp)
+                    root_id IN (${documentTableIdPageSql})
                     AND (  ${contentParamSql} ) 
                 )
             )
@@ -143,7 +146,7 @@ function generateDocumentIdContentTableSql(
     }
 
     let documentIdContentTableSql = generateDocumentContentLikeSql(
-        columns, keywords, contentLikeField, includeTypes, excludeNotebookIds, orders, pages);
+        columns, keywords, contentLikeField, includeTypes, excludeNotebookIds, orders, null);
 
     return documentIdContentTableSql;
 }
@@ -174,16 +177,8 @@ function generateDocumentContentLikeSql(
 
     let orderSql = generateOrderSql(orders);
 
-    let limitSql = '';
-    if (pages) {
-        const limit = pages[1];
-        if (pages.length == 1) {
-            limitSql = ` LIMIT ${limit} `;
-        } else if (pages.length == 2) {
-            const offset = (pages[0] - 1) * pages[1];
-            limitSql = ` LIMIT ${limit} OFFSET ${offset} `;
-        }
-    }
+    let limitSql = generateLimitSql(pages);
+
 
     let sql = `  
         SELECT ${columnSql} 
@@ -383,4 +378,18 @@ function generateOrderSql(orders: string[]): string {
         }
     }
     return orderSql;
+}
+
+function generateLimitSql(pages: number[]): string {
+    let limitSql = '';
+    if (pages) {
+        const limit = pages[1];
+        if (pages.length == 1) {
+            limitSql = ` LIMIT ${limit} `;
+        } else if (pages.length == 2) {
+            const offset = (pages[0] - 1) * pages[1];
+            limitSql = ` LIMIT ${limit} OFFSET ${offset} `;
+        }
+    }
+    return limitSql;
 }

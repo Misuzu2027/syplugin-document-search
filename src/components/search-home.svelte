@@ -306,16 +306,20 @@
         let documentSearchPromise: Promise<any[]> = query(documentSearchSql);
         documentSearchPromise
             .then((documentSearchResults: any[]) => {
+                processSearchResults(documentSearchResults, keywords);
+
+                // 查询完内容后后再查询文档分页数量信息，可以通过防止并发降低主sql的查询速度。
+                // refershSearchDocumentCount(documentSearchCriterion);
+                /* 
+                暂时改为一个查询可以获取到文档数量，
+                    缺点：数量字段每行都会有，增加了响应的体积。如果查询的块数量很多的话，速度回比上一个慢。
+                    优点：前一种方式每次查询两个sql，输入关键字的过程中很大概率触发查询，这期间的查询还未结束的情况下，会影响最终查询，使用者只需要最终的查询结果，所以这一种方式更优。
+                */
                 let documentCount: number;
                 if (documentSearchResults && documentSearchResults[0]) {
                     documentCount = documentSearchResults[0].documentCount;
+                    processSearchResultCount(documentCount, pageNum, pageSize);
                 }
-                processSearchResults(documentSearchResults, keywords);
-                
-                // 查询完内容后后再查询文档分页数量信息，可以通过防止并发降低sql的查询速度。
-                // refershSearchDocumentCount(documentSearchCriterion);
-                console.log("documentSearchPromise");
-                processSearchResultCount(documentCount, pageNum, pageSize);
             })
             .catch((error) => {
                 console.error("Error:", error);

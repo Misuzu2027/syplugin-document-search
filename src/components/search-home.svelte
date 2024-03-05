@@ -1,9 +1,12 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
-    import { checkBlockFold, lsNotebooks, sql as query } from "@/utils/api";
+    import {
+        checkBlockFold,
+        lsNotebooks,
+        sql as query,
+    } from "@/utils/api";
     import {
         DocumentQueryCriteria,
-        generateDocumentCountSql,
         generateDocumentSearchSql,
     } from "@/libs/search-sql";
     import {
@@ -37,16 +40,17 @@
 
     let previewDivElement: HTMLDivElement;
     let previewProtyle: Protyle;
+    let previewProtyleMatchFocusIndex: number;
     let searchInputKey: string = "";
     let searchResults: DocumentSearchResultItem[] = [];
-    let selectedIndex: number = -1;
+    let selectedItemIndex: number = -1;
     let itemClickCount = 0;
     let inputChangeTimeoutId;
     let isSearching: number = 0;
     let hiddenSearchResult: boolean = false;
-    let searchResultDocumentCount: number = null;
     // let searchResultTotalCount: number = null;
     let lastKeywords: string[];
+    let searchResultDocumentCount: number = null;
     let curPage: number = 0;
     let totalPage: number = 0;
     let notebookMap: Map<string, Notebook> = new Map();
@@ -63,7 +67,7 @@
     });
 
     function handleSearchDragMousdown(event: MouseEvent) {
-        /* 复制 https://vscode.dev/github/siyuan-note/siyuan/blob/master/app/src/search/util.ts#L407 
+        /* 复制 https://vscode.dev/github/siyuan-note/siyuan/blob/master/app/src/search/util.ts#L407
             #genSearch 方法下的 const dragElement = element.querySelector(".search__drag"); 处
         */
         const dragElement = element.querySelector(".search__drag");
@@ -148,7 +152,7 @@
             previewProtyle.protyle.element.style.width =
                 element.offsetWidth / 2 + "px";
         }
-        inputCursorInit();
+        documentSearchInputFocus();
 
         if (clientWidth) {
             if (clientWidth == 0) {
@@ -159,7 +163,7 @@
         }
     }
 
-    function inputCursorInit() {
+    function documentSearchInputFocus() {
         if (!documentSearchInputElement) {
             return;
         }
@@ -188,8 +192,8 @@
 
         let selectedItem: DocumentSearchResultItem = null;
         if (event.key === "ArrowUp") {
-            if (selectedIndex > 0) {
-                selectedIndex -= 1;
+            if (selectedItemIndex > 0) {
+                selectedItemIndex -= 1;
             }
         } else if (event.key === "ArrowDown") {
             let lastSubItems = searchResults[searchResults.length - 1].subItems;
@@ -197,17 +201,17 @@
             if (lastSubItems && lastSubItems.length > 0) {
                 lastIndex = lastSubItems[lastSubItems.length - 1].index;
             }
-            if (selectedIndex < lastIndex) {
-                selectedIndex += 1;
+            if (selectedItemIndex < lastIndex) {
+                selectedItemIndex += 1;
             }
         }
         for (const item of searchResults) {
-            if (selectedIndex == item.index) {
+            if (selectedItemIndex == item.index) {
                 selectedItem = item;
                 break;
             }
             for (const subItem of item.subItems) {
-                if (selectedIndex == subItem.index) {
+                if (selectedItemIndex == subItem.index) {
                     selectedItem = subItem;
                     break;
                 }
@@ -218,7 +222,7 @@
             return;
         }
         // refreshBlockPreviewBox(selectedItem.block.id);
-        inputCursorInit();
+        documentSearchInputFocus();
 
         if (event.key === "Enter") {
             openBlockTab(selectedItem.block.id);
@@ -238,7 +242,7 @@
 
         inputChangeTimeoutId = setTimeout(() => {
             refreshSearch(inputValue, 1);
-        }, 500);
+        }, 450);
     }
 
     function pageTurning(page: number) {
@@ -276,7 +280,7 @@
 
         updateNotebookMap();
 
-        initDocumentCount();
+        initSearchDocumentCount();
 
         let pageSize = SettingConfig.ins.pageSize;
         let types = SettingConfig.ins.includeTypes;
@@ -285,7 +289,7 @@
         let pages = [pageNum, pageSize];
         let documentSortMethod = SettingConfig.ins.documentSortMethod;
         let contentBlockSortMethod = SettingConfig.ins.contentBlockSortMethod;
-        selectedIndex = -1;
+        selectedItemIndex = -1;
 
         let documentSearchCriterion: DocumentQueryCriteria =
             new DocumentQueryCriteria(
@@ -308,9 +312,9 @@
             .then((documentSearchResults: any[]) => {
                 processSearchResults(documentSearchResults, keywords);
 
-                // 查询完内容后后再查询文档分页数量信息，可以通过防止并发降低主sql的查询速度。
+                // 查询完内容后后再查询文档分页数量信息，可以防止并发降低主sql的查询速度。
                 // refershSearchDocumentCount(documentSearchCriterion);
-                /* 
+                /*
                 暂时改为一个查询可以获取到文档数量，
                     缺点：数量字段每行都会有，增加了响应的体积。如果查询的块数量很多的话，速度回比上一个慢。
                     优点：前一种方式每次查询两个sql，输入关键字的过程中很大概率触发查询，这期间的查询还未结束的情况下，会影响最终查询，使用者只需要最终的查询结果，所以这一种方式更优。
@@ -326,33 +330,34 @@
             });
     }
 
-    function initDocumentCount() {
+    function initSearchDocumentCount() {
+        searchResultDocumentCount = 0;
         curPage = 0;
         totalPage = 0;
     }
 
-    function refershSearchDocumentCount(
-        documentSearchCriterion: DocumentQueryCriteria,
-    ) {
-        let documentCountSql = generateDocumentCountSql(
-            documentSearchCriterion,
-        );
-        let pageNum = documentSearchCriterion.pages[0];
-        let pageSize = documentSearchCriterion.pages[1];
+    // function refershSearchDocumentCount(
+    //     documentSearchCriterion: DocumentQueryCriteria,
+    // ) {
+    //     let documentCountSql = generateDocumentCountSql(
+    //         documentSearchCriterion,
+    //     );
+    //     let pageNum = documentSearchCriterion.pages[0];
+    //     let pageSize = documentSearchCriterion.pages[1];
 
-        let queryDocumentCountPromise: Promise<any[]> = query(documentCountSql);
-        queryDocumentCountPromise
-            .then((documentCountResults: any[]) => {
-                processSearchResultCount(
-                    documentCountResults.length,
-                    pageNum,
-                    pageSize,
-                );
-            })
-            .catch((error) => {
-                console.error("Error:", error);
-            });
-    }
+    //     let queryDocumentCountPromise: Promise<any[]> = query(documentCountSql);
+    //     queryDocumentCountPromise
+    //         .then((documentCountResults: any[]) => {
+    //             processSearchResultCount(
+    //                 documentCountResults.length,
+    //                 pageNum,
+    //                 pageSize,
+    //             );
+    //         })
+    //         .catch((error) => {
+    //             console.error("Error:", error);
+    //         });
+    // }
 
     function processSearchResultCount(
         documentCount: number,
@@ -558,18 +563,18 @@
         return highlightedString;
     }
 
-    function highlightContentMatches(searchString: string, array: string[]) {
-        if (!array.length || !searchString) {
-            return searchString; // 返回原始字符串，因为没有需要匹配的内容
-        }
-
-        const regexPattern = new RegExp(`(${array.join("|")})`, "gi");
-        const highlightedString = searchString.replace(
-            regexPattern,
-            "<span data-type='search-mark'>$1</span>",
-        );
-        return highlightedString;
-    }
+    // function highlightContentMatches(searchString: string, array: string[]) {
+    //     if (!array.length || !searchString) {
+    //         return searchString; // 返回原始字符串，因为没有需要匹配的内容
+    //     }
+    //
+    //     const regexPattern = new RegExp(`(${array.join("|")})`, "gi");
+    //     const highlightedString = searchString.replace(
+    //         regexPattern,
+    //         "<span data-type='search-mark'>$1</span>",
+    //     );
+    //     return highlightedString;
+    // }
 
     function escapeHtml(input: string): string {
         const escapeMap: Record<string, string> = {
@@ -586,8 +591,10 @@
     function clickItem(item: DocumentSearchResultItem) {
         let block = item.block;
         let blockId = block.id;
-        selectedIndex = item.index;
+        selectedItemIndex = item.index;
         let doubleClickTimeout = SettingConfig.ins.doubleClickTimeout;
+
+        documentSearchInputFocus();
 
         if (!showPreview) {
             openBlockTab(blockId);
@@ -657,6 +664,19 @@
         //     return;
         // }
 
+        if (previewProtyle.protyle.block.id == blockId) {
+            previewProtyleMatchFocusIndex++;
+
+            protyleHighlight(
+                previewProtyle.protyle.contentElement,
+                lastKeywords,
+                blockId,
+                previewProtyleMatchFocusIndex,
+            );
+            return;
+        }
+        previewProtyleMatchFocusIndex = 0;
+
         checkBlockFold(blockId)
             .then((zoomIn: boolean) => {
                 let actions: TProtyleAction[] = zoomIn
@@ -677,10 +697,11 @@
                     after: (protyle: Protyle) => {
                         let protyleContentElement =
                             protyle.protyle.contentElement;
-                        htmlHighlight(
+                        protyleHighlight(
                             protyleContentElement,
                             lastKeywords,
                             blockId,
+                            previewProtyleMatchFocusIndex,
                         );
                         // 延迟刷新一次，目前用于代码块、数据库块内容高亮
                         let refreshPreviewHighlightTimeout =
@@ -690,11 +711,19 @@
                             refreshPreviewHighlightTimeout > 0
                         ) {
                             setTimeout(() => {
-                                htmlHighlight(
+                                // const startTime = new Date().getTime();
+
+                                protyleHighlight(
                                     protyleContentElement,
                                     lastKeywords,
                                     blockId,
+                                    previewProtyleMatchFocusIndex,
                                 );
+                                // const endTime = new Date().getTime();
+                                // console.log(
+                                //     "高亮执行消耗的时间（毫秒）:",
+                                //     endTime - startTime,
+                                // );
                             }, refreshPreviewHighlightTimeout);
                         }
                     },
@@ -705,10 +734,11 @@
             });
     }
 
-    async function htmlHighlight(
+    async function protyleHighlight(
         contentElement: HTMLElement,
         keywords: string[],
         targetBlockId: string,
+        nextMatchFocusIndex: number,
     ) {
         if (!contentElement || !keywords) {
             return;
@@ -740,19 +770,20 @@
         // Clean-up the search query and bail-out if
         // if it's empty.
 
-        let ranges: Range[] = [];
-        let matchElement = null;
-        for (const queryStr of keywords) {
-            if (!queryStr) {
-                continue;
-            }
-            // Iterate over all text nodes and find matches.
-            allTextNodes
-                .map((el: Node) => {
-                    return { el, text: el.textContent.toLowerCase() };
-                })
-                .map(({ el, text }) => {
-                    const indices = [];
+        let allMatchRanges: Range[] = [];
+        let targetElementMatchRanges: Range[] = [];
+
+        // Iterate over all text nodes and find matches.
+        allTextNodes
+            .map((el: Node) => {
+                return { el, text: el.textContent.toLowerCase() };
+            })
+            .map(({ el, text }) => {
+                const indices: { index: number; length: number }[] = [];
+                for (const queryStr of keywords) {
+                    if (!queryStr) {
+                        continue;
+                    }
                     let startPos = 0;
                     while (startPos < text.length) {
                         const index = text.indexOf(
@@ -760,38 +791,53 @@
                             startPos,
                         );
                         if (index === -1) break;
-                        if (!matchElement) {
-                            let nodeId = getNodeID(el);
-                            if (targetBlockId == nodeId) {
-                                matchElement = el.parentElement;
-                            }
-                        }
-
-                        indices.push(index);
-                        startPos = index + queryStr.length;
+                        let length = queryStr.length;
+                        indices.push({ index, length });
+                        startPos = index + length;
                     }
+                }
 
-                    // Create a range object for each instance of
-                    // str we found in the text node.
-                    indices.map((index) => {
+                indices
+                    .sort((a, b) => a.index - b.index)
+                    .map(({ index, length }) => {
                         const range = new Range();
                         range.setStart(el, index);
-                        range.setEnd(el, index + queryStr.length);
-                        ranges.push(range);
+                        range.setEnd(el, index + length);
+                        allMatchRanges.push(range);
+                        if (getNodeID(el) == targetBlockId) {
+                            targetElementMatchRanges.push(range);
+                        }
                     });
-                });
+            });
 
-            // Create a Highlight object for the ranges.
-        }
-        ranges = ranges.flat();
-        if (!ranges || ranges.length <= 0) {
+        // Create a Highlight object for the ranges.
+        allMatchRanges = allMatchRanges.flat();
+        if (!allMatchRanges || allMatchRanges.length <= 0) {
             return;
         }
-        const searchResultsHighlight = new Highlight(...ranges);
+        let matchFocusRange: Range;
+        let nextMatchIndexRemainder =
+            nextMatchFocusIndex % targetElementMatchRanges.length;
+        for (let i = 0; i < targetElementMatchRanges.length; i++) {
+            if (i == nextMatchIndexRemainder) {
+                matchFocusRange = targetElementMatchRanges[i];
+                break;
+            }
+        }
+        if (!matchFocusRange) {
+            previewProtyleMatchFocusIndex = 0;
+            matchFocusRange = targetElementMatchRanges[0];
+        }
+        allMatchRanges = allMatchRanges.filter(
+            (obj) => obj !== matchFocusRange,
+        );
+
+        const searchResultsHighlight = new Highlight(...allMatchRanges);
 
         // Register the Highlight object in the registry.
         CSS.highlights.set("search-result-mark", searchResultsHighlight);
-        renderNextSearchMark(previewProtyle, matchElement);
+
+        renderNextSearchMarkByRange(previewProtyle, matchFocusRange);
     }
 
     function getNodeID(node: Node | null): string | null {
@@ -810,73 +856,94 @@
 
     /**
      * 官方规则高亮方法。
-     * 但是对于加粗、引用等有行内样式的文本，高亮标签会嵌套在行内样式标签内，造成DOM结构变化，并且不符合官方的规律。
+     * 但是对于加粗、引用等有行内样式的文本，已经存在span标签，处理逻辑比较复杂。
      * 暂时不用。
      * @param contentElement
      * @param keywords
      */
-    function protyleHighlightQueryStr(
-        contentElement: HTMLElement,
-        keywords: string[],
-    ) {
-        if (!contentElement || !keywords) {
-            return;
-        }
+    // function protyleHighlightQueryStr(
+    //     contentElement: HTMLElement,
+    //     keywords: string[],
+    //     targetBlockId: string,
+    // ) {
+    //     if (!contentElement || !keywords) {
+    //         return;
+    //     }
 
-        // Find all text nodes in the article. We'll search within
-        // these text nodes.
-        const treeWalker = document.createTreeWalker(
-            contentElement,
-            NodeFilter.SHOW_TEXT,
-        );
-        const allTextNodes: Node[] = [];
-        let currentNode = treeWalker.nextNode();
-        while (currentNode) {
-            allTextNodes.push(currentNode);
-            currentNode = treeWalker.nextNode();
-        }
+    //     // Find all text nodes in the article. We'll search within
+    //     // these text nodes.
+    //     const treeWalker = document.createTreeWalker(
+    //         contentElement,
+    //         NodeFilter.SHOW_TEXT,
+    //     );
+    //     const allTextNodes: Node[] = [];
+    //     let currentNode = treeWalker.nextNode();
+    //     while (currentNode) {
+    //         allTextNodes.push(currentNode);
+    //         currentNode = treeWalker.nextNode();
+    //     }
 
-        for (const textNode of allTextNodes) {
-            if (!textNode || !textNode.parentElement) {
-                continue;
-            }
-            const regexPattern = new RegExp(`(${keywords.join("|")})`, "gi");
-            if (textNode.textContent.match(regexPattern)) {
-                textNode.parentElement.innerHTML = highlightContentMatches(
-                    textNode.textContent,
-                    keywords,
-                );
-            }
-        }
-    }
+    //     for (const textNode of allTextNodes) {
+    //         if (!textNode || !textNode.parentElement) {
+    //             continue;
+    //         }
+    //         const regexPattern = new RegExp(`(${keywords.join("|")})`, "gi");
+    //         if (textNode.textContent.match(regexPattern)) {
+    //             textNode.parentElement.innerHTML = highlightContentMatches(
+    //                 textNode.textContent,
+    //                 keywords,
+    //             );
+    //         }
+    //     }
+    //     renderNextSearchMark(previewProtyle, targetBlockId);
+    // }
 
-    const renderNextSearchMark = (edit: Protyle, matchElement) => {
-        // const allMatchElements = Array.from(
-        //     options.edit.protyle.wysiwyg.element.querySelectorAll(
-        //         `div[data-node-id="${options.id}"] span[data-type~="search-mark"]`,
-        //     ),
-        // );
-        // allMatchElements.find((item, itemIndex) => {
-        //     if (item.classList.contains("search-mark--hl")) {
-        //         item.classList.remove("search-mark--hl");
-        //         matchElement = allMatchElements[itemIndex + 1];
-        //         return;
-        //     }
-        // });
-        // if (!matchElement) {
-        //     matchElement = allMatchElements[0];
-        // }
-        if (matchElement) {
+    // const renderNextSearchMark = (edit: Protyle, blockId: string) => {
+    //     let matchElement: Element;
+    //     const allMatchElements: Element[] = Array.from(
+    //         edit.protyle.wysiwyg.element.querySelectorAll(
+    //             `div[data-node-id="${blockId}"] span[data-type~="search-mark"]`,
+    //         ),
+    //     );
+    //     allMatchElements.find((item, itemIndex) => {
+    //         if (item.classList.contains("search-mark--hl")) {
+    //             item.classList.remove("search-mark--hl");
+    //             matchElement = allMatchElements[itemIndex + 1];
+    //             return;
+    //         }
+    //     });
+    //     if (!matchElement) {
+    //         matchElement = allMatchElements[0];
+    //     }
+    //     if (matchElement) {
+    //         // matchElement.classList.add("search-mark--hl");
+    //         const contentRect =
+    //             edit.protyle.contentElement.getBoundingClientRect();
+    //         edit.protyle.contentElement.scrollTop =
+    //             edit.protyle.contentElement.scrollTop +
+    //             matchElement.getBoundingClientRect().top -
+    //             contentRect.top -
+    //             contentRect.height / 2;
+    //     }
+    // };
+
+    function renderNextSearchMarkByRange(edit: Protyle, matchRange: Range) {
+        if (matchRange) {
             // matchElement.classList.add("search-mark--hl");
-            const contentRect =
-                edit.protyle.contentElement.getBoundingClientRect();
-            edit.protyle.contentElement.scrollTop =
-                edit.protyle.contentElement.scrollTop +
-                matchElement.getBoundingClientRect().top -
+            const protyleElement = edit.protyle.contentElement;
+            const contentRect = protyleElement.getBoundingClientRect();
+            protyleElement.scrollTop =
+                protyleElement.scrollTop +
+                matchRange.getBoundingClientRect().top -
                 contentRect.top -
                 contentRect.height / 2;
+
+            CSS.highlights.set(
+                "search-result-focus",
+                new Highlight(matchRange),
+            );
         }
-    };
+    }
 
     function toggleAllCollpsedItem(isCollapsed: boolean) {
         if (!isCollapsed) {
@@ -1168,7 +1235,7 @@
         {#if !hiddenSearchResult}
             <SearchResultItem
                 {searchResults}
-                {selectedIndex}
+                selectedIndex={selectedItemIndex}
                 clickCallback={clickItem}
             />
         {/if}
@@ -1193,6 +1260,11 @@
 
     ::highlight(search-result-mark) {
         background-color: var(--b3-protyle-inline-mark-background);
+        color: var(--b3-protyle-inline-mark-color);
+    }
+
+    ::highlight(search-result-focus) {
+        background-color: var(--b3-theme-primary-lighter);
         color: var(--b3-protyle-inline-mark-color);
     }
 </style>

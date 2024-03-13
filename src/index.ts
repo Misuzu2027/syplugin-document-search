@@ -1,15 +1,13 @@
 import {
     Plugin,
     openTab,
-    getFrontend,
-    Menu,
-    ITab,
 } from "siyuan";
 // import "@/index.scss";
 
-import SearchHomeExample from "@/components/search-home.svelte";
-import { CUSTOM_ICON_MAP } from "./libs/icons";
-import { SettingConfig } from "./libs/setting-config";
+import SearchHomeExample from "@/components/search/page/search-tab-view.svelte";
+import { CUSTOM_ICON_MAP } from "./utils/icons";
+import { SettingConfig } from "./services/setting-config";
+import { EnvConfig } from "./config/env-config";
 
 
 const SEARCH_TAB_TYPE = "search_home_tab";
@@ -17,15 +15,11 @@ const SEARCH_DOCK_TYPE = "search_dock_tab";
 
 export default class PluginSample extends Plugin {
 
-    private isMobile: boolean;
-
     private documentSearchTab: SearchHomeExample;
 
     async onload() {
+        EnvConfig.ins.init(this);
         SettingConfig.ins.load(this);
-
-        const frontEnd = getFrontend();
-        this.isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
 
         // 图标的制作参见帮助文档
         for (const key in CUSTOM_ICON_MAP) {
@@ -36,7 +30,7 @@ export default class PluginSample extends Plugin {
         }
         // this.addIcons(CUSTOM_ICON_MAP.iconDocumentSearch.source);
 
-        if (!this.isMobile) {
+        if (!EnvConfig.ins.isMobile) {
             this.addTopBar({
                 icon: CUSTOM_ICON_MAP.iconDocumentSearch.id,
                 title: this.i18n.documentSearchIconTip,
@@ -46,7 +40,6 @@ export default class PluginSample extends Plugin {
                 }
             });
         }
-        let app = this.app;
         let searchHomeExampleDock: SearchHomeExample;
         this.addDock({
             config: {
@@ -70,7 +63,6 @@ export default class PluginSample extends Plugin {
                 searchHomeExampleDock = new SearchHomeExample({
                     target: this.element,
                     props: {
-                        app: app,
                         showPreview: false,
                     }
                 });
@@ -108,7 +100,6 @@ export default class PluginSample extends Plugin {
                 _this.documentSearchTab = new SearchHomeExample({
                     target: this.element,
                     props: {
-                        app: this.app,
                         showPreview: true,
                     }
                 });

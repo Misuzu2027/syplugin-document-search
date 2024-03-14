@@ -1,9 +1,71 @@
-import { DocumentSearchResultItem } from "@/config/search-model";
-import { DocumentQueryCriteria } from "@/services/search-sql";
+import { DocumentItem, BlockItem, DocumentSqlQueryModel } from "@/config/search-model";
+import { DocumentQueryCriteria, generateDocumentSearchSql } from "@/services/search-sql";
 import { SettingConfig } from "@/services/setting-config";
-import { lsNotebooks } from "@/utils/api";
+import { checkBlockFold, getBlockIndex, lsNotebooks, sql } from "@/utils/api";
 import { convertIalStringToObject, convertIconInIal } from "@/utils/icons";
+import { Constants, TProtyleAction } from "siyuan";
 
+
+
+export async function getDocumentSearchResult(searchKey: string, pageNum: number): Promise<DocumentSqlQueryModel> {
+    // 去除多余的空格，并将输入框的值按空格分割成数组
+    let keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
+
+    // 过滤掉空的搜索条件并使用 Set 存储唯一的关键词
+    const uniqueKeywordsSet = new Set(
+        keywords.filter((keyword) => keyword.length > 0),
+    );
+
+    // 将 Set 转换为数组
+    keywords = Array.from(uniqueKeywordsSet);
+
+    let result = new DocumentSqlQueryModel();
+
+    if (!keywords || keywords.length <= 0) {
+        result.status = "param_null";
+        return result;
+    }
+
+    let pageSize = SettingConfig.ins.pageSize;
+    let types = SettingConfig.ins.includeTypes;
+    let queryFields = SettingConfig.ins.includeQueryFields;
+    let excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
+    let pages = [pageNum, pageSize];
+    let documentSortMethod = SettingConfig.ins.documentSortMethod;
+    let contentBlockSortMethod = SettingConfig.ins.contentBlockSortMethod;
+
+    let documentSearchCriterion: DocumentQueryCriteria =
+        new DocumentQueryCriteria(
+            keywords,
+            pages,
+            documentSortMethod,
+            contentBlockSortMethod,
+            types,
+            queryFields,
+            excludeNotebookIds,
+        );
+
+    let documentSearchSql = generateDocumentSearchSql(
+        documentSearchCriterion,
+    );
+    let documentSearchResults: any[] = await sql(documentSearchSql);
+    let documentItems: DocumentItem[] = await processSearchResults(
+        documentSearchResults,
+        documentSearchCriterion,
+    );
+
+    let documentCount: number;
+    if (documentSearchResults && documentSearchResults[0]) {
+        documentCount = documentSearchResults[0].documentCount;;
+    }
+
+    result.searchCriterion = documentSearchCriterion;
+    result.documentItems = documentItems;
+    result.documentCount = documentCount;
+    result.status = "success";
+
+    return result;
+}
 
 export function handleSearchDragMousdown(event: MouseEvent) {
     /* 复制 https://vscode.dev/github/siyuan-note/siyuan/blob/master/app/src/search/util.ts#L407
@@ -110,8 +172,8 @@ export async function getNotebookMap(): Promise<Map<string, Notebook>> {
 export async function processSearchResults(
     blocks: Block[],
     documentSearchCriterion: DocumentQueryCriteria
-): Promise<DocumentSearchResultItem[]> {
-    let searchResults: DocumentSearchResultItem[] = [];
+): Promise<DocumentItem[]> {
+    let searchResults: DocumentItem[] = [];
     if (!blocks) {
         blocks = [];
         return searchResults;
@@ -120,7 +182,7 @@ export async function processSearchResults(
     let documentSortMethod = documentSearchCriterion.documentSortMethod;
     let notebookMap = await getNotebookMap();
 
-    const documentBlockMap: Map<string, DocumentSearchResultItem> =
+    const documentBlockMap: Map<string, DocumentItem> =
         new Map();
 
     for (const block of blocks) {
@@ -131,16 +193,16 @@ export async function processSearchResults(
         highlightBlockContent(block, keywords);
 
         let rootId = block.root_id;
-        let documentItem = new DocumentSearchResultItem();
+        let documentItem = new DocumentItem();
         documentItem.block = block;
         documentItem.subItems = [];
         documentItem.isCollapsed = true;
 
-        let curParentItem: DocumentSearchResultItem = null;
+        let curParentItem: DocumentItem = null;
         if (documentBlockMap.has(rootId)) {
             curParentItem = documentBlockMap.get(rootId);
         } else {
-            curParentItem = new DocumentSearchResultItem();
+            curParentItem = new DocumentItem();
             curParentItem.subItems = [];
             documentBlockMap.set(rootId, curParentItem);
         }
@@ -202,45 +264,45 @@ export async function processSearchResults(
 
 function getDocumentSortFun(documentSortMethod: string)
     : (
-        a: DocumentSearchResultItem,
-        b: DocumentSearchResultItem,
+        a: DocumentItem,
+        b: DocumentItem,
     ) => number {
     let documentSortFun: (
-        a: DocumentSearchResultItem,
-        b: DocumentSearchResultItem,
+        a: DocumentItem,
+        b: DocumentItem,
     ) => number;
     if (documentSortMethod == "modifiedAsc") {
         documentSortFun = function (
-            a: DocumentSearchResultItem,
-            b: DocumentSearchResultItem,
+            a: DocumentItem,
+            b: DocumentItem,
         ): number {
             return Number(a.block.updated) - Number(b.block.updated);
         };
     } else if (documentSortMethod == "modifiedDesc") {
         documentSortFun = function (
-            a: DocumentSearchResultItem,
-            b: DocumentSearchResultItem,
+            a: DocumentItem,
+            b: DocumentItem,
         ): number {
             return Number(b.block.updated) - Number(a.block.updated);
         };
     } else if (documentSortMethod == "createdAsc") {
         documentSortFun = function (
-            a: DocumentSearchResultItem,
-            b: DocumentSearchResultItem,
+            a: DocumentItem,
+            b: DocumentItem,
         ): number {
             return Number(a.block.created) - Number(b.block.created);
         };
     } else if (documentSortMethod == "createdDesc") {
         documentSortFun = function (
-            a: DocumentSearchResultItem,
-            b: DocumentSearchResultItem,
+            a: DocumentItem,
+            b: DocumentItem,
         ): number {
             return Number(b.block.created) - Number(a.block.created);
         };
     } else if (documentSortMethod == "rankAsc") {
         documentSortFun = function (
-            a: DocumentSearchResultItem,
-            b: DocumentSearchResultItem,
+            a: DocumentItem,
+            b: DocumentItem,
         ): number {
             let aRank: number = a.block.content.split("<mark>").length - 1;
             let bRank: number = b.block.content.split("<mark>").length - 1;
@@ -253,8 +315,8 @@ function getDocumentSortFun(documentSortMethod: string)
         };
     } else {
         documentSortFun = function (
-            a: DocumentSearchResultItem,
-            b: DocumentSearchResultItem,
+            a: DocumentItem,
+            b: DocumentItem,
         ): number {
             let aRank: number = a.block.content.split("<mark>").length - 1;
             let bRank: number = b.block.content.split("<mark>").length - 1;
@@ -321,4 +383,264 @@ function escapeHtml(input: string): string {
     };
 
     return input.replace(/[&<>"']/g, (match) => escapeMap[match]);
+}
+
+export async function getOpenTabAction(blockId: string): Promise<TProtyleAction[]> {
+    let zoomIn = await checkBlockFold(blockId)
+    let actions: TProtyleAction[] = zoomIn
+        ? [
+            Constants.CB_GET_HL,
+            Constants.CB_GET_FOCUS,
+            Constants.CB_GET_ALL,
+        ]
+        : [
+            Constants.CB_GET_HL,
+            Constants.CB_GET_FOCUS,
+            Constants.CB_GET_CONTEXT,
+            Constants.CB_GET_ROOTSCROLL,
+        ];
+    return actions;
+}
+
+export async function getProtyleAction(blockId: string): Promise<TProtyleAction[]> {
+    let zoomIn = await checkBlockFold(blockId)
+    let actions: TProtyleAction[] = zoomIn
+        ? [
+            Constants.CB_GET_HL,
+            Constants.CB_GET_ALL,
+        ]
+        : [
+            Constants.CB_GET_HL,
+            Constants.CB_GET_CONTEXT,
+            Constants.CB_GET_ROOTSCROLL,
+        ];
+    return actions;
+}
+
+export function toggleAllCollpsedItem(documentItems: DocumentItem[], isCollapsed: boolean) {
+    if (!documentItems) {
+        return;
+    }
+    for (const item of documentItems) {
+        if (
+            !item ||
+            !item.block ||
+            !item.subItems ||
+            item.subItems.length <= 0
+        ) {
+            continue;
+        }
+        item.isCollapsed = isCollapsed;
+    }
+    documentItems = documentItems;
+}
+
+export function selectItemByArrowKeys(
+    event: KeyboardEvent, selectedItemIndex: number, documentItems: DocumentItem[]): BlockItem {
+    let selectedItem: BlockItem = null;
+
+    if (!event || !event.key) {
+        return selectedItem;
+    }
+    let keydownKey = event.key;
+    if (
+        keydownKey !== "ArrowUp" &&
+        keydownKey !== "ArrowDown" &&
+        keydownKey !== "Enter"
+    ) {
+        return selectedItem;
+    }
+    event.stopPropagation();
+
+    if (event.key === "ArrowUp") {
+        if (selectedItemIndex > 0) {
+            selectedItemIndex -= 1;
+        }
+    } else if (event.key === "ArrowDown") {
+        let lastSubItems = documentItems[documentItems.length - 1].subItems;
+        let lastIndex = documentItems[documentItems.length - 1].index;
+        if (lastSubItems && lastSubItems.length > 0) {
+            lastIndex = lastSubItems[lastSubItems.length - 1].index;
+        }
+        if (selectedItemIndex < lastIndex) {
+            selectedItemIndex += 1;
+        }
+    }
+    for (const item of documentItems) {
+        if (selectedItemIndex == item.index) {
+            selectedItem = item;
+            break;
+        }
+        for (const subItem of item.subItems) {
+            if (selectedItemIndex == subItem.index) {
+                selectedItem = subItem;
+                break;
+            }
+        }
+    }
+
+    return selectedItem;
+}
+
+type HighlightCallback = (matchFocusRange: Range) => void;
+
+export async function highlightElementTextByCss(
+    contentElement: HTMLElement,
+    keywords: string[],
+    targetBlockId: string,
+    nextMatchFocusIndex: number,
+    callback: HighlightCallback,
+) {
+    if (!contentElement || !keywords) {
+        return;
+    }
+    // If the CSS Custom Highlight API is not supported,
+    // display a message and bail-out.
+    if (!CSS.highlights) {
+        console.log("CSS Custom Highlight API not supported.");
+        return;
+    }
+
+    // Find all text nodes in the article. We'll search within
+    // these text nodes.
+    const treeWalker = document.createTreeWalker(
+        contentElement,
+        NodeFilter.SHOW_TEXT,
+    );
+    const allTextNodes: Node[] = [];
+    let currentNode = treeWalker.nextNode();
+    while (currentNode) {
+        allTextNodes.push(currentNode);
+        currentNode = treeWalker.nextNode();
+    }
+
+    // Clear the HighlightRegistry to remove the
+    // previous search results.
+    CSS.highlights.clear();
+
+    // Clean-up the search query and bail-out if
+    // if it's empty.
+
+    let allMatchRanges: Range[] = [];
+    let targetElementMatchRanges: Range[] = [];
+
+    // Iterate over all text nodes and find matches.
+    allTextNodes
+        .map((el: Node) => {
+            return { el, text: el.textContent.toLowerCase() };
+        })
+        .map(({ el, text }) => {
+            const indices: { index: number; length: number }[] = [];
+            for (const queryStr of keywords) {
+                if (!queryStr) {
+                    continue;
+                }
+                let startPos = 0;
+                while (startPos < text.length) {
+                    const index = text.indexOf(
+                        queryStr.toLowerCase(),
+                        startPos,
+                    );
+                    if (index === -1) break;
+                    let length = queryStr.length;
+                    indices.push({ index, length });
+                    startPos = index + length;
+                }
+            }
+
+            indices
+                .sort((a, b) => a.index - b.index)
+                .map(({ index, length }) => {
+                    const range = new Range();
+                    range.setStart(el, index);
+                    range.setEnd(el, index + length);
+                    allMatchRanges.push(range);
+                    if (getNodeId(el) == targetBlockId) {
+                        targetElementMatchRanges.push(range);
+                    }
+                });
+        });
+
+    // Create a Highlight object for the ranges.
+    allMatchRanges = allMatchRanges.flat();
+    if (!allMatchRanges || allMatchRanges.length <= 0) {
+        return;
+    }
+    let matchFocusRange: Range;
+    let nextMatchIndexRemainder =
+        nextMatchFocusIndex % targetElementMatchRanges.length;
+    for (let i = 0; i < targetElementMatchRanges.length; i++) {
+        if (i == nextMatchIndexRemainder) {
+            matchFocusRange = targetElementMatchRanges[i];
+            break;
+        }
+    }
+
+    allMatchRanges = allMatchRanges.filter(
+        (obj) => obj !== matchFocusRange,
+    );
+
+    const searchResultsHighlight = new Highlight(...allMatchRanges);
+
+    // Register the Highlight object in the registry.
+    CSS.highlights.set("search-result-mark", searchResultsHighlight);
+
+    CSS.highlights.set(
+        "search-result-focus",
+        new Highlight(matchFocusRange),
+    );
+
+    callback(matchFocusRange);
+}
+
+
+export async function searchItemSortByContent(subItems: BlockItem[]) {
+    let ids = subItems.map(item => item.block.id);
+    let idMap: Map<string, number> = await getBatchIdIndex(ids);
+    subItems.sort((a, b) => {
+        let aIndex = idMap.get(a.block.id) || 0;
+        let bIndex = idMap.get(b.block.id) || 0;
+        if (aIndex !== bIndex) {
+            return aIndex - bIndex;
+        } else {
+            return a.block.sort - b.block.sort;
+        }
+    });
+
+    return subItems;
+}
+
+async function getBatchIdIndex(ids: string[]) {
+    let idMap: Map<string, number> = new Map();
+    for (const id of ids) {
+        let index = await getBlockIndex(id);
+        idMap.set(id, index)
+    }
+    return idMap;
+}
+
+
+export function delayedTwiceRefresh(executeFun: () => void, firstTimeout: number) {
+    if (!executeFun) {
+        return;
+    }
+    if (!firstTimeout) {
+        firstTimeout = 0;
+    }
+    let refreshPreviewHighlightTimeout =
+        SettingConfig.ins.refreshPreviewHighlightTimeout;
+    setTimeout(() => {
+        executeFun();
+
+        // 延迟刷新一次，目前用于代码块、数据库块内容高亮
+        if (
+            refreshPreviewHighlightTimeout &&
+            refreshPreviewHighlightTimeout > 0
+        ) {
+            setTimeout(() => {
+                executeFun();
+            }, refreshPreviewHighlightTimeout);
+        }
+
+    }, firstTimeout);
 }

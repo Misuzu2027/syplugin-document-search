@@ -4,10 +4,12 @@ import {
 } from "siyuan";
 // import "@/index.scss";
 
-import SearchHomeExample from "@/components/search/page/search-tab-view.svelte";
+import SearchPreviewSvelte from "@/components/search/page/search-preview-view.svelte";
+import SearchSideSvelte from "@/components/search/page/search-side-view.svelte";
 import { CUSTOM_ICON_MAP } from "./utils/icons";
 import { SettingConfig } from "./services/setting-config";
 import { EnvConfig } from "./config/env-config";
+import "./index.scss"
 
 
 const SEARCH_TAB_TYPE = "search_home_tab";
@@ -15,7 +17,8 @@ const SEARCH_DOCK_TYPE = "search_dock_tab";
 
 export default class PluginSample extends Plugin {
 
-    private documentSearchTab: SearchHomeExample;
+    private documentSearchTab: SearchPreviewSvelte;
+    private documentSearchDock: SearchSideSvelte;
 
     async onload() {
         EnvConfig.ins.init(this);
@@ -40,7 +43,7 @@ export default class PluginSample extends Plugin {
                 }
             });
         }
-        let searchHomeExampleDock: SearchHomeExample;
+        let searchPageDock: SearchSideSvelte;
         this.addDock({
             config: {
                 position: "LeftTop",
@@ -53,17 +56,16 @@ export default class PluginSample extends Plugin {
             data: {},
             type: SEARCH_DOCK_TYPE,
             resize() {
-                if (searchHomeExampleDock) {
-                    searchHomeExampleDock.resize(this.element.clientWidth);
+                if (searchPageDock) {
+                    searchPageDock.resize(this.element.clientWidth);
                 }
             },
             update() {
             },
             init() {
-                searchHomeExampleDock = new SearchHomeExample({
+                searchPageDock = new SearchSideSvelte({
                     target: this.element,
                     props: {
-                        showPreview: false,
                     }
                 });
             },
@@ -97,7 +99,7 @@ export default class PluginSample extends Plugin {
         this.addTab({
             type: SEARCH_TAB_TYPE,
             init() {
-                _this.documentSearchTab = new SearchHomeExample({
+                _this.documentSearchTab = new SearchPreviewSvelte({
                     target: this.element,
                     props: {
                         showPreview: true,
@@ -123,7 +125,7 @@ export default class PluginSample extends Plugin {
     }
 
     private openDocumentSearchTab() {
-        let documentSearchTab: SearchHomeExample = this.documentSearchTab;
+        let documentSearchTab: SearchPreviewSvelte = this.documentSearchTab;
         openTab({
             app: this.app,
             custom: {

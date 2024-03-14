@@ -42,7 +42,9 @@ export function generateDocumentSearchSql(
     let documentCountColumnSql = " (SELECT count( 1 ) FROM document_id_temp) as documentCount "
     let documentTableIdPageSql = " SELECT root_id FROM document_id_temp " + generateLimitSql(pages);
     let concatConcatFieldSql = getConcatFieldSql("concatContent", includeConcatFields);
-    let typeInSql = generateAndInConditions("type", includeTypes);
+    // 在查询块的时候，无论如何都需要包含文档块类型，否则不知道文档信息
+    let includeTypesD: string[] = [...includeTypes, 'd'];
+    let typeInSql = generateAndInConditions("type", includeTypesD);
     let contentParamSql = generateOrLikeConditions("concatContent", keywords);
 
     let orders = [];

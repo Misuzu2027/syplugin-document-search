@@ -1,0 +1,14 @@
+.block__icon--show.block__icon.disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+::highlight(search-result-mark) {
+    background-color: var(--b3-protyle-inline-mark-background);
+    color: var(--b3-protyle-inline-mark-color);
+}
+
+::highlight(search-result-focus) {
+    background-color: var(--b3-theme-primary-lighter);
+    color: var(--b3-protyle-inline-mark-color);
+}

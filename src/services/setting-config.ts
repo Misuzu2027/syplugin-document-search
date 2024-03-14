@@ -20,7 +20,7 @@ export class SettingConfig {
         contentBlockSortMethod: "type" as string, // 内容块排序方式，默认：类型
 
         doubleClickTimeout: 190 as number, // 双击阈值
-        refreshPreviewHighlightTimeout: 200 as number, // 刷新预览区高亮延迟，太短可能会高亮失败，不需要可以设置为0
+        refreshPreviewHighlightTimeout: 240 as number, // 刷新预览区高亮延迟，太短可能会高亮失败，不需要可以设置为0
     };
 
 

@@ -3,6 +3,7 @@ import SettingOther from "./setting-other.svelte";
 import SettingAttr from "./setting-attr.svelte";
 import SettingType from "./setting-type.svelte";
 import SettingNotebook from "./setting-notebook.svelte";
+import { EnvConfig } from "@/config/env-config";
 
 export function openSettingsDialog(dialogType: SettingDialogType) {
     let dialogTitle: string;
@@ -26,7 +27,7 @@ export function openSettingsDialog(dialogType: SettingDialogType) {
     let dialog = new Dialog({
         title: dialogTitle,
         content: `<div id="${dialogType}" class="b3-dialog__content" ></div>`,
-        width: this.isMobile ? "92vw" : "520px",
+        width: EnvConfig.ins.isMobile ? "92vw" : "520px",
         height: "70vh",
         destroyCallback: (options) => {
             console.log("destroyCallback", options);

@@ -31,7 +31,7 @@
     let element: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
 
-    let previewDivElement: HTMLDivElement;
+    let previewDivElement: HTMLElement;
     let previewProtyle: Protyle;
     let previewProtyleMatchFocusIndex: number;
     let searchInputKey: string = "";
@@ -225,7 +225,9 @@
         previewProtyleMatchFocusIndex = 0;
         let actions = await getProtyleAction(blockId);
 
-        previewProtyle = new Protyle(EnvConfig.ins.app, previewDivElement, {
+        let tempDivElement = document.createElement("div");
+
+        previewProtyle = new Protyle(EnvConfig.ins.app, tempDivElement, {
             blockId: blockId,
             render: {
                 gutter: true,
@@ -233,6 +235,9 @@
             },
             action: actions,
             after: (protyle: Protyle) => {
+                // 这样可以降低预览区刷新空白延迟，但不清楚有没有副作用。
+                previewDivElement.innerHTML = "";
+                previewDivElement.append(...tempDivElement.childNodes);
                 afterCreateProtyle(protyle, blockId);
             },
         });
@@ -463,7 +468,7 @@
     </div>
     <div class="search__layout search__layout--row">
         <SearchResultItem
-            documentItemSearchResult={documentItemSearchResult}
+            {documentItemSearchResult}
             selectedIndex={selectedItemIndex}
             clickCallback={clickItem}
         />
@@ -480,4 +485,3 @@
     <!-- svelte-ignore a11y-missing-attribute -->
     <img width="120px" src="/stage/loading-pure.svg" />
 </div>
-

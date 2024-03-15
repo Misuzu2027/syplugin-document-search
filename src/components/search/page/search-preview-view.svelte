@@ -237,7 +237,9 @@
             after: (protyle: Protyle) => {
                 // 这样可以降低预览区刷新空白延迟，但不清楚有没有副作用。
                 previewDivElement.innerHTML = "";
-                previewDivElement.append(...tempDivElement.childNodes);
+                previewDivElement.append(
+                    ...Array.from(tempDivElement.childNodes),
+                );
                 afterCreateProtyle(protyle, blockId);
             },
         });
@@ -253,7 +255,7 @@
                 previewProtyleMatchFocusIndex,
                 renderNextSearchMarkByRange,
             );
-        }, 50);
+        }, 0);
     }
 
     function renderNextSearchMarkByRange(matchRange: Range) {

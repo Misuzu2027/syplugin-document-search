@@ -20,6 +20,8 @@
         highlightElementTextByCss,
         getOpenTabAction,
         delayedTwiceRefresh,
+        clearCssHighlights,
+        findScrollingElement,
     } from "./search-utils";
 
     let element: HTMLElement;
@@ -110,6 +112,12 @@
         refreshSearch(searchInputKey, page);
     }
 
+    function clearDocumentSearchInput() {
+        searchInputKey = "";
+        refreshSearch(searchInputKey, 1);
+        clearCssHighlights();
+    }
+
     async function refreshSearch(searchKey: string, pageNum: number) {
         isSearching++;
         let result: DocumentSqlQueryModel = await getDocumentSearchResult(
@@ -178,9 +186,10 @@
         if (EnvConfig.ins.isMobile) {
             openMobileFileById(EnvConfig.ins.app, blockId, actions);
         } else {
-            actions = actions.filter((item) => item !== Constants.CB_GET_HL);
             if (lastBlockId == blockId) {
-                actions = [];
+                actions = actions.filter(
+                    (item) => item !== Constants.CB_GET_HL,
+                );
             }
             lastBlockId = blockId;
 
@@ -190,7 +199,6 @@
                     id: blockId,
                     action: actions,
                 },
-                removeCurrentTab: true,
                 afterOpen() {
                     afterOpenDocTab(docTabPromise, blockId);
                 },
@@ -203,8 +211,8 @@
         blockId: string,
     ) {
         let docTab = await docTabPromise;
-        lastDocumentContentElement = docTab.panelElement.children[1]
-            .children[2] as HTMLElement;
+        lastDocumentContentElement = docTab.panelElement
+            .children[1] as HTMLElement;
 
         delayedTwiceRefresh(() => {
             highlightElementTextByCss(
@@ -219,8 +227,28 @@
 
     function renderNextSearchMarkByRange(matchRange: Range) {
         if (matchRange) {
-            const parent = matchRange.commonAncestorContainer.parentElement;
-            parent.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            const matchElement =
+                matchRange.commonAncestorContainer.parentElement;
+
+            if (
+                matchElement.clientHeight >
+                document.documentElement.clientHeight
+            ) {
+                // 特殊情况：如果一个段落中软换行非常多，此时如果定位到匹配节点的首行，
+                // 是看不到查询的文本的，需要通过 Range 的精确位置进行定位。
+                const scrollingElement = findScrollingElement(matchElement);
+                scrollingElement.scrollTo({
+                    top:
+                        scrollingElement.scrollTop +
+                        matchRange.getBoundingClientRect().top,
+                    behavior: "instant",
+                });
+            } else {
+                matchElement.scrollIntoView({
+                    behavior: "auto",
+                    block: "nearest",
+                });
+            }
         }
     }
 
@@ -351,10 +379,7 @@
                     : ''}"
                 aria-label="清空"
                 style="right: 8px;height:42px"
-                on:click|stopPropagation={() => {
-                    searchInputKey = "";
-                    refreshSearch(searchInputKey, 1);
-                }}
+                on:click|stopPropagation={clearDocumentSearchInput}
                 on:keydown={handleKeyDownDefault}
             >
                 <use xlink:href="#iconCloseRound"></use>

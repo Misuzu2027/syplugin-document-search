@@ -516,7 +516,7 @@ export async function highlightElementTextByCss(
 
     // Clear the HighlightRegistry to remove the
     // previous search results.
-    CSS.highlights.clear();
+    clearCssHighlights();
 
     // Clean-up the search query and bail-out if
     // if it's empty.
@@ -585,12 +585,20 @@ export async function highlightElementTextByCss(
     // Register the Highlight object in the registry.
     CSS.highlights.set("search-result-mark", searchResultsHighlight);
 
-    CSS.highlights.set(
-        "search-result-focus",
-        new Highlight(matchFocusRange),
-    );
+    if (matchFocusRange) {
+        CSS.highlights.set(
+            "search-result-focus",
+            new Highlight(matchFocusRange),
+        );
+    }
 
     callback(matchFocusRange);
+}
+
+export function clearCssHighlights() {
+    CSS.highlights.delete("search-result-mark");
+    CSS.highlights.delete("search-result-focus");
+
 }
 
 
@@ -613,7 +621,12 @@ export async function searchItemSortByContent(subItems: BlockItem[]) {
 async function getBatchIdIndex(ids: string[]) {
     let idMap: Map<string, number> = new Map();
     for (const id of ids) {
-        let index = await getBlockIndex(id);
+        let index = 0
+        try {
+            index = await getBlockIndex(id);
+        } catch (err) {
+            console.error("获取块索引报错 : ", err)
+        }
         idMap.set(id, index)
     }
     return idMap;
@@ -643,4 +656,17 @@ export function delayedTwiceRefresh(executeFun: () => void, firstTimeout: number
         }
 
     }, firstTimeout);
+}
+
+
+// 查找包含指定元素的最近的滚动容器
+export function findScrollingElement(element: HTMLElement): HTMLElement | null {
+    let parentElement = element.parentElement;
+    while (parentElement) {
+        if (parentElement.scrollHeight > parentElement.clientHeight) {
+            return parentElement; // 找到第一个具有滚动条的父级元素
+        }
+        parentElement = parentElement.parentElement;
+    }
+    return null; // 没有找到具有滚动条的父级元素
 }

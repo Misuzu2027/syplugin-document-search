@@ -75,7 +75,7 @@
                 ? 'b3-list-item--focus'
                 : ''} "
             on:click|stopPropagation={() => toggleItemVisibility(item.block)}
-            on:contextmenu|stopPropagation={(event) =>
+            on:contextmenu|stopPropagation|preventDefault={(event) =>
                 documentItemContextmenuEvent(event, item)}
             on:keydown={handleKeyDownDefault}
             data-node-id={item.block.id}
@@ -180,11 +180,13 @@
             {/each}
         </div>
     {/each}
-</div>
 
-<div class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}">
-    <!-- svelte-ignore a11y-missing-attribute -->
-    <img width="120px" src="/stage/loading-pure.svg" />
+    <div
+        class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}"
+    >
+        <!-- svelte-ignore a11y-missing-attribute -->
+        <img width="120px" src="/stage/loading-pure.svg" />
+    </div>
 </div>
 
 <style style="CSS">

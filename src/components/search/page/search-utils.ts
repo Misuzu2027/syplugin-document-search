@@ -1,7 +1,7 @@
 import { DocumentItem, BlockItem, DocumentSqlQueryModel } from "@/config/search-model";
 import { DocumentQueryCriteria, generateDocumentSearchSql } from "@/services/search-sql";
 import { SettingConfig } from "@/services/setting-config";
-import { checkBlockFold, getBlockIndex, lsNotebooks, sql } from "@/utils/api";
+import { checkBlockFold, getBlockIndex, getBlocksIndexes, lsNotebooks, sql } from "@/utils/api";
 import { convertIalStringToObject, convertIconInIal } from "@/utils/icons";
 import { Constants, TProtyleAction } from "siyuan";
 
@@ -173,6 +173,8 @@ export async function processSearchResults(
     blocks: Block[],
     documentSearchCriterion: DocumentQueryCriteria
 ): Promise<DocumentItem[]> {
+    const startTime = performance.now(); // 记录开始时间
+
     let searchResults: DocumentItem[] = [];
     if (!blocks) {
         blocks = [];
@@ -180,6 +182,7 @@ export async function processSearchResults(
     }
     let keywords = documentSearchCriterion.keywords;
     let documentSortMethod = documentSearchCriterion.documentSortMethod;
+    let contentBlockSortMethod = documentSearchCriterion.contentBlockSortMethod;
     let notebookMap = await getNotebookMap();
 
     const documentBlockMap: Map<string, DocumentItem> =
@@ -229,12 +232,14 @@ export async function processSearchResults(
         }
     }
 
-    let documentSortFun = getDocumentSortFun(documentSortMethod);
-
-    searchResults.sort(documentSortFun);
+    // 文档排序
+    documentSort(searchResults, documentSortMethod);
+    // let documentSortFun = getDocumentSortFun(documentSortMethod);
+    // searchResults.sort(documentSortFun);
 
     let index = 0;
     for (const item of searchResults) {
+        // 是否隐藏文档快
         if (!SettingConfig.ins.showChildDocument) {
             if (item.subItems.length > 1) {
                 let documentItemIndex = 0;
@@ -257,10 +262,27 @@ export async function processSearchResults(
             subItem.index = index;
         }
         index++;
+
+        // 块排序，目前主要处理原文排序，其他顺序已经在mysql中排序过了。
+        // 粗略测试觉得 sqlite 中的排序效率更高，可能有索引优化的原因。
+        if (contentBlockSortMethod == "content") {
+            await blockItemsSort(item.subItems, contentBlockSortMethod, item.index + 1);
+        }
     }
+
+    const endTime = performance.now(); // 记录结束时间
+    const executionTime = endTime - startTime; // 计算时间差
+    console.log(
+        `处理数据消耗 : ${executionTime} ms`,
+    );
     return searchResults;
 }
 
+function documentSort(searchResults: DocumentItem[], documentSortMethod: string) {
+    // 文档排序
+    let documentSortFun = getDocumentSortFun(documentSortMethod);
+    searchResults.sort(documentSortFun);
+}
 
 function getDocumentSortFun(documentSortMethod: string)
     : (
@@ -271,64 +293,199 @@ function getDocumentSortFun(documentSortMethod: string)
         a: DocumentItem,
         b: DocumentItem,
     ) => number;
-    if (documentSortMethod == "modifiedAsc") {
-        documentSortFun = function (
-            a: DocumentItem,
-            b: DocumentItem,
-        ): number {
-            return Number(a.block.updated) - Number(b.block.updated);
-        };
-    } else if (documentSortMethod == "modifiedDesc") {
-        documentSortFun = function (
-            a: DocumentItem,
-            b: DocumentItem,
-        ): number {
-            return Number(b.block.updated) - Number(a.block.updated);
-        };
-    } else if (documentSortMethod == "createdAsc") {
-        documentSortFun = function (
-            a: DocumentItem,
-            b: DocumentItem,
-        ): number {
-            return Number(a.block.created) - Number(b.block.created);
-        };
-    } else if (documentSortMethod == "createdDesc") {
-        documentSortFun = function (
-            a: DocumentItem,
-            b: DocumentItem,
-        ): number {
-            return Number(b.block.created) - Number(a.block.created);
-        };
-    } else if (documentSortMethod == "rankAsc") {
-        documentSortFun = function (
-            a: DocumentItem,
-            b: DocumentItem,
-        ): number {
-            let aRank: number = a.block.content.split("<mark>").length - 1;
-            let bRank: number = b.block.content.split("<mark>").length - 1;
-            let result = aRank - bRank;
-            result =
-                result == 0
-                    ? Number(b.block.updated) - Number(a.block.updated)
-                    : result;
-            return result;
-        };
-    } else {
-        documentSortFun = function (
-            a: DocumentItem,
-            b: DocumentItem,
-        ): number {
-            let aRank: number = a.block.content.split("<mark>").length - 1;
-            let bRank: number = b.block.content.split("<mark>").length - 1;
-            let result = bRank - aRank;
-            result =
-                result == 0
-                    ? Number(b.block.updated) - Number(a.block.updated)
-                    : result;
-            return result;
-        };
+
+    switch (documentSortMethod) {
+        case "type":
+            documentSortFun = function (
+                a: DocumentItem,
+                b: DocumentItem,
+            ): number {
+                let aRank: number = a.block.content.split("<mark>").length - 1;
+                let bRank: number = b.block.content.split("<mark>").length - 1;
+                let result = bRank - aRank;
+                result =
+                    result == 0
+                        ? Number(b.block.updated) - Number(a.block.updated)
+                        : result;
+                return result;
+            };
+            break;
+        case "modifiedAsc":
+            documentSortFun = function (
+                a: DocumentItem,
+                b: DocumentItem,
+            ): number {
+                return Number(a.block.updated) - Number(b.block.updated);
+            };
+            break;
+        case "modifiedDesc":
+            documentSortFun = function (
+                a: DocumentItem,
+                b: DocumentItem,
+            ): number {
+                return Number(b.block.updated) - Number(a.block.updated);
+            };
+            break;
+        case "createdAsc":
+            documentSortFun = function (
+                a: DocumentItem,
+                b: DocumentItem,
+            ): number {
+                return Number(a.block.created) - Number(b.block.created);
+            };
+            break;
+        case "createdDesc":
+            documentSortFun = function (
+                a: DocumentItem,
+                b: DocumentItem,
+            ): number {
+                return Number(b.block.created) - Number(a.block.created);
+            };
+            break;
+        case "rankAsc":
+            documentSortFun = function (
+                a: DocumentItem,
+                b: DocumentItem,
+            ): number {
+                let aRank: number = a.block.content.split("<mark>").length - 1;
+                let bRank: number = b.block.content.split("<mark>").length - 1;
+                let result = aRank - bRank;
+                result =
+                    result == 0
+                        ? Number(b.block.updated) - Number(a.block.updated)
+                        : result;
+                return result;
+            };
+            break;
+        case "rankDesc":
+            documentSortFun = function (
+                a: DocumentItem,
+                b: DocumentItem,
+            ): number {
+                let aRank: number = a.block.content.split("<mark>").length - 1;
+                let bRank: number = b.block.content.split("<mark>").length - 1;
+                let result = bRank - aRank;
+                result =
+                    result == 0
+                        ? Number(b.block.updated) - Number(a.block.updated)
+                        : result;
+                return result;
+            };
+            break;
     }
     return documentSortFun;
+}
+
+
+export async function blockItemsSort(
+    blockItems: BlockItem[],
+    contentBlockSortMethod: string,
+    startIndex: number,) {
+    if (contentBlockSortMethod == "content") {
+        await searchItemSortByContent(blockItems);
+    } else {
+        let blockSortFun: (
+            a: BlockItem,
+            b: BlockItem,
+        ) => number = getBlockSortFun(contentBlockSortMethod);
+        if (blockSortFun) {
+            blockItems.sort(blockSortFun);
+        }
+    }
+    // 排序后再处理一下搜索结果中的索引，用来上下键选择。
+    let index = startIndex;
+    for (const item of blockItems) {
+        item.index = index;
+        index++;
+    }
+}
+
+function getBlockSortFun(contentBlockSortMethod: string) {
+    let blockSortFun: (
+        a: BlockItem,
+        b: BlockItem,
+    ) => number;
+    switch (contentBlockSortMethod) {
+        case "type":
+            blockSortFun = function (
+                a: BlockItem,
+                b: BlockItem,
+            ): number {
+                let aSort: number = Number(a.block.sort);
+                let bSort: number = Number(b.block.sort);
+                let result = aSort - bSort;
+                if (result == 0) {
+                    let aRank: number = a.block.content.split("<mark>").length - 1;
+                    let bRank: number = b.block.content.split("<mark>").length - 1;
+                    result = bRank - aRank;
+                }
+
+                return result;
+            };
+            break;
+        case "modifiedAsc":
+            blockSortFun = function (
+                a: BlockItem,
+                b: BlockItem,
+            ): number {
+                return Number(a.block.updated) - Number(b.block.updated);
+            };
+            break;
+        case "modifiedDesc":
+            blockSortFun = function (
+                a: BlockItem,
+                b: BlockItem,
+            ): number {
+                return Number(b.block.updated) - Number(a.block.updated);
+            };
+            break;
+        case "createdAsc":
+            blockSortFun = function (
+                a: BlockItem,
+                b: BlockItem,
+            ): number {
+                return Number(a.block.created) - Number(b.block.created);
+            };
+            break;
+        case "createdDesc":
+            blockSortFun = function (
+                a: BlockItem,
+                b: BlockItem,
+            ): number {
+                return Number(b.block.created) - Number(a.block.created);
+            };
+            break;
+        case "rankAsc":
+            blockSortFun = function (
+                a: BlockItem,
+                b: BlockItem,
+            ): number {
+                let aRank: number = a.block.content.split("<mark>").length - 1;
+                let bRank: number = b.block.content.split("<mark>").length - 1;
+                let result = aRank - bRank;
+                if (result == 0) {
+                    result = Number(b.block.updated) - Number(a.block.updated);
+                }
+                return result;
+            };
+            break;
+        case "rankDesc":
+            blockSortFun = function (
+                a: BlockItem,
+                b: BlockItem,
+            ): number {
+                let aRank: number = a.block.content.split("<mark>").length - 1;
+                let bRank: number = b.block.content.split("<mark>").length - 1;
+                let result = bRank - aRank;
+                if (result == 0) {
+                    result = Number(b.block.updated) - Number(a.block.updated)
+                }
+                return result;
+            };
+            break;
+    }
+    return blockSortFun;
+
 }
 
 function highlightBlockContent(block: Block, keywords: string[]) {
@@ -360,13 +517,13 @@ function getHighlightedContent(
     return highlightedContent;
 }
 
-function highlightMatches(searchString: string, array: string[]): string {
-    if (!array.length || !searchString) {
-        return searchString; // 返回原始字符串，因为没有需要匹配的内容
+function highlightMatches(content: string, keywords: string[]): string {
+    if (!keywords.length || !content) {
+        return content; // 返回原始字符串，因为没有需要匹配的内容
     }
 
-    const regexPattern = new RegExp(`(${array.join("|")})`, "gi");
-    const highlightedString = searchString.replace(
+    const regexPattern = new RegExp(`(${keywords.join("|")})`, "gi");
+    const highlightedString = content.replace(
         regexPattern,
         "<mark>$1</mark>",
     );
@@ -384,6 +541,20 @@ function escapeHtml(input: string): string {
 
     return input.replace(/[&<>"']/g, (match) => escapeMap[match]);
 }
+
+
+function countKeywords(content: string, keywords: string[]): number {
+    let count = 0;
+    keywords.forEach(keyword => {
+        const regex = new RegExp(keyword, 'gi'); // 创建全局、不区分大小写的正则表达式
+        const matches = content.match(regex); // 在文本中查找匹配的关键字
+        if (matches) {
+            count += matches.length; // 更新匹配关键字的数量
+        }
+    });
+    return count;
+}
+
 
 export async function getOpenTabAction(blockId: string): Promise<TProtyleAction[]> {
     let zoomIn = await checkBlockFold(blockId)
@@ -602,10 +773,14 @@ export function clearCssHighlights() {
 }
 
 
-export async function searchItemSortByContent(subItems: BlockItem[]) {
-    let ids = subItems.map(item => item.block.id);
-    let idMap: Map<string, number> = await getBatchIdIndex(ids);
-    subItems.sort((a, b) => {
+
+
+async function searchItemSortByContent(blockItems: BlockItem[]) {
+    const startTime = performance.now(); // 记录开始时间
+
+    let ids = blockItems.map(item => item.block.id);
+    let idMap: Map<BlockId, number> = await getBatchBlockIdIndex(ids);
+    blockItems.sort((a, b) => {
         let aIndex = idMap.get(a.block.id) || 0;
         let bIndex = idMap.get(b.block.id) || 0;
         if (aIndex !== bIndex) {
@@ -615,20 +790,39 @@ export async function searchItemSortByContent(subItems: BlockItem[]) {
         }
     });
 
-    return subItems;
+    const endTime = performance.now(); // 记录结束时间
+    const executionTime = endTime - startTime; // 计算时间差
+    console.log(
+        `原文排序消耗时长 : ${executionTime} ms`,
+    );
+    return blockItems;
 }
 
-async function getBatchIdIndex(ids: string[]) {
+
+
+async function getBatchBlockIdIndex(ids: string[]): Promise<Map<BlockId, number>> {
+    let idObject = await getBlocksIndexes(ids);
     let idMap: Map<string, number> = new Map();
-    for (const id of ids) {
-        let index = 0
-        try {
-            index = await getBlockIndex(id);
-        } catch (err) {
-            console.error("获取块索引报错 : ", err)
+
+    // 遍历对象的键值对，并将它们添加到 Map 中
+    for (const key in idObject) {
+        if (Object.prototype.hasOwnProperty.call(idObject, key)) {
+            const value = idObject[key];
+            idMap.set(key, value);
         }
-        idMap.set(id, index)
     }
+
+
+    // let idMap: Map<string, number> = new Map();
+    // for (const id of ids) {
+    //     let index = 0
+    //     try {
+    //         index = await getBlockIndex(id);
+    //     } catch (err) {
+    //         console.error("获取块索引报错 : ", err)
+    //     }
+    //     idMap.set(id, index)
+    // }
     return idMap;
 }
 

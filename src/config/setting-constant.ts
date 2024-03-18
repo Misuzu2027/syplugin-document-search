@@ -136,6 +136,10 @@ export const SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT = [
         text: "类型",
         value: "type",
     },
+    {
+        text: "按原文内容顺序",
+        value: "content",
+    },
     ...SETTING_DOCUMENT_SORT_METHOD_ELEMENT,
 ];
 

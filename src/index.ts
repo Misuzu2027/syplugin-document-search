@@ -47,7 +47,7 @@ export default class PluginSample extends Plugin {
         this.addDock({
             config: {
                 position: "LeftTop",
-                size: { width: 400, height: 0 },
+                size: { width: 300, height: 0 },
                 icon: CUSTOM_ICON_MAP.iconDocumentSearch.id,
                 title: this.i18n.documentSearchIconTip,
                 hotkey: "⌥Q",
@@ -101,9 +101,6 @@ export default class PluginSample extends Plugin {
             init() {
                 _this.documentSearchTab = new SearchPreviewSvelte({
                     target: this.element,
-                    props: {
-                        showPreview: true,
-                    }
                 });
 
                 // this.element.replaceChildren(searchTabDiv.childNodes);

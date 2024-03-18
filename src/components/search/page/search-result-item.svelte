@@ -2,7 +2,7 @@
     import { showMessage } from "siyuan";
     import { BlockItem, DocumentItem } from "@/config/search-model";
     import { getBlockTypeIconHref } from "@/utils/icons";
-    import { searchItemSortByContent } from "./search-utils";
+    import { blockItemsSort } from "./search-utils";
 
     export let documentItemSearchResult: DocumentItem[];
     export let clickCallback: (item: BlockItem) => void;
@@ -48,19 +48,16 @@
         event: MouseEvent,
         documentItem: DocumentItem,
     ) {
-        const startTime = performance.now(); // 记录开始时间
-
         isSearching++;
-        let subItems = await searchItemSortByContent(documentItem.subItems);
-        documentItem.subItems = subItems;
+        await blockItemsSort(
+            documentItem.subItems,
+            "content",
+            documentItem.index,
+        );
         documentItemSearchResult = documentItemSearchResult;
         isSearching--;
 
-        const endTime = performance.now(); // 记录结束时间
-        const executionTime = endTime - startTime; // 计算时间差
-        console.log(
-            `原文排序消耗时长 : ${executionTime} ms, x : ${event.clientX}, y : ${event.clientY}`,
-        );
+        console.log(`文档右击位置 x : ${event.clientX}, y : ${event.clientY}`);
     }
 </script>
 

@@ -48,7 +48,10 @@ export function generateDocumentSearchSql(
     let contentParamSql = generateOrLikeConditions("concatContent", keywords);
 
     let orders = [];
-    if (contentBlockSortMethod == 'modifiedAsc') {
+    if (contentBlockSortMethod == 'type') { // type 类型
+        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", keywords, false);
+        orders = [" sort ASC ", orderCaseCombinationSql, " updated DESC "];
+    } else if (contentBlockSortMethod == 'modifiedAsc') {
         orders = [" updated ASC "]
     } else if (contentBlockSortMethod == 'modifiedDesc') {
         orders = [" updated DESC "]
@@ -62,9 +65,6 @@ export function generateDocumentSearchSql(
     } else if (contentBlockSortMethod == 'rankDesc') {
         let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", keywords, false);
         orders = [orderCaseCombinationSql, " sort ASC ", " updated DESC "]
-    } else { // type 类型
-        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", keywords, false);
-        orders = [" sort ASC ", orderCaseCombinationSql, " updated DESC "];
     }
     let orderSql = generateOrderSql(orders);
 

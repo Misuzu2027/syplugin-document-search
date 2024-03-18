@@ -176,11 +176,9 @@
 
         itemClickCount++;
         if (itemClickCount === 1) {
+            refreshBlockPreviewBox(blockId);
             // 单击逻辑
             setTimeout(() => {
-                if (itemClickCount === 1) {
-                    refreshBlockPreviewBox(blockId);
-                }
                 itemClickCount = 0; // 重置计数
             }, doubleClickTimeout);
         } else if (itemClickCount === 2) {

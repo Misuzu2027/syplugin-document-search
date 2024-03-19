@@ -1,67 +1,74 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
     import {
+        Protyle,
         openTab,
         openMobileFileById,
-        ITab,
-        Constants,
         TProtyleAction,
     } from "siyuan";
-    import SearchResultItem from "@/components/search/page/search-result-item.svelte";
+    import SearchResultItem from "@/components/search/search-result-item.svelte";
 
     import { SettingConfig } from "@/services/setting-config";
-    import { openSettingsDialog } from "../../setting/setting-util";
-    import { DocumentItem, DocumentSqlQueryModel } from "@/config/search-model";
+    import { openSettingsDialog } from "@/components/setting/setting-util";
+    import {
+        BlockItem,
+        DocumentItem,
+        DocumentSqlQueryModel,
+    } from "@/config/search-model";
     import { EnvConfig } from "@/config/env-config";
     import {
-        getDocumentSearchResult,
         selectItemByArrowKeys,
-        toggleAllCollpsedItem,
         highlightElementTextByCss,
+        toggleAllCollpsedItem,
         getOpenTabAction,
+        getProtyleAction,
         delayedTwiceRefresh,
-        clearCssHighlights,
-        findScrollingElement,
-    } from "./search-utils";
+        getDocumentSearchResult,
+    } from "@/components/search/search-utils";
+    import { handleSearchDragMousdown } from "@/lib/SearchUtil";
 
     let element: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
 
+    let previewDivElement: HTMLElement;
+    let previewProtyle: Protyle;
+    let previewProtyleMatchFocusIndex: number;
     let searchInputKey: string = "";
     let documentItemSearchResult: DocumentItem[] = [];
     let selectedItemIndex: number = -1;
+    let itemClickCount = 0;
     let inputChangeTimeoutId;
     let isSearching: number = 0;
-    let hiddenSearchResult: boolean = false;
     let lastKeywords: string[];
     let searchResultDocumentCount: number = null;
     let curPage: number = 0;
     let totalPage: number = 0;
-    let previewProtyleMatchFocusIndex = 0;
-    let lastBlockId: string;
-    let lastDocumentContentElement: HTMLElement;
 
     onMount(async () => {
+        previewProtyle = new Protyle(EnvConfig.ins.app, previewDivElement, {
+            blockId: "",
+            render: {
+                gutter: true,
+                breadcrumbDocName: true,
+            },
+        });
         resize();
     });
 
     onDestroy(() => {
         // showMessage("Hello panel closed");
+        previewProtyle.destroy();
     });
 
-    export function resize(clientWidth?: number) {
+    export function resize() {
         if (!document) {
             return;
         }
-        documentSearchInputFocus();
-
-        if (clientWidth) {
-            if (clientWidth == 0) {
-                hiddenSearchResult = true;
-            } else {
-                hiddenSearchResult = false;
-            }
+        if (previewProtyle && element.offsetWidth) {
+            previewProtyle.protyle.element.style.width =
+                element.offsetWidth / 2 + "px";
         }
+        documentSearchInputFocus();
     }
 
     function documentSearchInputFocus() {
@@ -80,6 +87,7 @@
             documentItemSearchResult,
         );
 
+        documentSearchInputFocus();
         if (selectedBlockItem) {
             selectedItemIndex = selectedBlockItem.index;
 
@@ -110,12 +118,6 @@
             return;
         }
         refreshSearch(searchInputKey, page);
-    }
-
-    function clearDocumentSearchInput() {
-        searchInputKey = "";
-        refreshSearch(searchInputKey, 1);
-        clearCssHighlights();
     }
 
     async function refreshSearch(searchKey: string, pageNum: number) {
@@ -163,104 +165,114 @@
         }
     }
 
-    function clickItem(item: DocumentItem) {
+    function clickItem(item: BlockItem) {
         let block = item.block;
         let blockId = block.id;
         selectedItemIndex = item.index;
+        let doubleClickTimeout = SettingConfig.ins.doubleClickTimeout;
 
-        // documentSearchInputFocus();
+        documentSearchInputFocus();
 
-        openBlockTab(blockId);
+        itemClickCount++;
+        if (itemClickCount === 1) {
+            refreshBlockPreviewBox(blockId);
+            // 单击逻辑
+            setTimeout(() => {
+                itemClickCount = 0; // 重置计数
+            }, doubleClickTimeout);
+        } else if (itemClickCount === 2) {
+            openBlockTab(blockId);
+            itemClickCount = 0; // 重置计数
+        }
     }
 
-    async function openBlockTab(blockId: string) {
-        if (lastBlockId == blockId) {
-            previewProtyleMatchFocusIndex++;
-        } else {
-            previewProtyleMatchFocusIndex = 0;
-        }
-        // lastBlockId = blockId;
-
-        let actions: TProtyleAction[] = await getOpenTabAction(blockId);
-
-        if (EnvConfig.ins.isMobile) {
-            openMobileFileById(EnvConfig.ins.app, blockId, actions);
-        } else {
-            if (lastBlockId == blockId) {
-                actions = actions.filter(
-                    (item) => item !== Constants.CB_GET_HL,
-                );
+    function openBlockTab(blockId: string) {
+        getOpenTabAction(blockId).then((actions: TProtyleAction[]) => {
+            if (EnvConfig.ins.isMobile) {
+                openMobileFileById(EnvConfig.ins.app, blockId, actions);
+            } else {
+                openTab({
+                    app: EnvConfig.ins.app,
+                    doc: {
+                        id: blockId,
+                        action: actions,
+                    },
+                });
             }
-            lastBlockId = blockId;
-
-            let docTabPromise: Promise<ITab> = openTab({
-                app: EnvConfig.ins.app,
-                doc: {
-                    id: blockId,
-                    action: actions,
-                },
-                afterOpen() {
-                    afterOpenDocTab(docTabPromise, blockId);
-                },
-            });
-        }
+        });
     }
 
-    async function afterOpenDocTab(
-        docTabPromise: Promise<ITab>,
-        blockId: string,
-    ) {
-        let docTab = await docTabPromise;
-        lastDocumentContentElement = docTab.panelElement
-            .children[1] as HTMLElement;
+    async function refreshBlockPreviewBox(blockId: string) {
+        if (!blockId) {
+            return;
+        }
 
-        delayedTwiceRefresh(() => {
+        if (previewProtyle.protyle.block.id == blockId) {
+            previewProtyleMatchFocusIndex++;
+
             highlightElementTextByCss(
-                lastDocumentContentElement,
+                previewProtyle.protyle.contentElement,
                 lastKeywords,
                 blockId,
                 previewProtyleMatchFocusIndex,
                 renderNextSearchMarkByRange,
             );
-        }, 50);
+            return;
+        }
+        previewProtyleMatchFocusIndex = 0;
+        let actions = await getProtyleAction(blockId);
+
+        let tempDivElement = document.createElement("div");
+
+        previewProtyle = new Protyle(EnvConfig.ins.app, tempDivElement, {
+            blockId: blockId,
+            render: {
+                gutter: true,
+                breadcrumbDocName: true,
+            },
+            action: actions,
+            after: (protyle: Protyle) => {
+                // 这样可以降低预览区刷新空白延迟，但不清楚有没有副作用。
+                previewDivElement.innerHTML = "";
+                previewDivElement.append(
+                    ...Array.from(tempDivElement.childNodes),
+                );
+                afterCreateProtyle(protyle, blockId);
+            },
+        });
+    }
+
+    function afterCreateProtyle(protyle: Protyle, blockId: string) {
+        let protyleContentElement = protyle.protyle.contentElement;
+        delayedTwiceRefresh(() => {
+            highlightElementTextByCss(
+                protyleContentElement,
+                lastKeywords,
+                blockId,
+                previewProtyleMatchFocusIndex,
+                renderNextSearchMarkByRange,
+            );
+        }, 0);
     }
 
     function renderNextSearchMarkByRange(matchRange: Range) {
         if (matchRange) {
-            const matchElement =
-                matchRange.commonAncestorContainer.parentElement;
+            // matchElement.classList.add("search-mark--hl");
+            const protyleElement = previewProtyle.protyle.contentElement;
+            const contentRect = protyleElement.getBoundingClientRect();
+            protyleElement.scrollTop =
+                protyleElement.scrollTop +
+                matchRange.getBoundingClientRect().top -
+                contentRect.top -
+                contentRect.height / 2;
 
-            if (
-                matchElement.clientHeight >
-                document.documentElement.clientHeight
-            ) {
-                // 特殊情况：如果一个段落中软换行非常多，此时如果定位到匹配节点的首行，
-                // 是看不到查询的文本的，需要通过 Range 的精确位置进行定位。
-                const scrollingElement = findScrollingElement(matchElement);
-                scrollingElement.scrollTo({
-                    top:
-                        scrollingElement.scrollTop +
-                        matchRange.getBoundingClientRect().top,
-                    behavior: "instant",
-                });
-            } else {
-                matchElement.scrollIntoView({
-                    behavior: "auto",
-                    block: "nearest",
-                });
-            }
+            CSS.highlights.set(
+                "search-result-focus",
+                new Highlight(matchRange),
+            );
         }
     }
 
-    function clickExpandAll() {
-        toggleAllCollpsedItem(documentItemSearchResult, false);
-        documentItemSearchResult = documentItemSearchResult;
-    }
-
-    function clickCollapseAll() {
-        toggleAllCollpsedItem(documentItemSearchResult, true);
-        documentItemSearchResult = documentItemSearchResult;
-    }
     function clickSearchNotebookFilter() {
         openSettingsDialog("settingNotebook");
     }
@@ -279,7 +291,53 @@
 </script>
 
 <div class="fn__flex-column" style="height: 100%;" bind:this={element}>
+    <!-- <div class="layout-tab-container fn__flex-1" bind:this={element}> -->
+
     <div class="block__icons" style="overflow: auto">
+        <span
+            data-position="9bottom"
+            data-type="previous"
+            class="block__icon block__icon--show ariaLabel
+            {curPage <= 1 ? 'disabled' : ''}"
+            aria-label="上一页"
+            on:click={() => {
+                pageTurning(curPage - 1);
+            }}
+            on:keydown={handleKeyDownDefault}
+            ><svg><use xlink:href="#iconLeft"></use></svg></span
+        >
+        <span class="fn__space"></span>
+        <span
+            data-position="9bottom"
+            data-type="next"
+            class="block__icon block__icon--show ariaLabel
+            {curPage >= totalPage ? 'disabled' : ''}"
+            aria-label="下一页"
+            on:click={() => {
+                pageTurning(curPage + 1);
+            }}
+            on:keydown={handleKeyDownDefault}
+            ><svg><use xlink:href="#iconRight"></use></svg></span
+        >
+
+        <span class="fn__space"></span>
+        <span
+            class="fn__flex-shrink ft__selectnone
+            {searchResultDocumentCount == null || searchResultDocumentCount == 0
+                ? 'fn__none'
+                : ''}"
+        >
+            {curPage}/{totalPage}
+            <span class="fn__space"></span>
+
+            <span class="ft__on-surface">
+                匹配到 {searchResultDocumentCount} 个文档
+                <!-- 中匹配 {searchResultTotalCount}块 -->
+            </span>
+        </span>
+        <span class="fn__space"></span>
+        <span class="fn__flex-1" style="min-height: 100%"></span>
+
         <span class="fn__space"></span>
         <span
             id="documentSearchNotebookFilter"
@@ -326,31 +384,6 @@
         >
             <svg><use xlink:href="#iconSearchSettingOther"></use></svg>
         </span>
-
-        <span class="fn__flex-1" style="min-height: 100%"></span>
-        <span class="fn__space"></span>
-
-        <span
-            id="documentSearchExpand"
-            class="block__icon block__icon--show ariaLabel"
-            data-position="9bottom"
-            aria-label="展开"
-            on:click={clickExpandAll}
-            on:keydown={handleKeyDownDefault}
-        >
-            <svg><use xlink:href="#iconExpand"></use></svg>
-        </span>
-        <span class="fn__space"></span>
-        <span
-            id="documentSearchCollapse"
-            class="block__icon block__icon--show ariaLabel"
-            data-position="9bottom"
-            aria-label="折叠"
-            on:click={clickCollapseAll}
-            on:keydown={handleKeyDownDefault}
-        >
-            <svg><use xlink:href="#iconContract"></use></svg>
-        </span>
     </div>
     <div
         class="b3-form__icon search__header"
@@ -379,7 +412,10 @@
                     : ''}"
                 aria-label="清空"
                 style="right: 8px;height:42px"
-                on:click|stopPropagation={clearDocumentSearchInput}
+                on:click|stopPropagation={() => {
+                    searchInputKey = "";
+                    refreshSearch(searchInputKey, 1);
+                }}
                 on:keydown={handleKeyDownDefault}
             >
                 <use xlink:href="#iconCloseRound"></use>
@@ -398,72 +434,50 @@
             >
                 <svg><use xlink:href="#iconRefresh"></use></svg>
             </span>
+
+            <div class="fn__flex">
+                <span class="fn__space"></span>
+                <span
+                    id="documentSearchExpand"
+                    class="block__icon block__icon--show ariaLabel"
+                    data-position="9bottom"
+                    aria-label="展开"
+                    on:click={() => {
+                        toggleAllCollpsedItem(documentItemSearchResult, false);
+                    }}
+                    on:keydown={handleKeyDownDefault}
+                >
+                    <svg><use xlink:href="#iconExpand"></use></svg>
+                </span>
+                <span class="fn__space"></span>
+                <span
+                    id="documentSearchCollapse"
+                    class="block__icon block__icon--show ariaLabel"
+                    data-position="9bottom"
+                    aria-label="折叠"
+                    on:click={() => {
+                        toggleAllCollpsedItem(documentItemSearchResult, true);
+                    }}
+                    on:keydown={handleKeyDownDefault}
+                >
+                    <svg><use xlink:href="#iconContract"></use></svg>
+                </span>
+            </div>
         </div>
     </div>
-
-    <div class="block__icons" style="overflow:auto">
-        <span
-            class="fn__flex-shrink ft__selectnone
-        {searchResultDocumentCount == null || searchResultDocumentCount == 0
-                ? 'fn__none'
-                : ''}"
-        >
-            <span class="fn__space"></span>
-
-            <span class="ft__on-surface">
-                匹配到 {searchResultDocumentCount} 个文档
-                <!-- 中匹配 {searchResultTotalCount}块 -->
-            </span>
-        </span>
-        <span class="fn__space"></span>
-        <span class="fn__flex-1" style="min-height: 100%"></span>
-
-        <span
-            class="fn__flex-shrink ft__selectnone
-    {searchResultDocumentCount == null || searchResultDocumentCount == 0
-                ? 'fn__none'
-                : ''}"
-        >
-            {curPage}/{totalPage}
-        </span>
-
-        <span class="fn__space"></span>
-        <span
-            data-position="9bottom"
-            data-type="previous"
-            class="block__icon block__icon--show ariaLabel
-            {curPage <= 1 ? 'disabled' : ''}"
-            aria-label="上一页"
-            on:click={() => {
-                pageTurning(curPage - 1);
-            }}
-            on:keydown={handleKeyDownDefault}
-            ><svg><use xlink:href="#iconLeft"></use></svg></span
-        >
-        <span class="fn__space"></span>
-        <span
-            data-position="9bottom"
-            data-type="next"
-            class="block__icon block__icon--show ariaLabel
-            {curPage >= totalPage ? 'disabled' : ''}"
-            aria-label="下一页"
-            on:click={() => {
-                pageTurning(curPage + 1);
-            }}
-            on:keydown={handleKeyDownDefault}
-            ><svg><use xlink:href="#iconRight"></use></svg></span
-        >
-
-        <span class="fn__space"></span>
-    </div>
     <div class="search__layout search__layout--row">
-        {#if !hiddenSearchResult}
-            <SearchResultItem
-                {documentItemSearchResult}
-                selectedIndex={selectedItemIndex}
-                clickCallback={clickItem}
-            />
-        {/if}
+        <SearchResultItem
+            {documentItemSearchResult}
+            selectedIndex={selectedItemIndex}
+            clickCallback={clickItem}
+        />
+
+        <div class="search__drag" on:mousedown={handleSearchDragMousdown}></div>
+        <div
+            id="documentSearchPreview"
+            class="search__preview"
+            bind:this={previewDivElement}
+        ></div>
     </div>
 </div>
 <div class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}">

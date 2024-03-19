@@ -4,11 +4,11 @@ import {
 } from "siyuan";
 // import "@/index.scss";
 
-import SearchPreviewSvelte from "@/components/search/page/search-preview-view.svelte";
-import SearchSideSvelte from "@/components/search/page/search-side-view.svelte";
-import { CUSTOM_ICON_MAP } from "./utils/icons";
-import { SettingConfig } from "./services/setting-config";
-import { EnvConfig } from "./config/env-config";
+import SearchPreviewSvelte from "@/components/search/search-preview-view.svelte";
+import SearchSideSvelte from "@/components/search/search-side-view.svelte";
+import { CUSTOM_ICON_MAP } from "@/utils/icons";
+import { SettingConfig } from "@/services/setting-config";
+import { EnvConfig } from "@/config/env-config";
 import "./index.scss"
 
 

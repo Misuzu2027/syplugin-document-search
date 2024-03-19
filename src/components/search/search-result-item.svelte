@@ -2,7 +2,11 @@
     import { showMessage } from "siyuan";
     import { BlockItem, DocumentItem } from "@/config/search-model";
     import { getBlockTypeIconHref } from "@/utils/icons";
-    import { blockItemsSort } from "./search-utils";
+    import {
+        blockItemsSort,
+        blockSortSubMenu,
+    } from "@/components/search/search-utils";
+    import { MenuItem } from "@/lib/Menu";
 
     export let documentItemSearchResult: DocumentItem[];
     export let clickCallback: (item: BlockItem) => void;
@@ -48,16 +52,42 @@
         event: MouseEvent,
         documentItem: DocumentItem,
     ) {
+        window.siyuan.menus.menu.remove();
+        window.siyuan.menus.menu.append(
+            new MenuItem({
+                label: "排序方式",
+                type: "submenu",
+                submenu: blockSortSubMenu(
+                    documentItem,
+                    blockSortSubMenuCallback,
+                ),
+            }).element,
+        );
+
+        window.siyuan.menus.menu.popup({ x: event.clientX, y: event.clientY });
+
+        // console.log(`文档右击位置 x : ${event.clientX}, y : ${event.clientY}`);
+    }
+
+    async function blockSortSubMenuCallback(
+        documentItem: DocumentItem,
+        sortMethod: string,
+    ) {
+        const startTime = performance.now(); // 记录开始时间
+
         isSearching++;
         await blockItemsSort(
             documentItem.subItems,
-            "content",
+            sortMethod,
             documentItem.index,
         );
         documentItemSearchResult = documentItemSearchResult;
         isSearching--;
-
-        console.log(`文档右击位置 x : ${event.clientX}, y : ${event.clientY}`);
+        const endTime = performance.now(); // 记录结束时间
+        const executionTime = endTime - startTime; // 计算时间差
+        console.log(
+            `排序类型 : ${sortMethod} , 数量 : ${documentItem.subItems.length} , 消耗时长 : ${executionTime} ms`,
+        );
     }
 </script>
 
@@ -71,7 +101,7 @@
             class="b3-list-item {item.index === selectedIndex
                 ? 'b3-list-item--focus'
                 : ''} "
-            on:click|stopPropagation={() => toggleItemVisibility(item.block)}
+            on:click={() => toggleItemVisibility(item.block)}
             on:contextmenu|stopPropagation|preventDefault={(event) =>
                 documentItemContextmenuEvent(event, item)}
             on:keydown={handleKeyDownDefault}

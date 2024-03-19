@@ -1,13 +1,16 @@
 import { DocumentItem, BlockItem, DocumentSqlQueryModel } from "@/config/search-model";
+import { SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT, SETTING_DOCUMENT_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
 import { DocumentQueryCriteria, generateDocumentSearchSql } from "@/services/search-sql";
 import { SettingConfig } from "@/services/setting-config";
 import { checkBlockFold, getBlockIndex, getBlocksIndexes, lsNotebooks, sql } from "@/utils/api";
 import { convertIalStringToObject, convertIconInIal } from "@/utils/icons";
+import { getObjectSizeInKB } from "@/utils/object-util";
 import { Constants, TProtyleAction } from "siyuan";
 
 
 
 export async function getDocumentSearchResult(searchKey: string, pageNum: number): Promise<DocumentSqlQueryModel> {
+    const startTime = performance.now(); // 记录开始时间
     // 去除多余的空格，并将输入框的值按空格分割成数组
     let keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
 
@@ -64,84 +67,13 @@ export async function getDocumentSearchResult(searchKey: string, pageNum: number
     result.documentCount = documentCount;
     result.status = "success";
 
+    const endTime = performance.now(); // 记录结束时间
+    const executionTime = endTime - startTime; // 计算时间差
+    console.log(
+        `获取和处理搜索结果消耗时间 : ${executionTime} ms, 内容大小 : ${getObjectSizeInKB(documentItems)}`,
+    );
     return result;
 }
-
-export function handleSearchDragMousdown(event: MouseEvent) {
-    /* 复制 https://vscode.dev/github/siyuan-note/siyuan/blob/master/app/src/search/util.ts#L407
-        #genSearch 方法下的 const dragElement = element.querySelector(".search__drag"); 处
-    */
-
-    const dragElement = event.target as Element;
-    const documentSelf = document;
-    const nextElement = dragElement.nextElementSibling as HTMLElement;
-    const previousElement =
-        dragElement.previousElementSibling as HTMLElement;
-    const direction = "lr";
-    // window.siyuan.storage[Constants.LOCAL_SEARCHKEYS][
-    //     closeCB ? "layout" : "layoutTab"
-    // ] === 1
-    //     ? "lr"
-    //     : "tb";
-    const x = event[direction === "lr" ? "clientX" : "clientY"];
-    const previousSize =
-        direction === "lr"
-            ? previousElement.clientWidth
-            : previousElement.clientHeight;
-    const nextSize =
-        direction === "lr"
-            ? nextElement.clientWidth
-            : nextElement.clientHeight;
-
-    nextElement.classList.remove("fn__flex-1");
-    nextElement.style[direction === "lr" ? "width" : "height"] =
-        nextSize + "px";
-
-    documentSelf.onmousemove = (moveEvent: MouseEvent) => {
-        moveEvent.preventDefault();
-        moveEvent.stopPropagation();
-        const previousNowSize =
-            previousSize +
-            (moveEvent[direction === "lr" ? "clientX" : "clientY"] - x);
-        const nextNowSize =
-            nextSize -
-            (moveEvent[direction === "lr" ? "clientX" : "clientY"] - x);
-        if (previousNowSize < 120 || nextNowSize < 120) {
-            return;
-        }
-        nextElement.style[direction === "lr" ? "width" : "height"] =
-            nextNowSize + "px";
-    };
-
-    documentSelf.onmouseup = () => {
-        documentSelf.onmousemove = null;
-        documentSelf.onmouseup = null;
-        documentSelf.ondragstart = null;
-        documentSelf.onselectstart = null;
-        documentSelf.onselect = null;
-        // window.siyuan.storage[Constants.LOCAL_SEARCHKEYS][
-        //     direction === "lr"
-        //         ? closeCB
-        //             ? "col"
-        //             : "colTab"
-        //         : closeCB
-        //           ? "row"
-        //           : "rowTab"
-        // ] =
-        //     nextElement[
-        //         direction === "lr" ? "clientWidth" : "clientHeight"
-        //     ] + "px";
-        // setStorageVal(
-        //     Constants.LOCAL_SEARCHKEYS,
-        //     window.siyuan.storage[Constants.LOCAL_SEARCHKEYS],
-        // );
-        // if (direction === "lr") {
-        //     resize(edit.protyle);
-        // }
-    };
-}
-
-
 
 export function getNodeId(node: Node | null): string | null {
     if (!node) {
@@ -173,7 +105,6 @@ export async function processSearchResults(
     blocks: Block[],
     documentSearchCriterion: DocumentQueryCriteria
 ): Promise<DocumentItem[]> {
-    const startTime = performance.now(); // 记录开始时间
 
     let searchResults: DocumentItem[] = [];
     if (!blocks) {
@@ -196,26 +127,34 @@ export async function processSearchResults(
         highlightBlockContent(block, keywords);
 
         let rootId = block.root_id;
-        let documentItem = new DocumentItem();
-        documentItem.block = block;
-        documentItem.subItems = [];
-        documentItem.isCollapsed = true;
+        let blockItem = new BlockItem();
+        blockItem.block = block;
 
-        let curParentItem: DocumentItem = null;
+        let tempParentItem: DocumentItem = null;
         if (documentBlockMap.has(rootId)) {
-            curParentItem = documentBlockMap.get(rootId);
+            tempParentItem = documentBlockMap.get(rootId);
         } else {
-            curParentItem = new DocumentItem();
-            curParentItem.subItems = [];
-            documentBlockMap.set(rootId, curParentItem);
+            tempParentItem = new DocumentItem();
+            tempParentItem.subItems = [];
+            documentBlockMap.set(rootId, tempParentItem);
         }
 
-        curParentItem.subItems.push(documentItem);
+        tempParentItem.subItems.push(blockItem);
 
         if (block.type === "d") {
-            if (curParentItem.subItems) {
-                documentItem.subItems = curParentItem.subItems;
+            let documentItem = new DocumentItem();
+            documentItem.block = block;
+            documentItem.subItems = [];
+
+            if (tempParentItem.subItems) {
+                // 让文档块始终在第一个。
+                let subItems = tempParentItem.subItems;
+                let documentBlockItem = subItems.pop()
+                subItems.unshift(documentBlockItem);
+
+                documentItem.subItems = subItems;
             }
+
             if (blocks.length > SettingConfig.ins.maxExpandCount) {
                 documentItem.isCollapsed = true;
             } else {
@@ -223,7 +162,7 @@ export async function processSearchResults(
             }
             if (block.ial) {
                 let ial = convertIalStringToObject(block.ial);
-                documentItem.icon = convertIconInIal(ial.icon);
+                blockItem.icon = convertIconInIal(ial.icon);
             }
             documentItem.path =
                 notebookMap.get(block.box).name + block.hpath;
@@ -238,24 +177,24 @@ export async function processSearchResults(
     // searchResults.sort(documentSortFun);
 
     let index = 0;
-    for (const item of searchResults) {
+    for (const documentItem of searchResults) {
         // 是否隐藏文档快
         if (!SettingConfig.ins.showChildDocument) {
-            if (item.subItems.length > 1) {
+            if (documentItem.subItems.length > 1) {
                 let documentItemIndex = 0;
-                for (let i: number = 0; i < item.subItems.length; i++) {
-                    let subItem = item.subItems[i];
+                for (let i: number = 0; i < documentItem.subItems.length; i++) {
+                    let subItem = documentItem.subItems[i];
                     if (subItem.block.type === "d") {
                         documentItemIndex = i;
                         break;
                     }
                 }
-                item.subItems.splice(documentItemIndex, 1);
+                documentItem.subItems.splice(documentItemIndex, 1);
             }
         }
-        item.index = index;
-        for (const subItem of item.subItems) {
-            if (item.block.id === subItem.block.id) {
+        documentItem.index = index;
+        for (const subItem of documentItem.subItems) {
+            if (documentItem.block.id === subItem.block.id) {
                 continue;
             }
             index++;
@@ -265,16 +204,14 @@ export async function processSearchResults(
 
         // 块排序，目前主要处理原文排序，其他顺序已经在mysql中排序过了。
         // 粗略测试觉得 sqlite 中的排序效率更高，可能有索引优化的原因。
-        if (contentBlockSortMethod == "content") {
-            await blockItemsSort(item.subItems, contentBlockSortMethod, item.index + 1);
+        if (contentBlockSortMethod == "content"
+            // || contentBlockSortMethod == "rankAsc"
+            // || contentBlockSortMethod == "rankDesc"
+        ) {
+            await blockItemsSort(documentItem.subItems, contentBlockSortMethod, documentItem.index + 1);
         }
     }
 
-    const endTime = performance.now(); // 记录结束时间
-    const executionTime = endTime - startTime; // 计算时间差
-    console.log(
-        `处理数据消耗 : ${executionTime} ms`,
-    );
     return searchResults;
 }
 
@@ -411,6 +348,12 @@ function getBlockSortFun(contentBlockSortMethod: string) {
                 a: BlockItem,
                 b: BlockItem,
             ): number {
+                if (a.block.type === "d") {
+                    return -1;
+                }
+                if (b.block.type === "d") {
+                    return 1;
+                }
                 let aSort: number = Number(a.block.sort);
                 let bSort: number = Number(b.block.sort);
                 let result = aSort - bSort;
@@ -428,6 +371,12 @@ function getBlockSortFun(contentBlockSortMethod: string) {
                 a: BlockItem,
                 b: BlockItem,
             ): number {
+                if (a.block.type === "d") {
+                    return -1;
+                }
+                if (b.block.type === "d") {
+                    return 1;
+                }
                 return Number(a.block.updated) - Number(b.block.updated);
             };
             break;
@@ -436,6 +385,12 @@ function getBlockSortFun(contentBlockSortMethod: string) {
                 a: BlockItem,
                 b: BlockItem,
             ): number {
+                if (a.block.type === "d") {
+                    return -1;
+                }
+                if (b.block.type === "d") {
+                    return 1;
+                }
                 return Number(b.block.updated) - Number(a.block.updated);
             };
             break;
@@ -444,6 +399,12 @@ function getBlockSortFun(contentBlockSortMethod: string) {
                 a: BlockItem,
                 b: BlockItem,
             ): number {
+                if (a.block.type === "d") {
+                    return -1;
+                }
+                if (b.block.type === "d") {
+                    return 1;
+                }
                 return Number(a.block.created) - Number(b.block.created);
             };
             break;
@@ -452,6 +413,12 @@ function getBlockSortFun(contentBlockSortMethod: string) {
                 a: BlockItem,
                 b: BlockItem,
             ): number {
+                if (a.block.type === "d") {
+                    return -1;
+                }
+                if (b.block.type === "d") {
+                    return 1;
+                }
                 return Number(b.block.created) - Number(a.block.created);
             };
             break;
@@ -460,11 +427,20 @@ function getBlockSortFun(contentBlockSortMethod: string) {
                 a: BlockItem,
                 b: BlockItem,
             ): number {
+                if (a.block.type === "d") {
+                    return -1;
+                }
+                if (b.block.type === "d") {
+                    return 1;
+                }
                 let aRank: number = a.block.content.split("<mark>").length - 1;
                 let bRank: number = b.block.content.split("<mark>").length - 1;
                 let result = aRank - bRank;
                 if (result == 0) {
-                    result = Number(b.block.updated) - Number(a.block.updated);
+                    result = Number(a.block.sort) - Number(b.block.sort);
+                    if (result == 0) {
+                        result = Number(b.block.updated) - Number(a.block.updated);
+                    }
                 }
                 return result;
             };
@@ -474,11 +450,20 @@ function getBlockSortFun(contentBlockSortMethod: string) {
                 a: BlockItem,
                 b: BlockItem,
             ): number {
+                if (a.block.type === "d") {
+                    return -1;
+                }
+                if (b.block.type === "d") {
+                    return 1;
+                }
                 let aRank: number = a.block.content.split("<mark>").length - 1;
                 let bRank: number = b.block.content.split("<mark>").length - 1;
                 let result = bRank - aRank;
                 if (result == 0) {
-                    result = Number(b.block.updated) - Number(a.block.updated)
+                    result = Number(a.block.sort) - Number(b.block.sort);
+                    if (result == 0) {
+                        result = Number(b.block.updated) - Number(a.block.updated);
+                    }
                 }
                 return result;
             };
@@ -621,6 +606,7 @@ export function selectItemByArrowKeys(
     ) {
         return selectedItem;
     }
+
     event.stopPropagation();
 
     if (event.key === "ArrowUp") {
@@ -628,8 +614,12 @@ export function selectItemByArrowKeys(
             selectedItemIndex -= 1;
         }
     } else if (event.key === "ArrowDown") {
-        let lastSubItems = documentItems[documentItems.length - 1].subItems;
-        let lastIndex = documentItems[documentItems.length - 1].index;
+        let lastDocumentItem = documentItems[documentItems.length - 1];
+        if (!lastDocumentItem) {
+            return selectedItem;
+        }
+        let lastSubItems = lastDocumentItem.subItems;
+        let lastIndex = lastDocumentItem.index;
         if (lastSubItems && lastSubItems.length > 0) {
             lastIndex = lastSubItems[lastSubItems.length - 1].index;
         }
@@ -776,11 +766,16 @@ export function clearCssHighlights() {
 
 
 async function searchItemSortByContent(blockItems: BlockItem[]) {
-    const startTime = performance.now(); // 记录开始时间
 
     let ids = blockItems.map(item => item.block.id);
     let idMap: Map<BlockId, number> = await getBatchBlockIdIndex(ids);
     blockItems.sort((a, b) => {
+        if (a.block.type === "d") {
+            return -1;
+        }
+        if (b.block.type === "d") {
+            return 1;
+        }
         let aIndex = idMap.get(a.block.id) || 0;
         let bIndex = idMap.get(b.block.id) || 0;
         if (aIndex !== bIndex) {
@@ -790,39 +785,40 @@ async function searchItemSortByContent(blockItems: BlockItem[]) {
         }
     });
 
-    const endTime = performance.now(); // 记录结束时间
-    const executionTime = endTime - startTime; // 计算时间差
-    console.log(
-        `原文排序消耗时长 : ${executionTime} ms`,
-    );
     return blockItems;
 }
 
 
 
 async function getBatchBlockIdIndex(ids: string[]): Promise<Map<BlockId, number>> {
-    let idObject = await getBlocksIndexes(ids);
     let idMap: Map<string, number> = new Map();
+    let getSuccess = true;
+    try {
+        let idObject = await getBlocksIndexes(ids);
+        // 遍历对象的键值对，并将它们添加到 Map 中
+        for (const key in idObject) {
+            if (Object.prototype.hasOwnProperty.call(idObject, key)) {
+                const value = idObject[key];
+                idMap.set(key, value);
+            }
+        }
+    } catch (err) {
+        getSuccess = false;
+        console.error("批量获取块索引报错，可能是旧版本不支持批量接口 : ", err)
+    }
 
-    // 遍历对象的键值对，并将它们添加到 Map 中
-    for (const key in idObject) {
-        if (Object.prototype.hasOwnProperty.call(idObject, key)) {
-            const value = idObject[key];
-            idMap.set(key, value);
+    if (!getSuccess) {
+        for (const id of ids) {
+            let index = 0
+            try {
+                index = await getBlockIndex(id);
+            } catch (err) {
+                console.error("获取块索引报错 : ", err)
+            }
+            idMap.set(id, index)
         }
     }
 
-
-    // let idMap: Map<string, number> = new Map();
-    // for (const id of ids) {
-    //     let index = 0
-    //     try {
-    //         index = await getBlockIndex(id);
-    //     } catch (err) {
-    //         console.error("获取块索引报错 : ", err)
-    //     }
-    //     idMap.set(id, index)
-    // }
     return idMap;
 }
 
@@ -864,3 +860,62 @@ export function findScrollingElement(element: HTMLElement): HTMLElement | null {
     }
     return null; // 没有找到具有滚动条的父级元素
 }
+
+
+
+
+export const blockSortSubMenu = (documentItem: DocumentItem, sortCallback: Function) => {
+
+    let menus = [];
+    for (const sortMethodObj of SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT) {
+        menus.push({
+            label: sortMethodObj.text,
+            click: () => {
+                sortCallback(documentItem, sortMethodObj.value)
+            }
+        })
+    }
+    return menus;
+
+    // return [{
+    //     label: "类型",
+    //     click: () => {
+    //         sortCallback(documentItem, "type")
+    //     }
+    // }, {
+    //     label: "按原文内容顺序",
+    //     click: () => {
+    //         sortCallback(documentItem, "content")
+    //     }
+    // }, {
+    //     label: "相关度升序",
+    //     click: () => {
+    //         sortCallback(documentItem, "rankAsc")
+    //     }
+    // }, {
+    //     label: "相关度降序",
+    //     click: () => {
+    //         sortCallback(documentItem, "rankDesc")
+    //     }
+    // }, {
+    //     label: "修改时间升序",
+    //     click: () => {
+    //         sortCallback(documentItem, "modifiedAsc")
+    //     }
+    // }, {
+    //     label: "修改时间降序",
+    //     click: () => {
+    //         sortCallback(documentItem, "modifiedDesc")
+    //     }
+    // }, {
+    //     label: "创建时间升序",
+    //     click: () => {
+    //         sortCallback(documentItem, "createdAsc")
+    //     }
+    // }, {
+    //     label: "创建时间降序",
+    //     click: () => {
+    //         sortCallback(documentItem, "createdDesc")
+    //     }
+    // }];
+};

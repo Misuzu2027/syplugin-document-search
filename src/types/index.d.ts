@@ -100,3 +100,22 @@ interface Window {
         languages: any;
     };
 }
+
+
+interface IMenu {
+    iconClass?: string,
+    label?: string,
+    click?: (element: HTMLElement, event: MouseEvent) => boolean | void | Promise<boolean | void>
+    type?: "separator" | "submenu" | "readonly" | "empty",
+    accelerator?: string,
+    action?: string,
+    id?: string,
+    submenu?: IMenu[]
+    disabled?: boolean
+    icon?: string
+    iconHTML?: string
+    current?: boolean
+    bind?: (element: HTMLElement) => void
+    index?: number
+    element?: HTMLElement
+}

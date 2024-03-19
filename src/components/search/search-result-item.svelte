@@ -79,7 +79,7 @@
         await blockItemsSort(
             documentItem.subItems,
             sortMethod,
-            documentItem.index,
+            documentItem.index + 1,
         );
         documentItemSearchResult = documentItemSearchResult;
         isSearching--;

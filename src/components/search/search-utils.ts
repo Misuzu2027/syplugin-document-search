@@ -146,12 +146,11 @@ export async function processSearchResults(
             documentItem.block = block;
             documentItem.subItems = [];
 
-            if (tempParentItem.subItems) {
+            let subItems = tempParentItem.subItems;
+            if (subItems) {
                 // 让文档块始终在第一个。
-                let subItems = tempParentItem.subItems;
                 let documentBlockItem = subItems.pop()
                 subItems.unshift(documentBlockItem);
-
                 documentItem.subItems = subItems;
             }
 
@@ -194,15 +193,14 @@ export async function processSearchResults(
         }
         documentItem.index = index;
         for (const subItem of documentItem.subItems) {
-            if (documentItem.block.id === subItem.block.id) {
-                continue;
+            if (documentItem.block.id !== subItem.block.id) {
+                index++;
             }
-            index++;
             subItem.index = index;
         }
         index++;
 
-        // 块排序，目前主要处理原文排序，其他顺序已经在mysql中排序过了。
+        // 块排序，目前主要处理原文排序，其他顺序已经在 mysql 中排序过了。
         // 粗略测试觉得 sqlite 中的排序效率更高，可能有索引优化的原因。
         if (contentBlockSortMethod == "content"
             // || contentBlockSortMethod == "rankAsc"

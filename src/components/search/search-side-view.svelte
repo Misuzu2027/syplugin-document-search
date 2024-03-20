@@ -457,7 +457,7 @@
         <span class="fn__space"></span>
     </div>
     <div class="search__layout search__layout--row">
-        {#if !hiddenSearchResult}
+        {#if !hiddenSearchResult }
             <SearchResultItem
                 {documentItemSearchResult}
                 selectedIndex={selectedItemIndex}

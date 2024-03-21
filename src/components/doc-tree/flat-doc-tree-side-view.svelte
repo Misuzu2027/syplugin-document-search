@@ -14,7 +14,7 @@
         Constants,
     } from "siyuan";
     import { EnvConfig } from "@/config/env-config";
-    import { getNotebookMap, getOpenTabAction } from "../search/search-util";
+    import { getNotebookMap } from "../search/search-util";
     import {
         convertIalStringToObject,
         convertIconInIal,
@@ -45,8 +45,8 @@
             return;
         }
         documentSearchInputElement.focus();
-        console.log(clientWidth);
-        if (!lastClientWidth) {
+
+        if (!lastClientWidth && clientWidth > 0) {
             refreshFileTree(searchInputKey, 1);
         }
         lastClientWidth = clientWidth;
@@ -67,11 +67,11 @@
     }
 
     async function openBlockTab(blockId: string) {
-        let actions: TProtyleAction[] = await getOpenTabAction(blockId);
-        actions = actions.filter(
-            (item) =>
-                item !== Constants.CB_GET_HL && item !== Constants.CB_GET_FOCUS,
-        );
+        let actions: TProtyleAction[] = [
+            Constants.CB_GET_FOCUS,
+            Constants.CB_GET_SCROLL,
+        ];
+
         if (EnvConfig.ins.isMobile) {
             openMobileFileById(EnvConfig.ins.app, blockId, actions);
         } else {

@@ -1,4 +1,4 @@
-import { CUSTOM_ICON_MAP } from "@/utils/icons";
+import { CUSTOM_ICON_MAP } from "@/config/icon-constant";
 import DocSearchDockSvelte from "@/components/dock/doc-search-dock.svelte";
 import FlatDocTreeDockSvelte from "@/components/dock/flat-doc-tree-dock.svelte";
 import { EnvConfig } from "@/config/env-config";
@@ -17,10 +17,12 @@ export function initDock() {
 function addDocSearchDock() {
     if (!EnvConfig.ins || !EnvConfig.ins.plugin) {
         console.log("添加搜索 dock 失败。")
+        return;
     }
     let docSearchDockPoisition = SettingConfig.ins.docSearchDockPoisition;
     if (!docSearchDockPoisition || docSearchDockPoisition === "Hidden") {
         console.log("不添加搜索 dock")
+        return;
     }
     let position: any = docSearchDockPoisition;
 
@@ -60,10 +62,12 @@ function addDocSearchDock() {
 function addFlatDocTreeDock() {
     if (!EnvConfig.ins || !EnvConfig.ins.plugin) {
         console.log("添加扁平文档树 dock 失败。")
+        return;
     }
     let docSearchDockPoisition = SettingConfig.ins.docSearchDockPoisition;
     if (!docSearchDockPoisition || docSearchDockPoisition === "Hidden") {
         console.log("不添加扁平化文档树 dock")
+        return;
     }
     let position: any = docSearchDockPoisition;
 
@@ -90,8 +94,7 @@ function addFlatDocTreeDock() {
         },
         init() {
             this.element.innerHTML = "";
-            // fn__flex-1 fn__flex-column file-tree sy__file layout__tab--active
-            this.element.classList.add("fn__flex-1", "fn__flex-column", "file-tree", "sy__file", "layout__tab--active");
+            this.element.classList.add("fn__flex-1", "fn__flex-column", "file-tree", "layout__tab--active");
             flatDocTreeSvelte = new FlatDocTreeDockSvelte({
                 target: this.element,
                 props: {

@@ -1,5 +1,4 @@
 
-
 export const CUSTOM_ICON_MAP =
 {
     iconDocumentSearch: {
@@ -12,8 +11,7 @@ export const CUSTOM_ICON_MAP =
     iconFlatDocTree: {
         id: "iconFlatDocTree",
         source: `<symbol id="iconFlatDocTree" viewBox="0 0 1024 1024">
-    <path d="M843.52 228.8h-82.24V146.88a20.48 20.48 0 0 0-20.48-18.88H180.48a20.48 20.48 0 0 0-20.48 18.88v627.84a20.48 20.48 0 0 0 20.48 20.48h82.24v81.92a20.48 20.48 0 0 0 20.48 20.48H720a20.8 20.8 0 0 0 15.04-6.4l123.2-130.88a21.44 21.44 0 0 0 5.76-14.08V249.28a20.48 20.48 0 0 0-20.48-20.48zM200.96 754.24V167.36h519.68v468.16L608 754.24z m622.08-16l-112 118.4H303.36v-61.44h314.24a20.16 20.16 0 0 0 14.72-6.4l123.52-130.88a21.12 21.12 0 0 0 5.44-14.08V269.76h61.76z"></path>
-    <path d="M307.52 266.56a21.12 21.12 0 1 0 21.12 21.12 21.44 21.44 0 0 0-21.12-21.12zM388.16 306.56h230.08A18.56 18.56 0 0 0 636.8 288a18.88 18.88 0 0 0-18.56-18.88h-230.08a18.88 18.88 0 0 0-18.88 18.88 18.56 18.56 0 0 0 18.88 18.56zM307.52 423.36a21.12 21.12 0 1 0 21.12 21.12 21.12 21.12 0 0 0-21.12-21.12zM388.16 463.36h230.08a18.88 18.88 0 0 0 18.56-18.88 18.56 18.56 0 0 0-18.56-18.88h-230.08a18.56 18.56 0 0 0-18.88 18.88 18.88 18.88 0 0 0 18.88 18.88zM307.52 580.16a21.12 21.12 0 1 0 21.12 20.8 21.12 21.12 0 0 0-21.12-20.8zM636.8 600.96a18.56 18.56 0 0 0-18.56-18.56h-230.08a18.88 18.88 0 1 0 0 37.44h230.08a18.56 18.56 0 0 0 18.56-18.88z"></path>
+    <path d="M896 365.604V896c0 35.346-28.654 64-64 64H192c-35.346 0-64-28.654-64-64V128c0-35.346 28.654-64 64-64h450.535l0.102 0.127c8.653 0.377 17.126 4.244 23.133 11.402l222.968 265.723c5.91 7.044 8.268 15.888 7.262 24.352z m-256-221.22V320h147.36L640 144.384zM832 384H610c-0.335 0-0.668-0.005-1-0.015-0.332 0.01-0.665 0.015-1 0.015-17.673 0-32-14.327-32-32V128H190v768h642V384z m-526-64h174c17.673 0 32 14.327 32 32 0 17.673-14.327 32-32 32H306c-17.673 0-32-14.327-32-32 0-17.673 14.327-32 32-32z m-6 192h425c17.673 0 32 14.327 32 32 0 17.673-14.327 32-32 32H300c-17.673 0-32-14.327-32-32 0-17.673 14.327-32 32-32z m0 192h425c17.673 0 32 14.327 32 32 0 17.673-14.327 32-32 32H300c-17.673 0-32-14.327-32-32 0-17.673 14.327-32 32-32z"></path>
     </symbol>`
     },
     iconSearchSettingExcludeNotebook: {
@@ -50,95 +48,3 @@ export const CUSTOM_ICON_MAP =
     </symbol>`
     },
 };
-
-export function convertIconInIal(icon: string): string {
-    if (icon) {
-        if (icon.includes(".")) {
-            // 如果包含 "."，则认为是图片，生成<img>标签
-            return `<img class="" src="/emojis/${icon}">`;
-        } else {
-            // 如果是Emoji，转换为表情符号
-            const emoji = String.fromCodePoint(parseInt(icon, 16));
-            return emoji;
-        }
-    }
-    // 既不是Emoji也不是图片，返回null
-    return null;
-}
-
-export function convertIalStringToObject(ial: string): { [key: string]: string } {
-    const keyValuePairs = ial.match(/\w+="[^"]*"/g);
-
-    if (!keyValuePairs) {
-        return {};
-    }
-
-    const resultObject: { [key: string]: string } = {};
-
-    keyValuePairs.forEach((pair) => {
-        const [key, value] = pair.split('=');
-        resultObject[key] = value.replace(/"/g, ''); // 去除值中的双引号
-    });
-
-    return resultObject;
-}
-
-
-
-export function getBlockTypeIconHref(type: string, subType: string): string {
-    let iconHref = "";
-    if (type) {
-        if (type === "d") {
-            iconHref = "#iconFile";
-        } else if (type === "h") {
-            if (subType === "h1") {
-                iconHref = "#iconH1";
-            } else if (subType === "h2") {
-                iconHref = "#iconH2";
-            } else if (subType === "h3") {
-                iconHref = "#iconH3";
-            } else if (subType === "h4") {
-                iconHref = "#iconH4";
-            } else if (subType === "h5") {
-                iconHref = "#iconH5";
-            } else if (subType === "h6") {
-                iconHref = "#iconH6";
-            }
-        } else if (type === "c") {
-            iconHref = "#iconCode";
-        } else if (type === "html") {
-            iconHref = "#iconHTML5";
-        } else if (type === "p") {
-            iconHref = "#iconParagraph";
-        } else if (type === "m") {
-            iconHref = "#iconMath";
-        } else if (type === "t") {
-            iconHref = "#iconTable";
-        } else if (type === "b") {
-            iconHref = "#iconQuote";
-        } else if (type === "l") {
-            if (subType === "o") {
-                iconHref = "#iconOrderedList";
-            } else if (subType === "u") {
-                iconHref = "#iconList";
-            } else if (subType === "t") {
-                iconHref = "#iconCheck";
-            }
-        } else if (type === "i") {
-            iconHref = "#iconListItem";
-        } else if (type === "av") {
-            iconHref = "#iconDatabase";
-        } else if (type === "s") {
-            iconHref = "#iconSuper";
-        } else if (type === "audio") {
-            iconHref = "#iconRecord";
-        } else if (type === "query_embed") {
-            iconHref = "#iconSQL";
-        } else if (type === "tb") {
-            iconHref = "#iconLine";
-        } else if (type === "widget") {
-            iconHref = "#iconBoth";
-        }
-    }
-    return iconHref;
-}

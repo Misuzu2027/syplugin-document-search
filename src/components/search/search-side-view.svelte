@@ -22,7 +22,7 @@
         delayedTwiceRefresh,
         clearCssHighlights,
         findScrollingElement,
-    } from "@/components/search/search-utils";
+    } from "@/components/search/search-util";
 
     // let element: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;

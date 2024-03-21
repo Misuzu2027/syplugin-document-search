@@ -5,11 +5,11 @@ import {
 // import "@/index.scss";
 
 import SearchPreviewSvelte from "@/components/search/search-preview-view.svelte";
-import { CUSTOM_ICON_MAP } from "@/utils/icons";
+import { CUSTOM_ICON_MAP } from "@/config/icon-constant";
 import { SettingConfig } from "@/services/setting-config";
 import { EnvConfig } from "@/config/env-config";
 import "./index.scss"
-import { initDock } from "./components/dock/dock-utils";
+import { initDock } from "./components/dock/dock-util";
 import { openSettingsDialog } from "./components/setting/setting-util";
 
 

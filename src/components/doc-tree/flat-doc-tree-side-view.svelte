@@ -14,11 +14,18 @@
         Constants,
     } from "siyuan";
     import { EnvConfig } from "@/config/env-config";
-    import { getNotebookMap, getOpenTabAction } from "../search/search-utils";
-    import { convertIalStringToObject, convertIconInIal } from "@/utils/icons";
+    import { getNotebookMap, getOpenTabAction } from "../search/search-util";
+    import {
+        convertIalStringToObject,
+        convertIconInIal,
+    } from "@/utils/icon-util";
     import { SettingConfig } from "@/services/setting-config";
     import { removePrefixAndSuffix } from "@/utils/string-util";
     import { SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
+    import {
+        convertDateTimeInBlock,
+        formatRelativeTimeInBlock,
+    } from "@/utils/datetime-util";
 
     let documentSearchInputElement: HTMLInputElement;
     let selectedItemIndex: number = -1;
@@ -174,11 +181,14 @@
         ariaLabelRow.push(`<br>笔记本 ${boxName}`);
         ariaLabelRow.push(`<br>路径 ${block.hpath}`);
 
+        let updated = formatRelativeTimeInBlock(block.updated);
+        let created = convertDateTimeInBlock(block.created);
+
         ariaLabelRow.push(
-            `<br>${window.siyuan.languages.modifiedAt} ${block.updated}`,
+            `<br>${window.siyuan.languages.modifiedAt} ${updated}`,
         );
         ariaLabelRow.push(
-            `<br>${window.siyuan.languages.createdAt} ${block.created}`,
+            `<br>${window.siyuan.languages.createdAt} ${created}`,
         );
 
         let ariaLabel = ariaLabelRow.join("");

@@ -24,7 +24,7 @@
         getProtyleAction,
         delayedTwiceRefresh,
         getDocumentSearchResult,
-    } from "@/components/search/search-utils";
+    } from "@/components/search/search-util";
     import { handleSearchDragMousdown } from "@/lib/SearchUtil";
 
     let element: HTMLElement;

@@ -4,7 +4,7 @@ import { DocumentQueryCriteria, generateDocumentSearchSql } from "@/services/sea
 import { SettingConfig } from "@/services/setting-config";
 import { checkBlockFold, getBlockIndex, getBlocksIndexes, lsNotebooks, sql } from "@/utils/api";
 import { highlightBlockContent } from "@/utils/html-util";
-import { convertIalStringToObject, convertIconInIal } from "@/utils/icons";
+import { convertIalStringToObject, convertIconInIal } from "@/utils/icon-util";
 import { getObjectSizeInKB } from "@/utils/object-util";
 import { Constants, TProtyleAction } from "siyuan";
 

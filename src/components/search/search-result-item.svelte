@@ -1,11 +1,11 @@
 <script lang="ts">
     import { showMessage } from "siyuan";
     import { BlockItem, DocumentItem } from "@/config/search-model";
-    import { getBlockTypeIconHref } from "@/utils/icons";
+    import { getBlockTypeIconHref } from "@/utils/icon-util";
     import {
         blockItemsSort,
         blockSortSubMenu,
-    } from "@/components/search/search-utils";
+    } from "@/components/search/search-util";
     import { MenuItem } from "@/lib/Menu";
 
     export let documentItemSearchResult: DocumentItem[];

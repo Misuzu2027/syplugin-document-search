@@ -63,5 +63,7 @@
             {/each}
         </select>
     </label>
-    <span >修改 dock 位置后需要重启软件或重置外观后才会生效。</span>
+    <span class="fn__flex b3-label config__item">
+        <span>配置中修改 dock 位置后需要重启软件或重置外观后才会生效。</span>
+    </span>
 </div>

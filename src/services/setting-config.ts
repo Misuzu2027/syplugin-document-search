@@ -21,6 +21,9 @@ export class SettingConfig {
 
         doubleClickTimeout: 190 as number, // 双击阈值
         refreshPreviewHighlightTimeout: 240 as number, // 刷新预览区高亮延迟，太短可能会高亮失败，不需要可以设置为0
+
+        docSearchDockPoisition: "LeftTop" as DockPosition,
+        flatDocTreeDockPoisition: "LeftTop" as DockPosition,
     };
 
 
@@ -128,6 +131,14 @@ export class SettingConfig {
         return this.settings.refreshPreviewHighlightTimeout;
     }
 
+    get docSearchDockPoisition(): DockPosition {
+        return this.settings.docSearchDockPoisition;
+    }
+
+    get flatDocTreeDockPoisition(): DockPosition {
+        return this.settings.flatDocTreeDockPoisition;
+    }
+
     updatePageSize(pageSize: number) {
         this.settings.pageSize = pageSize;
         this.save();
@@ -175,6 +186,17 @@ export class SettingConfig {
 
     updateRefreshPreviewHighlightTimeout(refreshPreviewHighlightTimeout: number) {
         this.settings.refreshPreviewHighlightTimeout = refreshPreviewHighlightTimeout;
+        this.save();
+    }
+
+
+    updateDocSearchDockPoisition(docSearchDockPoisition: DockPosition) {
+        this.settings.docSearchDockPoisition = docSearchDockPoisition;
+        this.save();
+    }
+
+    updateFlatDocTreeDockPoisition(flatDocTreeDockPoisition: DockPosition) {
+        this.settings.flatDocTreeDockPoisition = flatDocTreeDockPoisition;
         this.save();
     }
 }

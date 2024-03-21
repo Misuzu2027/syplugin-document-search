@@ -1,6 +1,6 @@
 <script lang="ts">
     import { EnvConfig } from "@/config/env-config";
-    import SearchSideView from "./search-side-view.svelte";
+    import SearchSideView from "../search/search-side-view.svelte";
 
     let isMobile = EnvConfig.ins.isMobile;
     let searchSideViewSvelte: SearchSideView;

@@ -27,6 +27,68 @@ export class DocumentQueryCriteria {
 }
 
 
+
+export function generateDocumentListSql(
+    queryCriteria: DocumentQueryCriteria,
+): string {
+
+    let keywords = queryCriteria.keywords;
+    let pages = queryCriteria.pages;
+    let documentSortMethod = queryCriteria.documentSortMethod;
+    let includeConcatFields = queryCriteria.includeConcatFields;
+    let columns: string[] = [" * "];
+
+    let contentParamSql = "";
+    if (keywords && keywords.length > 0) {
+        let concatConcatFieldSql = getConcatFieldSql("concatContent", includeConcatFields);
+        contentParamSql = " AND " + generateOrLikeConditions("concatContent", keywords);
+        columns.push(` ${concatConcatFieldSql} `);
+    }
+
+    let orders = [];
+    if (documentSortMethod == 'modifiedAsc') {
+        orders = [" updated ASC "]
+    } else if (documentSortMethod == 'modifiedDesc') {
+        orders = [" updated DESC "]
+    } else if (documentSortMethod == 'createdAsc') {
+        orders = [" created ASC "]
+    } else if (documentSortMethod == 'createdDesc') {
+        orders = [" created DESC "]
+    } else if (documentSortMethod == 'refCountAsc') {
+        columns.push(" (SELECT count(1) FROM refs WHERE def_block_root_id = blocks.id) refCount ");
+        orders = [" refCount ASC ", " updated DESC "]
+    } else if (documentSortMethod == 'refCountDesc') {
+        columns.push(" (SELECT count(1) FROM refs WHERE def_block_root_id = blocks.id) refCount ");
+        orders = [" refCount DESC ", " updated DESC "]
+    }
+
+    let columnSql = columns.join(" , ");
+    let orderSql = generateOrderSql(orders);
+    let limitSql = generateLimitSql(pages);
+    /*
+            * ,
+        ${concatConcatFieldSql},
+        (SELECT count(1) FROM refs WHERE def_block_root_id = blocks.id) refCount
+    */
+
+    let basicSql = `
+    SELECT
+      ${columnSql}
+
+    FROM
+        blocks 
+    WHERE
+        type = 'd' 
+        ${contentParamSql}
+
+    ${orderSql}
+    ${limitSql}
+    `
+
+    return cleanSpaceText(basicSql);
+}
+
+
 export function generateDocumentSearchSql(
     queryCriteria: DocumentQueryCriteria,
 ): string {

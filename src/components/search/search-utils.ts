@@ -3,6 +3,7 @@ import { SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT, SETTING_DOCUMENT_SORT_METHOD
 import { DocumentQueryCriteria, generateDocumentSearchSql } from "@/services/search-sql";
 import { SettingConfig } from "@/services/setting-config";
 import { checkBlockFold, getBlockIndex, getBlocksIndexes, lsNotebooks, sql } from "@/utils/api";
+import { highlightBlockContent } from "@/utils/html-util";
 import { convertIalStringToObject, convertIconInIal } from "@/utils/icons";
 import { getObjectSizeInKB } from "@/utils/object-util";
 import { Constants, TProtyleAction } from "siyuan";
@@ -471,59 +472,7 @@ function getBlockSortFun(contentBlockSortMethod: string) {
 
 }
 
-function highlightBlockContent(block: Block, keywords: string[]) {
-    if (!block) {
-        return;
-    }
-    let contentHtml = getHighlightedContent(block.content, keywords);
-    let nameHml = getHighlightedContent(block.name, keywords);
-    let aliasHtml = getHighlightedContent(block.alias, keywords);
-    let memoHtml = getHighlightedContent(block.memo, keywords);
-    block.content = contentHtml;
-    block.name = nameHml;
-    block.alias = aliasHtml;
-    block.memo = memoHtml;
-}
 
-function getHighlightedContent(
-    content: string,
-    keywords: string[],
-): string {
-    if (!content) {
-        return content;
-    }
-    let highlightedContent: string = escapeHtml(content);
-
-    if (keywords) {
-        highlightedContent = highlightMatches(highlightedContent, keywords);
-    }
-    return highlightedContent;
-}
-
-function highlightMatches(content: string, keywords: string[]): string {
-    if (!keywords.length || !content) {
-        return content; // 返回原始字符串，因为没有需要匹配的内容
-    }
-
-    const regexPattern = new RegExp(`(${keywords.join("|")})`, "gi");
-    const highlightedString = content.replace(
-        regexPattern,
-        "<mark>$1</mark>",
-    );
-    return highlightedString;
-}
-
-function escapeHtml(input: string): string {
-    const escapeMap: Record<string, string> = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-    };
-
-    return input.replace(/[&<>"']/g, (match) => escapeMap[match]);
-}
 
 
 function countKeywords(content: string, keywords: string[]): number {

@@ -143,3 +143,62 @@ export const SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT = [
     ...SETTING_DOCUMENT_SORT_METHOD_ELEMENT,
 ];
 
+// "LeftTop" | "LeftBottom" | "RightTop" | "RightBottom" | "BottomLeft" | "BottomRight"
+export const SETTING_DOC_POISITION_ELEMENT = [
+    {
+        text: "不显示",
+        value: "Hidden",
+    },
+    {
+        text: "左侧上方",
+        value: "LeftTop",
+    },
+    {
+        text: "左侧下方",
+        value: "LeftBottom",
+    },
+    {
+        text: "右侧上方",
+        value: "RightTop",
+    },
+    {
+        text: "右侧下方",
+        value: "RightBottom",
+    }, {
+        text: "下侧左方",
+        value: "BottomLeft",
+    },
+    {
+        text: "下侧右方",
+        value: "BottomRight",
+    },
+];
+
+
+
+export const SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT = [
+    {
+        text: "修改时间升序",
+        value: "modifiedAsc",
+    },
+    {
+        text: "修改时间降序",
+        value: "modifiedDesc",
+    },
+    {
+        text: "创建时间升序",
+        value: "createdAsc",
+    },
+    {
+        text: "创建时间降序",
+        value: "createdDesc",
+    },
+    {
+        text: "引用次数升序",
+        value: "refCountAsc",
+    },
+    {
+        text: "引用次数降序",
+        value: "refCountDesc",
+    },
+];

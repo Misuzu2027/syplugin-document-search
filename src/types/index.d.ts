@@ -119,3 +119,6 @@ interface IMenu {
     index?: number
     element?: HTMLElement
 }
+
+
+type DockPosition = "Hidden" | "LeftTop" | "LeftBottom" | "RightTop" | "RightBottom" | "BottomLeft" | "BottomRight";

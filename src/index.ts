@@ -5,20 +5,20 @@ import {
 // import "@/index.scss";
 
 import SearchPreviewSvelte from "@/components/search/search-preview-view.svelte";
-import SearchDockSvelte from "@/components/search/search-dock-view.svelte";
 import { CUSTOM_ICON_MAP } from "@/utils/icons";
 import { SettingConfig } from "@/services/setting-config";
 import { EnvConfig } from "@/config/env-config";
 import "./index.scss"
+import { initDock } from "./components/dock/dock-utils";
+import { openSettingsDialog } from "./components/setting/setting-util";
 
 
 const SEARCH_TAB_TYPE = "search_home_tab";
-const SEARCH_DOCK_TYPE = "search_dock_tab";
+
 
 export default class PluginSample extends Plugin {
 
     private documentSearchTab: SearchPreviewSvelte;
-    private documentSearchDock: SearchDockSvelte;
 
     async onload() {
         EnvConfig.ins.init(this);
@@ -43,37 +43,10 @@ export default class PluginSample extends Plugin {
                 }
             });
         }
-        let searchPageDock: SearchDockSvelte;
-        this.addDock({
-            config: {
-                position: "LeftTop",
-                size: { width: 300, height: 0 },
-                icon: CUSTOM_ICON_MAP.iconDocumentSearch.id,
-                title: this.i18n.documentSearchIconTip,
-                hotkey: "⌥Q",
-                show: false,
-            },
-            data: {},
-            type: SEARCH_DOCK_TYPE,
-            resize() {
-                if (searchPageDock) {
-                    searchPageDock.resize(this.element.clientWidth);
-                }
-            },
-            update() {
-            },
-            init() {
-                this.element.innerHTML = "";
-                searchPageDock = new SearchDockSvelte({
-                    target: this.element,
-                    props: {
-                    }
-                });
-            },
-            destroy() {
-            }
-        });
 
+        initDock();
+
+        //  this.openSetting.bind(this);
 
         this.addCommand({
             langKey: "打开文档搜索页签",
@@ -83,6 +56,11 @@ export default class PluginSample extends Plugin {
             },
         });
 
+    }
+
+
+    openSetting(): void {
+        openSettingsDialog("settingHub");
     }
 
     onLayoutReady() {

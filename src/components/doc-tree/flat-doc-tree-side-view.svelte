@@ -107,7 +107,7 @@
         keywords = Array.from(uniqueKeywordsSet);
         let queryCriteria: DocumentQueryCriteria = new DocumentQueryCriteria(
             keywords,
-            [pageNum, 50],
+            [pageNum, 30],
             flatDocTreeSortMethod,
             null,
             null,

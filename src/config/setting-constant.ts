@@ -146,32 +146,36 @@ export const SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT = [
 // "LeftTop" | "LeftBottom" | "RightTop" | "RightBottom" | "BottomLeft" | "BottomRight"
 export const SETTING_DOC_POISITION_ELEMENT = [
     {
-        text: "不显示",
-        value: "Hidden",
-    },
-    {
-        text: "左侧上方",
+        text: "显示",
         value: "LeftTop",
     },
     {
-        text: "左侧下方",
-        value: "LeftBottom",
+        text: "隐藏",
+        value: "Hidden",
     },
-    {
-        text: "右侧上方",
-        value: "RightTop",
-    },
-    {
-        text: "右侧下方",
-        value: "RightBottom",
-    }, {
-        text: "下侧左方",
-        value: "BottomLeft",
-    },
-    {
-        text: "下侧右方",
-        value: "BottomRight",
-    },
+    // {
+    //     text: "左侧上方",
+    //     value: "LeftTop",
+    // },
+    // {
+    //     text: "左侧下方",
+    //     value: "LeftBottom",
+    // },
+    // {
+    //     text: "右侧上方",
+    //     value: "RightTop",
+    // },
+    // {
+    //     text: "右侧下方",
+    //     value: "RightBottom",
+    // }, {
+    //     text: "下侧左方",
+    //     value: "BottomLeft",
+    // },
+    // {
+    //     text: "下侧右方",
+    //     value: "BottomRight",
+    // },
 ];
 
 

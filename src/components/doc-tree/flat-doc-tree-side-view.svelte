@@ -38,6 +38,10 @@
 
     onMount(async () => {
         resize();
+        // EnvConfig.ins.plugin.eventBus.on(
+        //     "open-menu-doctree",
+        //     handleOpenMenuDoctreeEvent,
+        // );
     });
 
     export function resize(clientWidth?: number) {
@@ -57,10 +61,12 @@
         refreshFileTree(searchInputKey, 1);
     }
 
-    async function itemClick(item: DocumentTreeItemInfo) {
+    async function itemClick(event, item: DocumentTreeItemInfo) {
         if (!item || !item.block) {
             return;
         }
+        event.stopPropagation();
+        event.preventDefault();
         let blockId = item.block.id;
         selectedItemIndex = item.index;
         openBlockTab(blockId);
@@ -345,8 +351,11 @@
     </div>
 </div>
 <div class="fn__flex-1">
-    <ul class="b3-list b3-list--background file-tree">
-        {#each documentItems as item}
+    {#each documentItems as item}
+        <ul
+            class="b3-list b3-list--background file-tree"
+            data-url={item.block.box}
+        >
             <li
                 data-node-id={item.block.id}
                 data-name={escapeAttr(item.block.name)}
@@ -356,7 +365,8 @@
                     ? 'b3-list-item--focus'
                     : ''} "
                 data-path={item.block.path}
-                on:click={() => itemClick(item)}
+                data-flat-doc-tree="true"
+                on:click={(event) => itemClick(event, item)}
                 on:keydown={handleKeyDownDefault}
             >
                 <span class="b3-list-item__icon">
@@ -384,8 +394,8 @@
                     </span>
                 {/if}
             </li>
-        {/each}
-    </ul>
+        </ul>
+    {/each}
 </div>
 <div class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}">
     <!-- svelte-ignore a11y-missing-attribute -->

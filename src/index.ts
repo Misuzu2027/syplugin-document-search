@@ -22,7 +22,8 @@ export default class PluginSample extends Plugin {
 
     async onload() {
         EnvConfig.ins.init(this);
-        SettingConfig.ins.load(this);
+        let settingLoadPromise: Promise<void> = SettingConfig.ins.load(this);
+        settingLoadPromise.then(this.settingLoadAfter);
 
         // 图标的制作参见帮助文档
         for (const key in CUSTOM_ICON_MAP) {
@@ -44,7 +45,6 @@ export default class PluginSample extends Plugin {
             });
         }
 
-        initDock();
 
         //  this.openSetting.bind(this);
 
@@ -55,6 +55,12 @@ export default class PluginSample extends Plugin {
                 this.openDocumentSearchTab();
             },
         });
+
+    }
+
+    settingLoadAfter(): void {
+
+        initDock();
 
     }
 

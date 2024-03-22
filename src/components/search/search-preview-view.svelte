@@ -165,7 +165,7 @@
         }
     }
 
-    function clickItem(item: BlockItem) {
+    function clickItem(event, item: BlockItem) {
         let block = item.block;
         let blockId = block.id;
         selectedItemIndex = item.index;
@@ -184,6 +184,9 @@
             openBlockTab(blockId);
             itemClickCount = 0; // 重置计数
         }
+
+        event.stopPropagation();
+        event.preventDefault();
     }
 
     function openBlockTab(blockId: string) {

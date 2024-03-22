@@ -13,7 +13,6 @@ export function initDock() {
     addFlatDocTreeDock();
 }
 
-
 function addDocSearchDock() {
     if (!EnvConfig.ins || !EnvConfig.ins.plugin) {
         console.log("添加搜索 dock 失败。")
@@ -27,8 +26,8 @@ function addDocSearchDock() {
     let position: any = docSearchDockPoisition;
 
     let plugin = EnvConfig.ins.plugin;
-    let searchPageDock: DocSearchDockSvelte;
-    plugin.addDock({
+    let docSearchSvelet: DocSearchDockSvelte;
+    let dockRet = plugin.addDock({
         config: {
             position: position,
             size: { width: 300, height: 0 },
@@ -40,15 +39,15 @@ function addDocSearchDock() {
         data: {},
         type: DOC_SEARCH_DOCK_TYPE,
         resize() {
-            if (searchPageDock) {
-                searchPageDock.resize(this.element.clientWidth);
+            if (docSearchSvelet) {
+                docSearchSvelet.resize(this.element.clientWidth);
             }
         },
         update() {
         },
         init() {
             this.element.innerHTML = "";
-            searchPageDock = new DocSearchDockSvelte({
+            docSearchSvelet = new DocSearchDockSvelte({
                 target: this.element,
                 props: {
                 }
@@ -57,6 +56,8 @@ function addDocSearchDock() {
         destroy() {
         }
     });
+
+    EnvConfig.ins.docSearchDock = dockRet;
 }
 
 function addFlatDocTreeDock() {
@@ -64,19 +65,19 @@ function addFlatDocTreeDock() {
         console.log("添加扁平文档树 dock 失败。")
         return;
     }
-    let docSearchDockPoisition = SettingConfig.ins.docSearchDockPoisition;
-    if (!docSearchDockPoisition || docSearchDockPoisition === "Hidden") {
+    let flatDocTreeDockPoisition = SettingConfig.ins.flatDocTreeDockPoisition;
+    if (!flatDocTreeDockPoisition || flatDocTreeDockPoisition === "Hidden") {
         console.log("不添加扁平化文档树 dock")
         return;
     }
-    let position: any = docSearchDockPoisition;
+    let position: any = flatDocTreeDockPoisition;
 
     let plugin = EnvConfig.ins.plugin;
     let flatDocTreeSvelte: FlatDocTreeDockSvelte;
-    plugin.addDock({
+    let dockRet = plugin.addDock({
         config: {
             position: position,
-            size: { width: 220, height: 0 },
+            size: { width: 240, height: 0 },
             icon: CUSTOM_ICON_MAP.iconFlatDocTree.id,
             title: "扁平化文档树",
             hotkey: "⌥E",
@@ -104,4 +105,7 @@ function addFlatDocTreeDock() {
         destroy() {
         }
     });
+
+    EnvConfig.ins.flatDocTreeDock = dockRet;
+
 }

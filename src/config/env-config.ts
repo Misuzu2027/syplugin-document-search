@@ -1,5 +1,5 @@
 import Instance from "@/utils/Instance";
-import { App, Plugin, getFrontend } from "siyuan";
+import { App, IDockModel, IPluginDockTab, Plugin, getFrontend } from "siyuan";
 
 export class EnvConfig {
 
@@ -28,6 +28,9 @@ export class EnvConfig {
         this._plugin = plugin;
     }
 
+
+    docSearchDock:{ config: IPluginDockTab, model: IDockModel };
+    flatDocTreeDock:{ config: IPluginDockTab, model: IDockModel };
 
 
 

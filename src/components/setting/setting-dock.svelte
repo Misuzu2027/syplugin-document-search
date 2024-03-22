@@ -1,6 +1,7 @@
 <script lang="ts">
     import { SettingConfig } from "@/services/setting-config";
     import { SETTING_DOC_POISITION_ELEMENT } from "@/config/setting-constant";
+
     let docSearchDockPoisition: DockPosition =
         SettingConfig.ins.docSearchDockPoisition;
     let flatDocTreeDockPoisition: DockPosition =
@@ -9,6 +10,7 @@
     function docSearchDockPoisitionChange(event) {
         docSearchDockPoisition = event.target.value;
         SettingConfig.ins.updateDocSearchDockPoisition(docSearchDockPoisition);
+        window.location.reload();
     }
 
     function flatDocTreeDockPoisitionChange(event) {
@@ -16,6 +18,7 @@
         SettingConfig.ins.updateFlatDocTreeDockPoisition(
             flatDocTreeDockPoisition,
         );
+        window.location.reload();
     }
 </script>
 
@@ -64,6 +67,8 @@
         </select>
     </label>
     <span class="fn__flex b3-label config__item">
-        <span>配置中修改 dock 位置后需要重启软件或重置外观后才会生效。</span>
+        <span
+            >注：修改 Dock 会刷新界面。</span
+        >
     </span>
 </div>

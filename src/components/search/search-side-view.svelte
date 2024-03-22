@@ -163,7 +163,7 @@
         }
     }
 
-    function clickItem(item: DocumentItem) {
+    function clickItem(event, item: DocumentItem) {
         let block = item.block;
         let blockId = block.id;
         selectedItemIndex = item.index;
@@ -171,6 +171,8 @@
         // documentSearchInputFocus();
 
         openBlockTab(blockId);
+        event.stopPropagation();
+        event.preventDefault();
     }
 
     async function openBlockTab(blockId: string) {
@@ -457,7 +459,7 @@
         <span class="fn__space"></span>
     </div>
     <div class="search__layout search__layout--row">
-        {#if !hiddenSearchResult }
+        {#if !hiddenSearchResult}
             <SearchResultItem
                 {documentItemSearchResult}
                 selectedIndex={selectedItemIndex}

@@ -9,14 +9,14 @@
     import { MenuItem } from "@/lib/Menu";
 
     export let documentItemSearchResult: DocumentItem[];
-    export let clickCallback: (item: BlockItem) => void;
+    export let clickCallback: (event, item: BlockItem) => void;
     export let selectedIndex: number = 0;
 
     let isSearching: number = 0;
 
-    function itemClick(item: BlockItem) {
+    function itemClick(event, item: BlockItem) {
         if (clickCallback) {
-            clickCallback(item);
+            clickCallback(event, item);
         }
     }
 
@@ -153,7 +153,7 @@
                 {subItem.index === selectedIndex ? 'b3-list-item--focus' : ''}"
                     data-node-id={subItem.block.id}
                     data-root-id={subItem.block.root_id}
-                    on:click={() => itemClick(subItem)}
+                    on:click={(event) => itemClick(event, subItem)}
                     on:keydown={handleKeyDownDefault}
                 >
                     <svg class="b3-list-item__graphic">

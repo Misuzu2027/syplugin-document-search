@@ -207,7 +207,7 @@ export async function processSearchResults(
             // || contentBlockSortMethod == "rankAsc"
             // || contentBlockSortMethod == "rankDesc"
         ) {
-            await blockItemsSort(documentItem.subItems, contentBlockSortMethod, documentItem.index + 1);
+            await blockItemsSort(documentItem.subItems, contentBlockSortMethod, documentItem.index);
         }
     }
 
@@ -317,6 +317,9 @@ export async function blockItemsSort(
     blockItems: BlockItem[],
     contentBlockSortMethod: string,
     startIndex: number,) {
+    if (!blockItems || blockItems.length <= 0) {
+        return;
+    }
     if (contentBlockSortMethod == "content") {
         await searchItemSortByContent(blockItems);
     } else {
@@ -330,6 +333,9 @@ export async function blockItemsSort(
     }
     // 排序后再处理一下搜索结果中的索引，用来上下键选择。
     let index = startIndex;
+    if (blockItems[0].block.type != "d") {
+        index++;
+    }
     for (const item of blockItems) {
         item.index = index;
         index++;

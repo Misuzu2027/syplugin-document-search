@@ -41,7 +41,7 @@ export function generateDocumentListSql(
     let contentParamSql = "";
     if (keywords && keywords.length > 0) {
         let concatConcatFieldSql = getConcatFieldSql("concatContent", includeConcatFields);
-        contentParamSql = " AND " + generateOrLikeConditions("concatContent", keywords);
+        contentParamSql = " AND " + generateAndLikeConditions("concatContent", keywords);
         columns.push(` ${concatConcatFieldSql} `);
     }
 

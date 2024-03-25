@@ -80,6 +80,8 @@ export function getBlockTypeIconHref(type: string, subType: string): string {
             iconHref = "#iconSuper";
         } else if (type === "audio") {
             iconHref = "#iconRecord";
+        } else if (type === "video") {
+            iconHref = "#iconVideo";
         } else if (type === "query_embed") {
             iconHref = "#iconSQL";
         } else if (type === "tb") {

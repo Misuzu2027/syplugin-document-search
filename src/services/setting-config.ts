@@ -7,7 +7,8 @@ const SettingFile = 'search-setting.json';
 
 export class SettingConfig {
     private defaultSettings = {
-        defaultConentFields: ["content", "tag"],
+        defaultContentFields: ["content", "tag"],
+        defaultIncludeTypes: ["audio", "video"],
     }
     private settings = {
         pageSize: 10 as number, // 每页的文档数
@@ -91,7 +92,8 @@ export class SettingConfig {
     }
 
     get includeTypes(): string[] {
-        return this.settings.includeTypes;
+        let includeTypes = [...this.defaultSettings.defaultIncludeTypes, ...this.settings.includeTypes];    
+        return includeTypes;
     }
 
     get includeAttrFields(): string[] {
@@ -99,7 +101,7 @@ export class SettingConfig {
     }
 
     get includeQueryFields(): string[] {
-        let queryFields = [...this.defaultSettings.defaultConentFields, ...this.settings.includeAttrFields];
+        let queryFields = [...this.defaultSettings.defaultContentFields, ...this.settings.includeAttrFields];
         return queryFields;
     }
 

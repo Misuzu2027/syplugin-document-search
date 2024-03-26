@@ -77,6 +77,30 @@ export const SETTING_BLOCK_TYPE_ELEMENT = [
         dataType: "databaseBlock",
         value: "av",
     },
+    {
+        icon: "#iconVideo",
+        text: "视频",
+        dataType: "videoBlock",
+        value: "video",
+    }, 
+    {
+        icon: "#iconRecord",
+        text: "音频",
+        dataType: "audioBlock",
+        value: "audio",
+    }, 
+    {
+        icon: "#iconLanguage",
+        text: "IFrame",
+        dataType: "iFrameBlock",
+        value: "iframe",
+    }, 
+     {
+        icon: "#iconBoth",
+        text: "挂件",
+        dataType: "widgetBlock",
+        value: "widget",
+    },
 ];
 
 export const SETTING_BLOCK_ATTR_ELEMENT = [

@@ -88,6 +88,8 @@ export function getBlockTypeIconHref(type: string, subType: string): string {
             iconHref = "#iconLine";
         } else if (type === "widget") {
             iconHref = "#iconBoth";
+        } else if (type === "iframe") {
+            iconHref = "#iconLanguage";
         }
     }
     return iconHref;

@@ -8,11 +8,10 @@ const SettingFile = 'search-setting.json';
 export class SettingConfig {
     private defaultSettings = {
         defaultContentFields: ["content", "tag"],
-        defaultIncludeTypes: ["audio", "video"],
     }
     private settings = {
         pageSize: 10 as number, // 每页的文档数
-        includeTypes: ["d", "h", "c", "m", "t", "p", "html", "av"] as BlockType[], // 查询的类型
+        includeTypes: ["d", "h", "c", "m", "t", "p", "html", "av", "video", "audio"] as BlockType[], // 查询的类型
         includeAttrFields: ["name", "alias", "memo"] as string[], // 查询的属性字段
         excludeNotebookIds: [] as string[], // 排除的笔记本ID
         maxExpandCount: 100 as number,  // 最大展开数量，查询结果超过这个数量会自动折叠
@@ -92,7 +91,7 @@ export class SettingConfig {
     }
 
     get includeTypes(): string[] {
-        let includeTypes = [...this.defaultSettings.defaultIncludeTypes, ...this.settings.includeTypes];    
+        let includeTypes = [...this.settings.includeTypes];
         return includeTypes;
     }
 

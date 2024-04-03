@@ -101,6 +101,9 @@ function addFlatDocTreeDock() {
                 props: {
                 }
             });
+            if (EnvConfig.ins.isMobile) {
+                flatDocTreeSvelte.resize(1);
+            }
         },
         destroy() {
         }

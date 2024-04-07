@@ -276,6 +276,16 @@
         }
     }
 
+    function clickExpandAll() {
+        toggleAllCollpsedItem(documentItemSearchResult, false);
+        documentItemSearchResult = documentItemSearchResult;
+    }
+
+    function clickCollapseAll() {
+        toggleAllCollpsedItem(documentItemSearchResult, true);
+        documentItemSearchResult = documentItemSearchResult;
+    }
+
     function clickSearchNotebookFilter() {
         openSettingsDialog("settingNotebook");
     }
@@ -445,9 +455,7 @@
                     class="block__icon block__icon--show ariaLabel"
                     data-position="9bottom"
                     aria-label="展开"
-                    on:click={() => {
-                        toggleAllCollpsedItem(documentItemSearchResult, false);
-                    }}
+                    on:click={clickExpandAll}
                     on:keydown={handleKeyDownDefault}
                 >
                     <svg><use xlink:href="#iconExpand"></use></svg>
@@ -458,9 +466,7 @@
                     class="block__icon block__icon--show ariaLabel"
                     data-position="9bottom"
                     aria-label="折叠"
-                    on:click={() => {
-                        toggleAllCollpsedItem(documentItemSearchResult, true);
-                    }}
+                    on:click={clickCollapseAll}
                     on:keydown={handleKeyDownDefault}
                 >
                     <svg><use xlink:href="#iconContract"></use></svg>

@@ -1,62 +1,62 @@
-# 基于文档搜索
+[中文](README_zh_CN.md)
 
 
-* 包含功能
-  * 基于文档进行搜索，与官方搜索功能隔离，不会影响官方搜索，支持手机端使用。
-  * 搜索结果支持预览和双击打开文档，与官方操作逻辑一致。（如果双击无法打开文档，可以在其他设置中修改 “双击时间阈值”）
-  * 预览区支持 代码块、数据库 关键字高亮和定位（官方搜索目前不支持）
-  * 电脑端 Dock(侧边栏）搜索，支持打开文档后高亮。
-  * 支持右键单击文档后，进行单篇文档内容排序。
-* 当前不足（后期计划）
-  * 查询存在竞态条件
-    * 前一次查询较慢（数据量大或网络问题）还未响应，后一次查询已经显示，此时前一次接口响应会覆盖后一次的显示。
-* 一些默认配置
-  * 默认查询的块类型：
-    * 文档, 标题, 代码块, 数学公式块, 表格块, 段落块, html块, 数据库
-  * 默认会匹配块的命名、别名、备注
-  * 默认排序方式：
-    * 文档排序：相关度降序
-    * 内容块排序：类型
-  * 每页文档数量：10
-  * 默认最大展开数量：100
+## Document-based Search
+### Features
+* Search based on documents
+* Ability to set the type of search blocks (isolated from official search types, without affecting each other.)
+* Support filtering out less frequently used notebooks
+* Support for mobile use (requires Dock bar to be enabled)
+### Functions
+#### Click Result Positioning
+Click on a search result block to position within the document. Works well in long tables or code blocks.
 
-# 更新日志
+![Image](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/click-result-positioning.gif)
 
-* 0.8.2
-  * 修复扁平化文档树多关键字搜索错误。 
-* 0.8.1
-  * 新增扁平化文档树 Dock，方便查看最近修改、创建的文档（目前默认展示前 30 个），支持文档名搜索。（不需要可以再设置中关闭）
-  * 优化文档全文搜索 Dock 手机端布局。
-* 0.7.0
-  * 电脑端 Dock(侧边栏）搜索单击结果，支持打开文档后高亮并定位关键字。
-  * 优化显示文档块，开启后文档块无论如何排序都在第一位。
-  * 右击文档分组，支持对单篇文档的搜索结果进行排序。
-  * 支持 原文内容排序。建议升级 v3.0.4 后使用，v3.0.4 之前的版本用此搜索会比较慢。
-* 0.6.5
-  * 支持点击相同搜索结果块，预览区定位到下一个关键字。
-* 0.6.4
-  * 优化查询速度：把查询匹配内容块 和 文档数量两个sql合并，降低sql并发，提升了查询速度（个人测试快了30%左右）。
-* 0.6.3
-  * 添加 刷新预览区延迟 设置，可用于代码块、数据库等需要时间渲染的块内容高亮。
-* 0.6.2
-  * 被折叠的块可以正常预览并打开定位。
-  * 修改标签内的id，与官方进行区别，防止重复id的错误调用。
-  * 添加双击时间阈值设置。
-* 0.6.1
-  * 支持分别设置文档、内容块的排序方式
-* 0.6.0
-  * 支持预览区高亮，支持表格定位首个匹配关键字位置
-* 0.5.2
-  * 优化设置“显示文档块”的逻辑，优化上下键选择搜索结果的样式。
-* 0.5.1
-  * 修复搜索预览超出页面，优化搜索页的结构。
-* 0.5.0
-  * 支持设置过滤块类型、笔记本、快属性（命名、别名等）；支持配置每页文档数量、默认展开数量
-* 0.4.0
-  * 支持查询块的命名、别名、备注并显示
-* 0.3.0
-  * 支持分页查询
-* 0.2.0
-  * 支持手机端
-* 0.1.0
-  * 支持Dock和自定义页签查询
+#### Double-click Search Result to Open Document Tab
+Double-click a search result to open the document and jump to the specified location. If it does not open after double-clicking, you can adjust the "Double-click Time Threshold" in the "Other" settings.
+
+#### Single Document Content Sorting
+* Trigger method:
+  * Right-click on document on desktop
+  * Long press on document on mobile
+
+![Image](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/sorting-menu-en.png)
+
+#### Support for Arrow Key Selection
+When the cursor is in the input box, you can use the up and down arrow keys to select search results, and press Enter to open the result tab.
+
+#### Code Block, Database Highlighting
+After clicking to open a document in the tab search preview area or Dock bar, **code block, database** keyword highlighting and positioning are supported! (Official search currently does not support)
+If the highlighting for **code block, database** fails, you can adjust the "Preview Refresh Highlight Delay" in the "Other" settings.
+
+
+## Flat Document Tree
+### Features
+* All operations on documents supported by the official document tree are also supported here.
+  * Note: Operations such as renaming, deleting, and creating documents require manual refreshing to display the latest data.
+* Support for mobile use (requires Dock bar to be enabled)
+### Functions
+* Supports sorting by modification time, creation time, and reference count.
+* Document name search supported in the search box.
+
+## Hide Dock
+You can hide unused Docks in the plugin's Dock Settings.
+Note: The hiding will be synchronized on mobile.
+
+## Default Configuration
+* Document-based Search
+  * Default block types for queries:
+    * Document, Heading, Code Block, Math Block, Table Block, Paragraph Block, HTML Block, Database, Audio, Video
+  * Default matching attributes for blocks: Name, Alias, Memo
+  * Default sorting:
+    * Document sorting: Descending by relevance
+    * Content block sorting: Type
+  * Documents per page: 10
+  * Default maximum expansion count: 100
+* Flat Document Tree
+  * Default sorting: Descending by modification time
+  * Display 30 items
+
+# Changelog
+> [Changelog](./CHANGELOG_zh_CN.md)

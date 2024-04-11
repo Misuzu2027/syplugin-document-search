@@ -34,7 +34,7 @@
     let searchInputKey: string = "";
     let lastClientWidth;
     let documentItems: DocumentTreeItemInfo[] = [];
-    let flatDocTreeSortMethod: string = "modifiedDesc";
+    let flatDocTreeSortMethod: DocumentSortMethod= "modifiedDesc";
 
     onMount(async () => {
         resize();

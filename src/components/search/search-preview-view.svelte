@@ -240,6 +240,7 @@
                 previewDivElement.append(
                     ...Array.from(tempDivElement.childNodes),
                 );
+                previewProtyle.protyle.element = previewDivElement;
                 afterCreateProtyle(protyle, blockId);
             },
         });

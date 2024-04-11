@@ -11,7 +11,7 @@
 #### 单击搜索结果进行定位
 单击搜索结果块，支持在文档中进行定位。在长表格或代码块中体验良好。
 
-![Image](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/click-result-positioning.gif)
+![Image](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/click-result-positioning.gif?raw=true)
 
 #### 标签页双击搜索结果打开文档页签
 标签页双击搜索结果打开文档，并跳转到指定位置。如果双击后没有打开，可以在“其他”设置中，把“双击时间阈值”调大点。
@@ -21,7 +21,7 @@
   * 桌面端右键单击文档
   * 手机端长按文档
 
-![Image](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/sorting-menu.png)
+![Image](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/sorting-menu.png?raw=true)
 
 #### 支持方向键选择
 光标在输入框中时，可以上下键选择搜索结果，回车键打开结果标签页。

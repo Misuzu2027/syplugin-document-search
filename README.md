@@ -11,7 +11,7 @@
 #### Click Result Positioning
 Click on a search result block to position within the document. Works well in long tables or code blocks.
 
-![Image](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/click-result-positioning.gif)
+![Image](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/click-result-positioning.gif?raw=true)
 
 #### Double-click Search Result to Open Document Tab
 Double-click a search result to open the document and jump to the specified location. If it does not open after double-clicking, you can adjust the "Double-click Time Threshold" in the "Other" settings.
@@ -21,7 +21,7 @@ Double-click a search result to open the document and jump to the specified loca
   * Right-click on document on desktop
   * Long press on document on mobile
 
-![Image](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/sorting-menu-en.png)
+![Image](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/sorting-menu-en.png?raw=true)
 
 #### Support for Arrow Key Selection
 When the cursor is in the input box, you can use the up and down arrow keys to select search results, and press Enter to open the result tab.

@@ -32,7 +32,7 @@ function addDocSearchDock() {
             position: position,
             size: { width: 300, height: 0 },
             icon: CUSTOM_ICON_MAP.iconDocumentSearch.id,
-            title: plugin.i18n.documentSearchIconTip,
+            title: EnvConfig.ins.i18n.documentBasedSearch,
             hotkey: "⌥Q",
             show: false,
         },
@@ -79,7 +79,7 @@ function addFlatDocTreeDock() {
             position: position,
             size: { width: 240, height: 0 },
             icon: CUSTOM_ICON_MAP.iconFlatDocTree.id,
-            title: "扁平化文档树",
+            title: EnvConfig.ins.i18n.flatDocumentTree,
             hotkey: "⌥E",
         },
         data: {

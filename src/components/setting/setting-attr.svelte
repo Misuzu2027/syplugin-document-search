@@ -20,7 +20,7 @@
 </script>
 
 <div id="document-search-setting-attr">
-    {#each SETTING_BLOCK_ATTR_ELEMENT as element}
+    {#each SETTING_BLOCK_ATTR_ELEMENT() as element}
         <label class="fn__flex b3-label">
             <svg class="ft__on-surface svg fn__flex-center"
                 ><use xlink:href={element.icon}></use></svg

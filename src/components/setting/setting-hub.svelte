@@ -4,26 +4,27 @@
     import SettingAttr from "./setting-attr.svelte";
     import SettingType from "./setting-type.svelte";
     import SettingNotebook from "./setting-notebook.svelte";
+    import { EnvConfig } from "@/config/env-config";
 
     let groups = [
         {
-            title: "🌈 Dock 设置",
+            title: EnvConfig.ins.i18n.settingDock,
             type: "settingDock",
         },
         {
-            title: "🌈 过滤笔记本",
+            title: EnvConfig.ins.i18n.settingNotebookFilter,
             type: "settingNotebook",
         },
         {
-            title: "🌈 类型",
+            title: EnvConfig.ins.i18n.settingType,
             type: "settingType",
         },
         {
-            title: "🌈 属性",
+            title: EnvConfig.ins.i18n.settingAttr,
             type: "settingAttr",
         },
         {
-            title: "🌈 其他设置",
+            title: EnvConfig.ins.i18n.settingOther,
             type: "settingOther",
         },
     ];

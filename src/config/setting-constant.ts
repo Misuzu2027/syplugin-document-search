@@ -1,232 +1,244 @@
-export const SETTING_BLOCK_TYPE_ELEMENT = [
-    {
-        icon: "#iconMath",
-        text: "公式块",
-        dataType: "mathBlock",
-        value: "m",
-    },
-    {
-        icon: "#iconTable",
-        text: "表格",
-        dataType: "table",
-        value: "t",
-    },
-    {
-        icon: "#iconQuote",
-        text: "引述",
-        dataType: "blockquote",
-        value: "b",
-    },
-    {
-        icon: "#iconSuper",
-        text: "超级块",
-        dataType: "superBlock",
-        value: "s",
-    },
-    {
-        icon: "#iconParagraph",
-        text: "段落",
-        dataType: "paragraph",
-        value: "p",
-    },
-    {
-        icon: "#iconFile",
-        text: "文档",
-        dataType: "document",
-        value: "d",
-    },
-    {
-        icon: "#iconHeadings",
-        text: "标题",
-        dataType: "heading",
-        value: "h",
-    },
-    {
-        icon: "#iconList",
-        text: "列表",
-        dataType: "checkbox",
-        value: "l",
-    },
-    {
-        icon: "#iconListItem",
-        text: "列表项",
-        dataType: "listItem",
-        value: "i",
-    },
-    {
-        icon: "#iconCode",
-        text: "代码块",
-        dataType: "codeBlock",
-        value: "c",
-    },
-    {
-        icon: "#iconHTML5",
-        text: "HTML",
-        dataType: "htmlBlock",
-        value: "html",
-    },
-    {
-        icon: "#iconSQL",
-        text: "嵌入块",
-        dataType: "embedBlock",
-        value: "query_embed",
-    },
-    {
-        icon: "#iconDatabase",
-        text: "数据库",
-        dataType: "databaseBlock",
-        value: "av",
-    },
-    {
-        icon: "#iconVideo",
-        text: "视频",
-        dataType: "videoBlock",
-        value: "video",
-    }, 
-    {
-        icon: "#iconRecord",
-        text: "音频",
-        dataType: "audioBlock",
-        value: "audio",
-    }, 
-    {
-        icon: "#iconLanguage",
-        text: "IFrame",
-        dataType: "iFrameBlock",
-        value: "iframe",
-    }, 
-     {
-        icon: "#iconBoth",
-        text: "挂件",
-        dataType: "widgetBlock",
-        value: "widget",
-    },
-];
+import { EnvConfig } from "./env-config";
 
-export const SETTING_BLOCK_ATTR_ELEMENT = [
-    {
-        icon: "#iconN",
-        text: "命名",
-        value: "name",
-    },
-    {
-        icon: "#iconA",
-        text: "别名",
-        value: "alias",
-    },
-    {
-        icon: "#iconM",
-        text: "备注",
-        value: "memo",
-    },
-    {
-        icon: "#iconAttr",
-        text: "所有属性名和属性值",
-        value: "ial",
-    },
-];
+export function SETTING_BLOCK_TYPE_ELEMENT() {
+    return [
+        {
+            icon: "#iconMath",
+            text: EnvConfig.ins.i18n.mathBlock,
+            dataType: "mathBlock",
+            value: "m",
+        },
+        {
+            icon: "#iconTable",
+            text: EnvConfig.ins.i18n.table,
+            dataType: "table",
+            value: "t",
+        },
+        {
+            icon: "#iconQuote",
+            text: EnvConfig.ins.i18n.quoteBlock,
+            dataType: "quoteBlock",
+            value: "b",
+        },
+        {
+            icon: "#iconSuper",
+            text: EnvConfig.ins.i18n.superBlock,
+            dataType: "superBlock",
+            value: "s",
+        },
+        {
+            icon: "#iconParagraph",
+            text: EnvConfig.ins.i18n.paragraph,
+            dataType: "paragraph",
+            value: "p",
+        },
+        {
+            icon: "#iconFile",
+            text: EnvConfig.ins.i18n.doc,
+            dataType: "document",
+            value: "d",
+        },
+        {
+            icon: "#iconHeadings",
+            text: EnvConfig.ins.i18n.headings,
+            dataType: "heading",
+            value: "h",
+        },
+        {
+            icon: "#iconList",
+            text: EnvConfig.ins.i18n.list,
+            dataType: "checkbox",
+            value: "l",
+        },
+        {
+            icon: "#iconListItem",
+            text: EnvConfig.ins.i18n.listItem,
+            dataType: "listItem",
+            value: "i",
+        },
+        {
+            icon: "#iconCode",
+            text: EnvConfig.ins.i18n.codeBlock,
+            dataType: "codeBlock",
+            value: "c",
+        },
+        {
+            icon: "#iconHTML5",
+            text: EnvConfig.ins.i18n.htmlBlock,
+            dataType: "htmlBlock",
+            value: "html",
+        },
+        {
+            icon: "#iconSQL",
+            text: EnvConfig.ins.i18n.embedBlock,
+            dataType: "embedBlock",
+            value: "query_embed",
+        },
+        {
+            icon: "#iconDatabase",
+            text: EnvConfig.ins.i18n.database,
+            dataType: "databaseBlock",
+            value: "av",
+        },
+        {
+            icon: "#iconVideo",
+            text: EnvConfig.ins.i18n.video,
+            dataType: "videoBlock",
+            value: "video",
+        },
+        {
+            icon: "#iconRecord",
+            text: EnvConfig.ins.i18n.audio,
+            dataType: "audioBlock",
+            value: "audio",
+        },
+        {
+            icon: "#iconLanguage",
+            text: EnvConfig.ins.i18n.IFrame,
+            dataType: "iFrameBlock",
+            value: "iframe",
+        },
+        {
+            icon: "#iconBoth",
+            text: EnvConfig.ins.i18n.widget,
+            dataType: "widgetBlock",
+            value: "widget",
+        },
+    ];
+}
+
+export function SETTING_BLOCK_ATTR_ELEMENT() {
+    return [
+        {
+            icon: "#iconN",
+            text: EnvConfig.ins.i18n.name,
+            value: "name",
+        },
+        {
+            icon: "#iconA",
+            text: EnvConfig.ins.i18n.alias,
+            value: "alias",
+        },
+        {
+            icon: "#iconM",
+            text: EnvConfig.ins.i18n.memo,
+            value: "memo",
+        },
+        {
+            icon: "#iconAttr",
+            text: EnvConfig.ins.i18n.allAttrs,
+            value: "ial",
+        },
+    ];
+}
 
 
+export function SETTING_DOCUMENT_SORT_METHOD_ELEMENT() {
+    return [
+        {
+            text: EnvConfig.ins.i18n.sortByRankASC,
+            value: "rankAsc",
+        },
+        {
+            text: EnvConfig.ins.i18n.sortByRankDESC,
+            value: "rankDesc",
+        },
+        {
+            text: EnvConfig.ins.i18n.modifiedASC,
+            value: "modifiedAsc",
+        },
+        {
+            text: EnvConfig.ins.i18n.modifiedDESC,
+            value: "modifiedDesc",
+        },
+        {
+            text: EnvConfig.ins.i18n.createdASC,
+            value: "createdAsc",
+        },
+        {
+            text: EnvConfig.ins.i18n.createdDESC,
+            value: "createdDesc",
+        },
+    ];
+}
 
-export const SETTING_DOCUMENT_SORT_METHOD_ELEMENT = [
-    {
-        text: "相关度升序",
-        value: "rankAsc",
-    },
-    {
-        text: "相关度降序",
-        value: "rankDesc",
-    },
-    {
-        text: "修改时间升序",
-        value: "modifiedAsc",
-    },
-    {
-        text: "修改时间降序",
-        value: "modifiedDesc",
-    },
-    {
-        text: "创建时间升序",
-        value: "createdAsc",
-    },
-    {
-        text: "创建时间降序",
-        value: "createdDesc",
-    },
-];
-
-export const SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT = [
-    {
-        text: "类型",
-        value: "type",
-    },
-    {
-        text: "按原文内容顺序",
-        value: "content",
-    },
-    ...SETTING_DOCUMENT_SORT_METHOD_ELEMENT,
-];
+export function SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT() {
+    return [
+        {
+            text: EnvConfig.ins.i18n.type,
+            value: "type",
+        },
+        {
+            text: EnvConfig.ins.i18n.sortByContent,
+            value: "content",
+        },
+        ...SETTING_DOCUMENT_SORT_METHOD_ELEMENT(),
+    ];
+}
 
 // "LeftTop" | "LeftBottom" | "RightTop" | "RightBottom" | "BottomLeft" | "BottomRight"
-export const SETTING_DOC_POISITION_ELEMENT = [
-    {
-        text: "显示",
-        value: "LeftTop",
-    },
-    {
-        text: "隐藏",
-        value: "Hidden",
-    },
-    // {
-    //     text: "左侧上方",
-    //     value: "LeftTop",
-    // },
-    // {
-    //     text: "左侧下方",
-    //     value: "LeftBottom",
-    // },
-    // {
-    //     text: "右侧上方",
-    //     value: "RightTop",
-    // },
-    // {
-    //     text: "右侧下方",
-    //     value: "RightBottom",
-    // }, {
-    //     text: "下侧左方",
-    //     value: "BottomLeft",
-    // },
-    // {
-    //     text: "下侧右方",
-    //     value: "BottomRight",
-    // },
-];
+export function SETTING_DOC_POISITION_ELEMENT() {
+    return [
+        {
+            text: EnvConfig.ins.i18n.show,
+            value: "LeftTop",
+        },
+        {
+            text: EnvConfig.ins.i18n.hide,
+            value: "Hidden",
+        },
+        // {
+        //     text: "左侧上方",
+        //     value: "LeftTop",
+        // },
+        // {
+        //     text: "左侧下方",
+        //     value: "LeftBottom",
+        // },
+        // {
+        //     text: "右侧上方",
+        //     value: "RightTop",
+        // },
+        // {
+        //     text: "右侧下方",
+        //     value: "RightBottom",
+        // }, {
+        //     text: "下侧左方",
+        //     value: "BottomLeft",
+        // },
+        // {
+        //     text: "下侧右方",
+        //     value: "BottomRight",
+        // },
+    ];
+}
 
 
-
-export const SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT = [
-    {
-        text: "修改时间升序",
-        value: "modifiedAsc",
-    },
-    {
-        text: "修改时间降序",
-        value: "modifiedDesc",
-    },
-    {
-        text: "创建时间升序",
-        value: "createdAsc",
-    },
-    {
-        text: "创建时间降序",
-        value: "createdDesc",
-    },
-    {
-        text: "引用次数升序",
-        value: "refCountAsc",
-    },
-    {
-        text: "引用次数降序",
-        value: "refCountDesc",
-    },
-];
+export function SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT() {
+    return [
+        {
+            text: EnvConfig.ins.i18n.modifiedASC,
+            value: "modifiedAsc",
+        },
+        {
+            text: EnvConfig.ins.i18n.modifiedDESC,
+            value: "modifiedDesc",
+        },
+        {
+            text: EnvConfig.ins.i18n.createdASC,
+            value: "createdAsc",
+        },
+        {
+            text: EnvConfig.ins.i18n.createdDESC,
+            value: "createdDesc",
+        },
+        {
+            text: EnvConfig.ins.i18n.refCountASC,
+            value: "refCountAsc",
+        },
+        {
+            text: EnvConfig.ins.i18n.refCountDESC,
+            value: "refCountDesc",
+        },
+    ];
+}

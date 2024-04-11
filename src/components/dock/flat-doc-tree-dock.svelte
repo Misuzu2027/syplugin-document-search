@@ -18,7 +18,7 @@
         <svg class="toolbar__icon"
             ><use xlink:href="#iconDocumentSearch"></use></svg
         >
-        <div class="toolbar__text">扁平化文档树</div>
+        <div class="toolbar__text">{EnvConfig.ins.i18n.flatDocumentTree}</div>
     </div>
     <div class="fn__flex-1">
         <FlatDocTreeSideSvelte bind:this={flatDocTreeSideSvelte} />

@@ -184,8 +184,8 @@
             );
         }
 
-        ariaLabelRow.push(`<br>笔记本 ${boxName}`);
-        ariaLabelRow.push(`<br>路径 ${block.hpath}`);
+        ariaLabelRow.push(`<br>${EnvConfig.ins.i18n.notebook} ${boxName}`);
+        ariaLabelRow.push(`<br>${EnvConfig.ins.i18n.path} ${block.hpath}`);
 
         let updated = formatRelativeTimeInBlock(block.updated);
         let created = convertDateTimeInBlock(block.created);
@@ -289,13 +289,13 @@
 <div class="flat_doc_tree--top">
     <div class="block__icons" style="overflow: auto">
         <span style="display: flex;align-items: center;padding:5px;"
-            >排序方式：</span
-        >
+            >{EnvConfig.ins.i18n.sort} :
+        </span>
         <select
             class="b3-select fn__flex-center"
             on:change={documentSortMethodChange}
         >
-            {#each SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT as element}
+            {#each SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT() as element}
                 <option
                     value={element.value}
                     selected={element.value == flatDocTreeSortMethod}
@@ -326,7 +326,7 @@
                 class="b3-form__icon-clear ariaLabel {searchInputKey == ''
                     ? 'fn__none'
                     : ''}"
-                aria-label="清空"
+                aria-label={EnvConfig.ins.i18n.clear}
                 style="right: 8px;height:42px"
                 on:click|stopPropagation={clearDocumentSearchInput}
                 on:keydown={handleKeyDownDefault}
@@ -337,7 +337,7 @@
         <div class="block__icons">
             <span
                 id="documentSearchRefresh"
-                aria-label="刷新"
+                aria-label={EnvConfig.ins.i18n.refresh}
                 class="block__icon ariaLabel"
                 data-position="9bottom"
                 on:click|stopPropagation={() => {
@@ -387,7 +387,7 @@
                 {#if item.refCount}
                     <span
                         class="popover__block counter b3-tooltips b3-tooltips__nw"
-                        aria-label="引用"
+                        aria-label={EnvConfig.ins.i18n.reference}
                         style=""
                     >
                         {item.refCount}

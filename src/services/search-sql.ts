@@ -1,8 +1,8 @@
 export class DocumentQueryCriteria {
     keywords: string[];
     pages: number[];
-    documentSortMethod: string;
-    contentBlockSortMethod: string;
+    documentSortMethod: DocumentSortMethod;
+    contentBlockSortMethod: ContentBlockSortMethod;
     includeTypes: string[];
     includeConcatFields: string[];
     excludeNotebookIds: string[];
@@ -10,8 +10,8 @@ export class DocumentQueryCriteria {
     constructor(
         keywords: string[],
         pages: number[],
-        documentSortMethod: string,
-        contentBlockSortMethod: string,
+        documentSortMethod: DocumentSortMethod,
+        contentBlockSortMethod: ContentBlockSortMethod,
         includeTypes: string[],
         includeConcatFields: string[],
         excludeNotebookIds: string[],

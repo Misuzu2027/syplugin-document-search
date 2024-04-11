@@ -1,5 +1,5 @@
 import Instance from "@/utils/Instance";
-import { App, IDockModel, IPluginDockTab, Plugin, getFrontend } from "siyuan";
+import { App, I18N, IDockModel, IPluginDockTab, Plugin, getFrontend } from "siyuan";
 
 export class EnvConfig {
 
@@ -22,6 +22,17 @@ export class EnvConfig {
         return this._plugin.app;
     }
 
+    get i18n(): I18N {
+        if (this._plugin) {
+            return this._plugin.i18n;
+        }
+        const i18nObject: I18N = {
+            // 添加你需要的属性和方法
+        };
+        return i18nObject;
+    }
+
+
     public init(plugin: Plugin) {
         let frontEnd: string = getFrontend();
         this._isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
@@ -29,8 +40,8 @@ export class EnvConfig {
     }
 
 
-    docSearchDock:{ config: IPluginDockTab, model: IDockModel };
-    flatDocTreeDock:{ config: IPluginDockTab, model: IDockModel };
+    docSearchDock: { config: IPluginDockTab, model: IDockModel };
+    flatDocTreeDock: { config: IPluginDockTab, model: IDockModel };
 
 
 

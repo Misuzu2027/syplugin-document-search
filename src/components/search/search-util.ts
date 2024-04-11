@@ -1,5 +1,6 @@
+import { EnvConfig } from "@/config/env-config";
 import { DocumentItem, BlockItem, DocumentSqlQueryModel } from "@/config/search-model";
-import { SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT, SETTING_DOCUMENT_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
+import { SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
 import { DocumentQueryCriteria, generateDocumentSearchSql } from "@/services/search-sql";
 import { SettingConfig } from "@/services/setting-config";
 import { checkBlockFold, getBlockIndex, getBlocksIndexes, lsNotebooks, sql } from "@/utils/api";
@@ -214,13 +215,13 @@ export async function processSearchResults(
     return searchResults;
 }
 
-function documentSort(searchResults: DocumentItem[], documentSortMethod: string) {
+function documentSort(searchResults: DocumentItem[], documentSortMethod: DocumentSortMethod) {
     // 文档排序
     let documentSortFun = getDocumentSortFun(documentSortMethod);
     searchResults.sort(documentSortFun);
 }
 
-function getDocumentSortFun(documentSortMethod: string)
+function getDocumentSortFun(documentSortMethod: DocumentSortMethod)
     : (
         a: DocumentItem,
         b: DocumentItem,
@@ -231,21 +232,6 @@ function getDocumentSortFun(documentSortMethod: string)
     ) => number;
 
     switch (documentSortMethod) {
-        case "type":
-            documentSortFun = function (
-                a: DocumentItem,
-                b: DocumentItem,
-            ): number {
-                let aRank: number = a.block.content.split("<mark>").length - 1;
-                let bRank: number = b.block.content.split("<mark>").length - 1;
-                let result = bRank - aRank;
-                result =
-                    result == 0
-                        ? Number(b.block.updated) - Number(a.block.updated)
-                        : result;
-                return result;
-            };
-            break;
         case "modifiedAsc":
             documentSortFun = function (
                 a: DocumentItem,
@@ -283,8 +269,8 @@ function getDocumentSortFun(documentSortMethod: string)
                 a: DocumentItem,
                 b: DocumentItem,
             ): number {
-                let aRank: number = a.block.content.split("<mark>").length - 1;
-                let bRank: number = b.block.content.split("<mark>").length - 1;
+                let aRank: number = calculateBlockRank(a.block);
+                let bRank: number = calculateBlockRank(b.block);
                 let result = aRank - bRank;
                 result =
                     result == 0
@@ -298,8 +284,8 @@ function getDocumentSortFun(documentSortMethod: string)
                 a: DocumentItem,
                 b: DocumentItem,
             ): number {
-                let aRank: number = a.block.content.split("<mark>").length - 1;
-                let bRank: number = b.block.content.split("<mark>").length - 1;
+                let aRank: number = calculateBlockRank(a.block);
+                let bRank: number = calculateBlockRank(b.block);
                 let result = bRank - aRank;
                 result =
                     result == 0
@@ -315,7 +301,7 @@ function getDocumentSortFun(documentSortMethod: string)
 
 export async function blockItemsSort(
     blockItems: BlockItem[],
-    contentBlockSortMethod: string,
+    contentBlockSortMethod: ContentBlockSortMethod,
     startIndex: number,) {
     if (!blockItems || blockItems.length <= 0) {
         return;
@@ -342,7 +328,7 @@ export async function blockItemsSort(
     }
 }
 
-function getBlockSortFun(contentBlockSortMethod: string) {
+function getBlockSortFun(contentBlockSortMethod: ContentBlockSortMethod) {
     let blockSortFun: (
         a: BlockItem,
         b: BlockItem,
@@ -363,8 +349,8 @@ function getBlockSortFun(contentBlockSortMethod: string) {
                 let bSort: number = Number(b.block.sort);
                 let result = aSort - bSort;
                 if (result == 0) {
-                    let aRank: number = a.block.content.split("<mark>").length - 1;
-                    let bRank: number = b.block.content.split("<mark>").length - 1;
+                    let aRank: number = calculateBlockRank(a.block);
+                    let bRank: number = calculateBlockRank(b.block);
                     result = bRank - aRank;
                 }
 
@@ -438,8 +424,8 @@ function getBlockSortFun(contentBlockSortMethod: string) {
                 if (b.block.type === "d") {
                     return 1;
                 }
-                let aRank: number = a.block.content.split("<mark>").length - 1;
-                let bRank: number = b.block.content.split("<mark>").length - 1;
+                let aRank: number = calculateBlockRank(a.block);
+                let bRank: number = calculateBlockRank(b.block);
                 let result = aRank - bRank;
                 if (result == 0) {
                     result = Number(a.block.sort) - Number(b.block.sort);
@@ -461,8 +447,8 @@ function getBlockSortFun(contentBlockSortMethod: string) {
                 if (b.block.type === "d") {
                     return 1;
                 }
-                let aRank: number = a.block.content.split("<mark>").length - 1;
-                let bRank: number = b.block.content.split("<mark>").length - 1;
+                let aRank: number = calculateBlockRank(a.block);
+                let bRank: number = calculateBlockRank(b.block);
                 let result = bRank - aRank;
                 if (result == 0) {
                     result = Number(a.block.sort) - Number(b.block.sort);
@@ -479,6 +465,21 @@ function getBlockSortFun(contentBlockSortMethod: string) {
 }
 
 
+function calculateBlockRank(block: Block): number {
+    let includeAttrFields = SettingConfig.ins.includeAttrFields;
+    let rank = block.content.split("<mark>").length - 1;
+
+    if (includeAttrFields.includes("name")) {
+        rank += block.name.split("<mark>").length - 1;
+    }
+    if (includeAttrFields.includes("alias")) {
+        rank += block.alias.split("<mark>").length - 1;
+    }
+    if (includeAttrFields.includes("memo")) {
+        rank += block.memo.split("<mark>").length - 1;
+    }
+    return rank;
+}
 
 
 function countKeywords(content: string, keywords: string[]): number {
@@ -820,7 +821,7 @@ export function findScrollingElement(element: HTMLElement): HTMLElement | null {
 export const blockSortSubMenu = (documentItem: DocumentItem, sortCallback: Function) => {
 
     let menus = [];
-    for (const sortMethodObj of SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT) {
+    for (const sortMethodObj of SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT()) {
         menus.push({
             label: sortMethodObj.text,
             click: () => {

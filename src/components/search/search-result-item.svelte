@@ -7,6 +7,7 @@
         blockSortSubMenu,
     } from "@/components/search/search-util";
     import { MenuItem } from "@/lib/Menu";
+    import { EnvConfig } from "@/config/env-config";
 
     export let documentItemSearchResult: DocumentItem[];
     export let clickCallback: (event, item: BlockItem) => void;
@@ -38,7 +39,7 @@
                     documentItemSearchResult = documentItemSearchResult;
                 } else {
                     showMessage(
-                        `${item.block.content} 下不存在符合条件的内容`,
+                        `${item.block.content} ${EnvConfig.ins.i18n.noContentBelow}`,
                         5000,
                         "error",
                     );
@@ -55,7 +56,7 @@
         window.siyuan.menus.menu.remove();
         window.siyuan.menus.menu.append(
             new MenuItem({
-                label: "排序方式",
+                label: EnvConfig.ins.i18n.sort,
                 type: "submenu",
                 submenu: blockSortSubMenu(
                     documentItem,

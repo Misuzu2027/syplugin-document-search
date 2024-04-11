@@ -20,7 +20,7 @@ export default class PluginSample extends Plugin {
 
     private documentSearchTab: SearchPreviewSvelte;
 
-    async onload() {
+    onload() {
         EnvConfig.ins.init(this);
         let settingLoadPromise: Promise<void> = SettingConfig.ins.load(this);
         settingLoadPromise.then(this.settingLoadAfter);
@@ -37,7 +37,7 @@ export default class PluginSample extends Plugin {
         if (!EnvConfig.ins.isMobile) {
             this.addTopBar({
                 icon: CUSTOM_ICON_MAP.iconDocumentSearch.id,
-                title: this.i18n.documentSearchIconTip,
+                title: this.i18n.documentBasedSearch,
                 position: "right",
                 callback: () => {
                     this.openDocumentSearchTab();
@@ -49,7 +49,7 @@ export default class PluginSample extends Plugin {
         //  this.openSetting.bind(this);
 
         this.addCommand({
-            langKey: "打开文档搜索页签",
+            langKey: EnvConfig.ins.i18n.openDocumentSearchTab,
             hotkey: "⇧⌘Q",
             callback: () => {
                 this.openDocumentSearchTab();

@@ -1,8 +1,13 @@
 <script lang="ts">
     import { SettingConfig } from "@/services/setting-config";
-    import { SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT, SETTING_DOCUMENT_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
-    let documentSortMethod: string = SettingConfig.ins.documentSortMethod;
-    let contentBlockSortMethod: string =
+    import {
+        SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT,
+        SETTING_DOCUMENT_SORT_METHOD_ELEMENT,
+    } from "@/config/setting-constant";
+    import { EnvConfig } from "@/config/env-config";
+    let documentSortMethod: DocumentSortMethod =
+        SettingConfig.ins.documentSortMethod;
+    let contentBlockSortMethod: ContentBlockSortMethod =
         SettingConfig.ins.contentBlockSortMethod;
     let pageSize: number = SettingConfig.ins.pageSize;
     let maxExpandCount: number = SettingConfig.ins.maxExpandCount;
@@ -61,13 +66,15 @@
             ><use xlink:href="#iconSort"></use></svg
         >
         <span class="fn__space"></span>
-        <div class="fn__flex-1 fn__flex-center">文档排序方式</div>
+        <div class="fn__flex-1 fn__flex-center">
+            {EnvConfig.ins.i18n.docSortMethod}
+        </div>
         <span class="fn__space"></span>
         <select
             class="b3-select fn__flex-center fn__size200"
             on:change={documentSortMethodChange}
         >
-            {#each SETTING_DOCUMENT_SORT_METHOD_ELEMENT as element}
+            {#each SETTING_DOCUMENT_SORT_METHOD_ELEMENT() as element}
                 <option
                     value={element.value}
                     selected={element.value == documentSortMethod}
@@ -83,13 +90,15 @@
             ><use xlink:href="#iconSort"></use></svg
         >
         <span class="fn__space"></span>
-        <div class="fn__flex-1 fn__flex-center">内容块排序方式</div>
+        <div class="fn__flex-1 fn__flex-center">
+            {EnvConfig.ins.i18n.contentBlockSortMethod}
+        </div>
         <span class="fn__space"></span>
         <select
             class="b3-select fn__flex-center fn__size200"
             on:change={contentBlockSortMethodChange}
         >
-            {#each SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT as element}
+            {#each SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT() as element}
                 <option
                     value={element.value}
                     selected={element.value == contentBlockSortMethod}
@@ -105,7 +114,9 @@
             ><use xlink:href="#iconFile"></use></svg
         >
         <span class="fn__space"></span>
-        <div class="fn__flex-1 fn__flex-center">每页文档数量</div>
+        <div class="fn__flex-1 fn__flex-center">
+            {EnvConfig.ins.i18n.contentBlockSortMethod}
+        </div>
         <span class="fn__space"></span>
         <input
             class="b3-text-field fn__flex-center fn__size200"
@@ -122,9 +133,9 @@
         <span class="fn__space"></span>
         <div
             class="fn__flex-1 fn__flex-center ariaLabel"
-            aria-label="如果查询结果的块数量小于当前值，默认展开全部文档；反之会默认折叠全部文档。"
+            aria-label={EnvConfig.ins.i18n.blockCountBehaviorTips}
         >
-            默认展开数
+            {EnvConfig.ins.i18n.defaultExpansionCount}
         </div>
         <div class="b3-label__text"></div>
         <span class="fn__space"></span>
@@ -141,7 +152,9 @@
             ><use xlink:href="#iconFile"></use></svg
         >
         <span class="fn__space"></span>
-        <div class="fn__flex-1 fn__flex-center">显示文档块</div>
+        <div class="fn__flex-1 fn__flex-center">
+            {EnvConfig.ins.i18n.displayDocBlock}
+        </div>
         <span class="fn__space"></span>
         <input
             class="b3-switch fn__flex-center"
@@ -155,7 +168,9 @@
             ><use xlink:href="#iconClock"></use></svg
         >
         <span class="fn__space"></span>
-        <div class="fn__flex-1 fn__flex-center">双击时间阈值(毫秒)</div>
+        <div class="fn__flex-1 fn__flex-center">
+            {EnvConfig.ins.i18n.doubleClickTimeThreshold}
+        </div>
         <span class="fn__space"></span>
         <input
             class="b3-text-field fn__flex-center fn__size200"
@@ -173,9 +188,9 @@
         <span class="fn__space"></span>
         <div
             class="fn__flex-1 fn__flex-center ariaLabel"
-            aria-label="用于代码块、数据库这种需要时间渲染的块高亮，太短可能会失败，不需要可以设置为0"
+            aria-label={EnvConfig.ins.i18n.previewRefreshHighlightDelayTips}
         >
-            刷新预览区高亮延迟(毫秒)
+            {EnvConfig.ins.i18n.previewRefreshHighlightDelay}
         </div>
         <span class="fn__space"></span>
         <input

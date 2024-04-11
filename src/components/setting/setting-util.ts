@@ -10,19 +10,19 @@ export function openSettingsDialog(dialogType: SettingDialogType) {
     let dialogTitle: string;
     switch (dialogType) {
         case "settingNotebook":
-            dialogTitle = "笔记本过滤";
+            dialogTitle = EnvConfig.ins.i18n.notebookFilter;
             break;
         case "settingType":
-            dialogTitle = "类型";
+            dialogTitle = EnvConfig.ins.i18n.type;
             break;
         case "settingAttr":
-            dialogTitle = "属性";
+            dialogTitle = EnvConfig.ins.i18n.attr;
             break;
         case "settingOther":
-            dialogTitle = "其他设置";
+            dialogTitle = EnvConfig.ins.i18n.other;
             break;
         case "settingHub":
-            dialogTitle = "设置中心";
+            dialogTitle = EnvConfig.ins.i18n.settingHub;
             break;
         default:
             return;

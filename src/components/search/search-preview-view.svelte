@@ -312,7 +312,7 @@
             data-type="previous"
             class="block__icon block__icon--show ariaLabel
             {curPage <= 1 ? 'disabled' : ''}"
-            aria-label="上一页"
+            aria-label={EnvConfig.ins.i18n.previousLabel}
             on:click={() => {
                 pageTurning(curPage - 1);
             }}
@@ -325,7 +325,7 @@
             data-type="next"
             class="block__icon block__icon--show ariaLabel
             {curPage >= totalPage ? 'disabled' : ''}"
-            aria-label="下一页"
+            aria-label={EnvConfig.ins.i18n.nextLabel}
             on:click={() => {
                 pageTurning(curPage + 1);
             }}
@@ -344,7 +344,10 @@
             <span class="fn__space"></span>
 
             <span class="ft__on-surface">
-                匹配到 {searchResultDocumentCount} 个文档
+                {EnvConfig.ins.i18n.findInDoc.replace(
+                    "${x}",
+                    searchResultDocumentCount,
+                )}
                 <!-- 中匹配 {searchResultTotalCount}块 -->
             </span>
         </span>
@@ -354,7 +357,7 @@
         <span class="fn__space"></span>
         <span
             id="documentSearchNotebookFilter"
-            aria-label="笔记本过滤"
+            aria-label={EnvConfig.ins.i18n.notebookFilter}
             class="block__icon block__icon--show ariaLabel"
             data-position="9bottom"
             on:click={clickSearchNotebookFilter}
@@ -366,7 +369,7 @@
         <span class="fn__space"></span>
         <span
             id="documentSearchTypeFilter"
-            aria-label="类型"
+            aria-label={EnvConfig.ins.i18n.type}
             class="block__icon block__icon--show ariaLabel"
             data-position="9bottom"
             on:click={clickSearchTypeFilter}
@@ -377,7 +380,7 @@
         <span class="fn__space"></span>
         <span
             id="documentSearchAttrFilter"
-            aria-label="属性"
+            aria-label={EnvConfig.ins.i18n.attr}
             class="block__icon block__icon--show ariaLabel"
             data-position="9bottom"
             on:click={clickSearchAttrFilter}
@@ -389,7 +392,7 @@
         <span class="fn__space"></span>
         <span
             id="documentSearchSettingOther"
-            aria-label="其他"
+            aria-label={EnvConfig.ins.i18n.other}
             class="block__icon block__icon--show ariaLabel"
             data-position="9bottom"
             on:click={clickSearchSettingOther}
@@ -423,7 +426,7 @@
                 class="b3-form__icon-clear ariaLabel {searchInputKey == ''
                     ? 'fn__none'
                     : ''}"
-                aria-label="清空"
+                aria-label={EnvConfig.ins.i18n.clear}
                 style="right: 8px;height:42px"
                 on:click|stopPropagation={() => {
                     searchInputKey = "";
@@ -437,7 +440,7 @@
         <div class="block__icons">
             <span
                 id="documentSearchRefresh"
-                aria-label="刷新"
+                aria-label={EnvConfig.ins.i18n.refresh}
                 class="block__icon ariaLabel"
                 data-position="9bottom"
                 on:click|stopPropagation={() => {
@@ -454,7 +457,7 @@
                     id="documentSearchExpand"
                     class="block__icon block__icon--show ariaLabel"
                     data-position="9bottom"
-                    aria-label="展开"
+                    aria-label={EnvConfig.ins.i18n.expand}
                     on:click={clickExpandAll}
                     on:keydown={handleKeyDownDefault}
                 >
@@ -465,7 +468,7 @@
                     id="documentSearchCollapse"
                     class="block__icon block__icon--show ariaLabel"
                     data-position="9bottom"
-                    aria-label="折叠"
+                    aria-label={EnvConfig.ins.i18n.collapse}
                     on:click={clickCollapseAll}
                     on:keydown={handleKeyDownDefault}
                 >

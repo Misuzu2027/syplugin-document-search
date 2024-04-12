@@ -32,6 +32,8 @@ export class EnvConfig {
         return i18nObject;
     }
 
+    public currentDocId: string;
+
 
     public init(plugin: Plugin) {
         let frontEnd: string = getFrontend();

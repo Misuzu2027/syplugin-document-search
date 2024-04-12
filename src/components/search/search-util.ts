@@ -497,6 +497,12 @@ function countKeywords(content: string, keywords: string[]): number {
 
 export async function getOpenTabAction(blockId: string): Promise<TProtyleAction[]> {
     let zoomIn = await checkBlockFold(blockId)
+
+    return getOpenTabActionByZoomIn(zoomIn);
+}
+
+
+export function getOpenTabActionByZoomIn(zoomIn: boolean): TProtyleAction[] {
     let actions: TProtyleAction[] = zoomIn
         ? [
             Constants.CB_GET_HL,
@@ -707,7 +713,9 @@ export async function highlightElementTextByCss(
         );
     }
 
-    callback(matchFocusRange);
+    if (callback) {
+        callback(matchFocusRange);
+    }
 }
 
 export function clearCssHighlights() {

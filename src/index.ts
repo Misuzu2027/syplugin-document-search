@@ -56,12 +56,15 @@ export default class PluginSample extends Plugin {
             },
         });
 
+        this.eventBus.on('switch-protyle', (e: any) => {
+            EnvConfig.ins.currentDocId = e.detail.protyle.block.rootID;
+            // utils.setCurrentBoxId(e.detail.protyle.notebookId)
+          })
+
     }
 
     settingLoadAfter(): void {
-
         initDock();
-
     }
 
 
@@ -70,16 +73,6 @@ export default class PluginSample extends Plugin {
     }
 
     onLayoutReady() {
-
-        // let searchTabDiv = document.createElement("div");
-        // let documentSearchTab = new SearchHomeExample({
-        //     target: searchTabDiv,
-        //     props: {
-        //         app: this.app,
-        //         showPreview: true,
-        //     }
-        // });
-        // this.documentSearchTab = documentSearchTab;
         let _this = this;
         this.addTab({
             type: SEARCH_TAB_TYPE,
@@ -87,8 +80,6 @@ export default class PluginSample extends Plugin {
                 _this.documentSearchTab = new SearchPreviewSvelte({
                     target: this.element,
                 });
-
-                // this.element.replaceChildren(searchTabDiv.childNodes);
             },
             beforeDestroy() {
             },
@@ -121,63 +112,6 @@ export default class PluginSample extends Plugin {
                 }
             }
         });
-    }
-
-    // private addMobileDocumentSearchMenu() {
-    //     console.log("addMobileDocumentSearchMenu");
-    //     if (!this.isMobile) {
-    //         return;
-    //     }
-
-    //     let mobileDocSearchClassName = "mobile-document-search"
-    //     const menu = new Menu("mobileDocumentSearchMenu", () => {
-    //         let existingSearchDiv = menu.element.querySelector('.' + mobileDocSearchClassName);
-    //         this.hiddenElement(existingSearchDiv);
-    //         // if (existingSearchDiv) {
-    //         //     existingSearchDiv.remove();
-    //         // }
-    //     });
-    //     const menuElement = menu.element;
-
-    //     // 检查是否已经存在 Svelte div
-    //     let existingSearchDiv = menuElement.querySelector('.' + mobileDocSearchClassName);
-    //     if (existingSearchDiv) {
-    //         this.showElement(existingSearchDiv);
-    //     } else {
-    //         // 创建搜索组件的容器元素
-    //         let searchContainerDiv = document.createElement('div');
-    //         searchContainerDiv.className = mobileDocSearchClassName;
-    //         // 在 b3-menu__title 后面插入 
-    //         let b3MenuTitle = menuElement.querySelector('.b3-menu__title');
-    //         menuElement.insertBefore(searchContainerDiv, b3MenuTitle.nextSibling);
-
-    //         new SearchHomeExample({
-    //             target: searchContainerDiv,
-    //             props: {
-    //                 app: this.app,
-    //                 showPreview: false,
-    //             }
-    //         });
-    //     }
-    //     menu.fullscreen();
-    // }
-
-    private hiddenElement(element: HTMLElement | Element) {
-        if (element) {
-            let isHidden = element.classList.contains("fn__none");
-            if (!isHidden) {
-                element.classList.add("fn__none");
-            }
-        }
-    }
-
-    private showElement(element: HTMLElement | Element) {
-        if (element) {
-            let isHidden = element.classList.contains("fn__none");
-            if (isHidden) {
-                element.classList.remove("fn__none");
-            }
-        }
     }
 
 }

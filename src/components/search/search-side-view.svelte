@@ -4,8 +4,8 @@
         openTab,
         openMobileFileById,
         ITab,
-        Constants,
         TProtyleAction,
+        Constants,
     } from "siyuan";
     import SearchResultItem from "@/components/search/search-result-item.svelte";
 
@@ -18,11 +18,12 @@
         selectItemByArrowKeys,
         toggleAllCollpsedItem,
         highlightElementTextByCss,
-        getOpenTabAction,
         delayedTwiceRefresh,
         clearCssHighlights,
         findScrollingElement,
+        getOpenTabActionByZoomIn,
     } from "@/components/search/search-util";
+    import { checkBlockFold } from "@/utils/api";
 
     // let element: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
@@ -84,7 +85,8 @@
             selectedItemIndex = selectedBlockItem.index;
 
             if (event.key === "Enter") {
-                openBlockTab(selectedBlockItem.block.id);
+                let block = selectedBlockItem.block;
+                openBlockTab(block.id, block.root_id);
             }
         }
     }
@@ -166,46 +168,80 @@
     function clickItem(event, item: DocumentItem) {
         let block = item.block;
         let blockId = block.id;
+        let rootId = block.root_id;
         selectedItemIndex = item.index;
 
         // documentSearchInputFocus();
 
-        openBlockTab(blockId);
+        openBlockTab(blockId, rootId);
         event.stopPropagation();
         event.preventDefault();
     }
 
-    async function openBlockTab(blockId: string) {
+    async function openBlockTab(blockId: string, rootId: string) {
         if (lastBlockId == blockId) {
             previewProtyleMatchFocusIndex++;
         } else {
             previewProtyleMatchFocusIndex = 0;
         }
-        // lastBlockId = blockId;
 
-        let actions: TProtyleAction[] = await getOpenTabAction(blockId);
+        let zoomIn = await checkBlockFold(blockId);
+        let actions: TProtyleAction[] = getOpenTabActionByZoomIn(zoomIn);
 
         if (EnvConfig.ins.isMobile) {
             openMobileFileById(EnvConfig.ins.app, blockId, actions);
         } else {
-            if (lastBlockId == blockId) {
-                actions = actions.filter(
-                    (item) => item !== Constants.CB_GET_HL,
-                );
-            }
-            lastBlockId = blockId;
-
-            let docTabPromise: Promise<ITab> = openTab({
-                app: EnvConfig.ins.app,
-                doc: {
-                    id: blockId,
-                    action: actions,
-                },
-                afterOpen() {
-                    afterOpenDocTab(docTabPromise, blockId);
-                },
-            });
+            openDestopBlockTab(zoomIn, actions, blockId, rootId);
         }
+    }
+
+    async function openDestopBlockTab(
+        zoomIn: boolean,
+        actions: TProtyleAction[],
+        blockId: string,
+        rootId: string,
+    ) {
+        if (rootId == blockId) {
+            // actions = actions.filter((item) => item !== Constants.CB_GET_HL);
+            actions = [Constants.CB_GET_FOCUS, Constants.CB_GET_SCROLL];
+        }
+        lastBlockId = blockId;
+
+        // 如果被查找节点不是聚焦状态，节点文档是当前查看文档，节点的文档element 存在，文档element 保护查找的节点
+        if (
+            !zoomIn &&
+            rootId == EnvConfig.ins.currentDocId &&
+            lastDocumentContentElement &&
+            document.contains(lastDocumentContentElement) &&
+            lastDocumentContentElement.querySelector(
+                `[data-node-id="${blockId}"]`,
+            ) &&
+            rootId != blockId
+        ) {
+            highlightElementTextByCss(
+                lastDocumentContentElement,
+                lastKeywords,
+                blockId,
+                previewProtyleMatchFocusIndex,
+                renderNextSearchMarkByRange,
+            );
+            return;
+        }
+
+        let docTabPromise: Promise<ITab> = openTab({
+            app: EnvConfig.ins.app,
+            doc: {
+                id: blockId,
+                action: actions,
+            },
+            afterOpen() {
+                let tmpBlockId;
+                if (rootId != blockId) {
+                    tmpBlockId = blockId;
+                }
+                afterOpenDocTab(docTabPromise, tmpBlockId);
+            },
+        });
     }
 
     async function afterOpenDocTab(
@@ -247,8 +283,9 @@
                 });
             } else {
                 matchElement.scrollIntoView({
-                    behavior: "auto",
+                    behavior: "smooth",
                     block: "nearest",
+                    inline: "center",
                 });
             }
         }

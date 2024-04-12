@@ -20,5 +20,6 @@ type DocumentSortMethod =
 type ContentBlockSortMethod =
     | "type"
     | "content"
+    | "typeAndContent"
     | DocumentSortMethod
     ;

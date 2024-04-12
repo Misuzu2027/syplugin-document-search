@@ -72,7 +72,7 @@
 
     async function blockSortSubMenuCallback(
         documentItem: DocumentItem,
-        sortMethod: string,
+        sortMethod: ContentBlockSortMethod,
     ) {
         const startTime = performance.now(); // 记录开始时间
 

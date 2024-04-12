@@ -59,4 +59,4 @@ Note: The hiding will be synchronized on mobile.
   * Display 30 items
 
 # Changelog
-> [Changelog](./CHANGELOG_zh_CN.md)
+> [Changelog(Chinese)](./CHANGELOG_zh_CN.md)

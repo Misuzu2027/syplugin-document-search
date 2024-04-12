@@ -29,6 +29,7 @@
     "createdDESC": "Created Time DESC",
     "type": "Type",
     "sortByContent": "Original content order",
+    "sortByTypeAndContent": "Type And Original content order",
     "show": "Show",
     "hide": "Hide",
     "refCountASC": "Ref Count ASC",

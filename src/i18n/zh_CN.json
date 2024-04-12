@@ -29,6 +29,7 @@
     "createdDESC": "创建时间降序",
     "type": "类型",
     "sortByContent": "按原文内容顺序",
+    "sortByTypeAndContent": "类型和原文内容顺序",
     "show": "显示",
     "hide": "隐藏",
     "refCountASC": "引用数升序",

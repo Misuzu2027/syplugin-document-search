@@ -173,6 +173,10 @@ export function SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT() {
             value: "content",
         },
         ...SETTING_DOCUMENT_SORT_METHOD_ELEMENT(),
+        {
+            text: EnvConfig.ins.i18n.sortByTypeAndContent,
+            value: "typeAndContent",
+        },
     ];
 }
 

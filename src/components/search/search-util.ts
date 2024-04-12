@@ -205,6 +205,7 @@ export async function processSearchResults(
         // 块排序，目前主要处理原文排序，其他顺序已经在 mysql 中排序过了。
         // 粗略测试觉得 sqlite 中的排序效率更高，可能有索引优化的原因。
         if (contentBlockSortMethod == "content"
+            || contentBlockSortMethod == "typeAndContent"
             // || contentBlockSortMethod == "rankAsc"
             // || contentBlockSortMethod == "rankDesc"
         ) {
@@ -308,6 +309,8 @@ export async function blockItemsSort(
     }
     if (contentBlockSortMethod == "content") {
         await searchItemSortByContent(blockItems);
+    } else if (contentBlockSortMethod == "typeAndContent") {
+        await searchItemSortByTypeAndContent(blockItems);
     } else {
         let blockSortFun: (
             a: BlockItem,
@@ -345,13 +348,14 @@ function getBlockSortFun(contentBlockSortMethod: ContentBlockSortMethod) {
                 if (b.block.type === "d") {
                     return 1;
                 }
-                let aSort: number = Number(a.block.sort);
-                let bSort: number = Number(b.block.sort);
-                let result = aSort - bSort;
+                let result = a.block.sort - b.block.sort;
                 if (result == 0) {
                     let aRank: number = calculateBlockRank(a.block);
                     let bRank: number = calculateBlockRank(b.block);
                     result = bRank - aRank;
+                }
+                if (result == 0) {
+                    result = Number(b.block.updated) - Number(a.block.updated);
                 }
 
                 return result;
@@ -731,8 +735,6 @@ export function clearCssHighlights() {
 }
 
 
-
-
 async function searchItemSortByContent(blockItems: BlockItem[]) {
 
     let ids = blockItems.map(item => item.block.id);
@@ -746,17 +748,41 @@ async function searchItemSortByContent(blockItems: BlockItem[]) {
         }
         let aIndex = idMap.get(a.block.id) || 0;
         let bIndex = idMap.get(b.block.id) || 0;
-        if (aIndex !== bIndex) {
-            return aIndex - bIndex;
-        } else {
-            return a.block.sort - b.block.sort;
+        let result = aIndex - bIndex;
+        if (result == 0) {
+            result = a.block.sort - b.block.sort;
         }
+        if (result == 0) {
+            result = Number(b.block.updated) - Number(a.block.updated);
+        }
+        return result;
     });
 
     return blockItems;
 }
 
 
+async function searchItemSortByTypeAndContent(blockItems: BlockItem[]) {
+    let ids = blockItems.map(item => item.block.id);
+    let idMap: Map<BlockId, number> = await getBatchBlockIdIndex(ids);
+    blockItems.sort((a, b) => {
+        if (a.block.type === "d") {
+            return -1;
+        }
+        if (b.block.type === "d") {
+            return 1;
+        }
+        let result = a.block.sort - b.block.sort;
+        if (result == 0) {
+            let aIndex = idMap.get(a.block.id) || 0;
+            let bIndex = idMap.get(b.block.id) || 0;
+            result = aIndex - bIndex;
+        }
+        return result;
+    });
+
+    return blockItems;
+}
 
 async function getBatchBlockIdIndex(ids: string[]): Promise<Map<BlockId, number>> {
     let idMap: Map<string, number> = new Map();

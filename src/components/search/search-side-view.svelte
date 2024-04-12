@@ -210,13 +210,13 @@
         // 如果被查找节点不是聚焦状态，节点文档是当前查看文档，节点的文档element 存在，文档element 保护查找的节点
         if (
             !zoomIn &&
+            rootId != blockId &&
             rootId == EnvConfig.ins.currentDocId &&
             lastDocumentContentElement &&
             document.contains(lastDocumentContentElement) &&
             lastDocumentContentElement.querySelector(
                 `[data-node-id="${blockId}"]`,
-            ) &&
-            rootId != blockId
+            )
         ) {
             highlightElementTextByCss(
                 lastDocumentContentElement,
@@ -275,11 +275,15 @@
                 // 特殊情况：如果一个段落中软换行非常多，此时如果定位到匹配节点的首行，
                 // 是看不到查询的文本的，需要通过 Range 的精确位置进行定位。
                 const scrollingElement = findScrollingElement(matchElement);
+                const contentRect = scrollingElement.getBoundingClientRect();
+                let scrollTop =
+                    scrollingElement.scrollTop +
+                    matchRange.getBoundingClientRect().top -
+                    contentRect.top -
+                    contentRect.height / 2;
                 scrollingElement.scrollTo({
-                    top:
-                        scrollingElement.scrollTop +
-                        matchRange.getBoundingClientRect().top,
-                    behavior: "instant",
+                    top: scrollTop,
+                    behavior: "smooth",
                 });
             } else {
                 matchElement.scrollIntoView({

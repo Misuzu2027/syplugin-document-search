@@ -511,7 +511,7 @@ export function getOpenTabActionByZoomIn(zoomIn: boolean): TProtyleAction[] {
         ]
         : [
             Constants.CB_GET_HL,
-            Constants.CB_GET_FOCUS,
+            // Constants.CB_GET_FOCUS,
             Constants.CB_GET_CONTEXT,
             Constants.CB_GET_ROOTSCROLL,
         ];
@@ -520,6 +520,12 @@ export function getOpenTabActionByZoomIn(zoomIn: boolean): TProtyleAction[] {
 
 export async function getProtyleAction(blockId: string): Promise<TProtyleAction[]> {
     let zoomIn = await checkBlockFold(blockId)
+
+    return getProtyleActionByZoomIn(zoomIn);
+}
+
+
+export function getProtyleActionByZoomIn(zoomIn: boolean): TProtyleAction[] {
     let actions: TProtyleAction[] = zoomIn
         ? [
             Constants.CB_GET_HL,

@@ -21,11 +21,12 @@
         highlightElementTextByCss,
         toggleAllCollpsedItem,
         getOpenTabAction,
-        getProtyleAction,
         delayedTwiceRefresh,
         getDocumentSearchResult,
+        getProtyleActionByZoomIn,
     } from "@/components/search/search-util";
     import { handleSearchDragMousdown } from "@/lib/SearchUtil";
+    import { checkBlockFold } from "@/utils/api";
 
     let element: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
@@ -168,6 +169,7 @@
     function clickItem(event, item: BlockItem) {
         let block = item.block;
         let blockId = block.id;
+        let rootId = block.root_id;
         selectedItemIndex = item.index;
         let doubleClickTimeout = SettingConfig.ins.doubleClickTimeout;
 
@@ -175,7 +177,7 @@
 
         itemClickCount++;
         if (itemClickCount === 1) {
-            refreshBlockPreviewBox(blockId);
+            refreshBlockPreviewBox(blockId, rootId);
             // 单击逻辑
             setTimeout(() => {
                 itemClickCount = 0; // 重置计数
@@ -205,7 +207,7 @@
         });
     }
 
-    async function refreshBlockPreviewBox(blockId: string) {
+    async function refreshBlockPreviewBox(blockId: string, rootId: string) {
         if (!blockId) {
             return;
         }
@@ -218,12 +220,31 @@
                 lastKeywords,
                 blockId,
                 previewProtyleMatchFocusIndex,
-                renderNextSearchMarkByRange,
+                renderNextSearchMarkSmoothByRange,
             );
             return;
         }
         previewProtyleMatchFocusIndex = 0;
-        let actions = await getProtyleAction(blockId);
+        let zoomIn = await checkBlockFold(blockId);
+        let actions = getProtyleActionByZoomIn(zoomIn);
+
+        if (
+            !zoomIn &&
+            previewProtyle.protyle.block.rootID == rootId &&
+            document.contains(previewProtyle.protyle.contentElement) &&
+            previewProtyle.protyle.contentElement.querySelector(
+                `[data-node-id="${blockId}"]`,
+            )
+        ) {
+            highlightElementTextByCss(
+                previewProtyle.protyle.contentElement,
+                lastKeywords,
+                blockId,
+                previewProtyleMatchFocusIndex,
+                renderNextSearchMarkSmoothByRange,
+            );
+            return;
+        }
 
         let tempDivElement = document.createElement("div");
 
@@ -254,12 +275,12 @@
                 lastKeywords,
                 blockId,
                 previewProtyleMatchFocusIndex,
-                renderNextSearchMarkByRange,
+                renderFirstSearchMarkByRange,
             );
         }, 0);
     }
 
-    function renderNextSearchMarkByRange(matchRange: Range) {
+    function renderFirstSearchMarkByRange(matchRange: Range) {
         if (matchRange) {
             // matchElement.classList.add("search-mark--hl");
             const protyleElement = previewProtyle.protyle.contentElement;
@@ -270,6 +291,39 @@
                 contentRect.top -
                 contentRect.height / 2;
 
+            CSS.highlights.set(
+                "search-result-focus",
+                new Highlight(matchRange),
+            );
+        }
+    }
+
+    function renderNextSearchMarkSmoothByRange(matchRange: Range) {
+        if (matchRange) {
+            const matchElement =
+                matchRange.commonAncestorContainer.parentElement;
+            if (
+                matchElement.clientHeight >
+                previewProtyle.protyle.contentElement.clientHeight
+            ) {
+                const protyleElement = previewProtyle.protyle.contentElement;
+                const contentRect = protyleElement.getBoundingClientRect();
+                let scrollTop =
+                    protyleElement.scrollTop +
+                    matchRange.getBoundingClientRect().top -
+                    contentRect.top -
+                    contentRect.height / 2;
+                protyleElement.scrollTo({
+                    top: scrollTop,
+                    behavior: "smooth",
+                });
+            } else {
+                matchElement.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                    inline: "center",
+                });
+            }
             CSS.highlights.set(
                 "search-result-focus",
                 new Highlight(matchRange),

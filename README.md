@@ -16,7 +16,7 @@ Click on a search result block to position within the document. Works well in lo
 #### Double-click Search Result to Open Document Tab
 Double-click a search result to open the document and jump to the specified location. If it does not open after double-clicking, you can adjust the "Double-click Time Threshold" in the "Other" settings.
 
-#### Single Document Content Sorting
+#### Single Document Search Result Sorting
 * Trigger method:
   * Right-click on document on desktop
   * Long press on document on mobile

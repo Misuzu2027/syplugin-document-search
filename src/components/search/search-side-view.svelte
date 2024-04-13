@@ -258,12 +258,20 @@
                 lastKeywords,
                 blockId,
                 previewProtyleMatchFocusIndex,
-                renderNextSearchMarkByRange,
+                renderFirstSearchMarkByRange,
             );
         }, 50);
     }
 
+    function renderFirstSearchMarkByRange(matchRange: Range) {
+        scrollByRange(matchRange, "nearest");
+    }
+
     function renderNextSearchMarkByRange(matchRange: Range) {
+        scrollByRange(matchRange, "center");
+    }
+
+    function scrollByRange(matchRange: Range, position: ScrollLogicalPosition) {
         if (matchRange) {
             const matchElement =
                 matchRange.commonAncestorContainer.parentElement;
@@ -288,8 +296,8 @@
             } else {
                 matchElement.scrollIntoView({
                     behavior: "smooth",
-                    block: "nearest",
-                    inline: "center",
+                    block: position,
+                    inline: position,
                 });
             }
         }

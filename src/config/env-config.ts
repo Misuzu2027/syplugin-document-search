@@ -32,7 +32,7 @@ export class EnvConfig {
         return i18nObject;
     }
 
-    public currentDocId: string;
+    public lastViewedDocId: string;
 
 
     public init(plugin: Plugin) {

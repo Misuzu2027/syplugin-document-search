@@ -5,6 +5,7 @@ export class DocumentQueryCriteria {
     contentBlockSortMethod: ContentBlockSortMethod;
     includeTypes: string[];
     includeConcatFields: string[];
+    includeRootIds: string[];
     excludeNotebookIds: string[];
 
     constructor(
@@ -158,6 +159,7 @@ export function generateDocumentSearchSql(
 export function generateDocumentCountSql(queryCriteria: DocumentQueryCriteria) {
     let keywords = queryCriteria.keywords;
     let includeTypes = queryCriteria.includeTypes;
+    let includeRootIds = queryCriteria.includeRootIds;
     let excludeNotebookIds = queryCriteria.excludeNotebookIds;
 
     let concatContentFields: string[] = queryCriteria.includeConcatFields;
@@ -170,7 +172,7 @@ export function generateDocumentCountSql(queryCriteria: DocumentQueryCriteria) {
     let contentLikeField = "GROUP_CONCAT( documentContent )";
     let pages = [1, 99999999];
     let documentContentLikeCountSql = generateDocumentContentLikeSql(
-        columns, keywords, contentLikeField, includeTypes, excludeNotebookIds, null, pages);
+        columns, keywords, contentLikeField, includeTypes, includeRootIds, excludeNotebookIds, null, pages);
 
     let documentCountSql = `SELECT count(1) AS documentCount FROM (${documentContentLikeCountSql})`;
 
@@ -184,6 +186,7 @@ function generateDocumentIdContentTableSql(
     let pages = queryCriteria.pages;
     let documentSortMethod = queryCriteria.documentSortMethod;
     let includeTypes = queryCriteria.includeTypes;
+    let includeRootIds = queryCriteria.includeRootIds;
     let includeConcatFields = queryCriteria.includeConcatFields;
     let excludeNotebookIds = queryCriteria.excludeNotebookIds;
 
@@ -210,7 +213,7 @@ function generateDocumentIdContentTableSql(
     }
 
     let documentIdContentTableSql = generateDocumentContentLikeSql(
-        columns, keywords, contentLikeField, includeTypes, excludeNotebookIds, orders, null);
+        columns, keywords, contentLikeField, includeTypes, includeRootIds, excludeNotebookIds, orders, null);
 
     return documentIdContentTableSql;
 }
@@ -219,14 +222,23 @@ function generateDocumentContentLikeSql(
     columns: string[],
     keywords: string[],
     contentLikeField: string,
-    types: string[],
+    includeTypes: string[],
+    includeRootIds: string[],
     excludeNotebookIds: string[],
     orders: string[],
     pages: number[]): string {
 
     let columnSql = columns.join(",");
-    let typeInSql = generateAndInConditions("type", types);
-    let boxNotInSql = generateAndNotInConditions("box", excludeNotebookIds);
+    let typeInSql = generateAndInConditions("type", includeTypes);
+    let rootIdInSql = " ";
+    let boxNotInSql = " ";
+    // 如果文档id不为空，则忽略过滤的笔记本id。
+    if (includeRootIds && includeRootIds.length > 0) {
+        rootIdInSql = generateAndInConditions("root_id", includeRootIds);
+    } else {
+        boxNotInSql = generateAndNotInConditions("box", excludeNotebookIds);
+    }
+
     // let contentOrLikeSql = generateOrLikeConditions("content", keywords);
     // if (contentOrLikeSql) {
     //     contentOrLikeSql = ` AND ( ${contentOrLikeSql} ) `;
@@ -251,6 +263,7 @@ function generateDocumentContentLikeSql(
         WHERE
             1 = 1 
             ${typeInSql}
+            ${rootIdInSql}
             ${boxNotInSql}
         GROUP BY
             root_id 

@@ -70,5 +70,6 @@
     "doubleClickTimeThreshold": "Double Click Time Threshold (Milliseconds)",
     "previewRefreshHighlightDelayTips": "For code blocks, databases, and other blocks that require time to render, too short a delay may fail. Set to 0 if not needed.",
     "previewRefreshHighlightDelay": "Preview Refresh Highlight Delay (Milliseconds)",
-    "settingHub": "Settings Hub"
+    "settingHub": "Settings Hub",
+    "switchCurrentDocumentSearchFailureMessage": "Document Search Plugin: Failed to retrieve the opened document. You can switch tabs or reopen the document."
 }

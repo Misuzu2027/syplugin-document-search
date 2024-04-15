@@ -6,6 +6,7 @@
         ITab,
         TProtyleAction,
         Constants,
+        showMessage,
     } from "siyuan";
     import SearchResultItem from "@/components/search/search-result-item.svelte";
 
@@ -22,6 +23,7 @@
         clearCssHighlights,
         findScrollingElement,
         getOpenTabActionByZoomIn,
+        getDocumentQueryCriteria,
     } from "@/components/search/search-util";
     import { checkBlockFold } from "@/utils/api";
 
@@ -41,6 +43,7 @@
     let previewProtyleMatchFocusIndex = 0;
     let lastBlockId: string;
     let lastDocumentContentElement: HTMLElement;
+    let isSearchInCurrentDoc: boolean = false;
 
     onMount(async () => {
         resize();
@@ -122,9 +125,23 @@
 
     async function refreshSearch(searchKey: string, pageNum: number) {
         isSearching++;
-        let result: DocumentSqlQueryModel = await getDocumentSearchResult(
+
+        let documentQueryCriteria = getDocumentQueryCriteria(
             searchKey,
             pageNum,
+        );
+        if (documentQueryCriteria) {
+            if (isSearchInCurrentDoc && EnvConfig.ins.lastViewedDocId) {
+                // 使用在当前文档搜索的时候，强制修改排序方式为原文排序
+                documentQueryCriteria.includeRootIds = [
+                    EnvConfig.ins.lastViewedDocId,
+                ];
+                // 原文排序
+                documentQueryCriteria.contentBlockSortMethod = "content";
+            }
+        }
+        let result: DocumentSqlQueryModel = await getDocumentSearchResult(
+            documentQueryCriteria,
         );
         isSearching = Math.max(0, isSearching - 1);
         if (!result || result.status === "param_null") {
@@ -211,7 +228,7 @@
         if (
             !zoomIn &&
             rootId != blockId &&
-            rootId == EnvConfig.ins.currentDocId &&
+            rootId == EnvConfig.ins.lastViewedDocId &&
             lastDocumentContentElement &&
             document.contains(lastDocumentContentElement) &&
             lastDocumentContentElement.querySelector(
@@ -327,6 +344,19 @@
     function clickSearchSettingOther() {
         openSettingsDialog("settingOther");
     }
+
+    function changeCheckboxSearchInCurrentDoc(event) {
+        if (event.target.checked && !EnvConfig.ins.lastViewedDocId) {
+            showMessage(
+                `文档搜索插件: 没有获取到打开的文档，可切换页签或重新打开文档。`,
+                4000,
+                "info",
+            );
+            event.target.checked = false;
+        }
+        isSearchInCurrentDoc = event.target.checked;
+        refreshSearch(searchInputKey, 1);
+    }
 </script>
 
 <div class="fn__flex-column" style="height: 100%;">
@@ -376,6 +406,15 @@
             on:keydown={handleKeyDownDefault}
         >
             <svg><use xlink:href="#iconSearchSettingOther"></use></svg>
+        </span>
+
+        <span class="fn__space"></span>
+        <span>
+            <input
+                class="b3-switch fn__flex-center"
+                type="checkbox"
+                on:change={changeCheckboxSearchInCurrentDoc}
+            />
         </span>
 
         <span class="fn__flex-1" style="min-height: 100%"></span>
@@ -524,3 +563,10 @@
     <!-- svelte-ignore a11y-missing-attribute -->
     <img width="120px" src="/stage/loading-pure.svg" />
 </div>
+
+<style>
+    input.disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+    }
+</style>

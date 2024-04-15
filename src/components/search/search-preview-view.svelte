@@ -24,6 +24,7 @@
         delayedTwiceRefresh,
         getDocumentSearchResult,
         getProtyleActionByZoomIn,
+        getDocumentQueryCriteria,
     } from "@/components/search/search-util";
     import { handleSearchDragMousdown } from "@/lib/SearchUtil";
     import { checkBlockFold } from "@/utils/api";
@@ -123,9 +124,12 @@
 
     async function refreshSearch(searchKey: string, pageNum: number) {
         isSearching++;
-        let result: DocumentSqlQueryModel = await getDocumentSearchResult(
+        let documentQueryCriteria = getDocumentQueryCriteria(
             searchKey,
             pageNum,
+        );
+        let result: DocumentSqlQueryModel = await getDocumentSearchResult(
+            documentQueryCriteria,
         );
         isSearching = Math.max(0, isSearching - 1);
         if (!result || result.status === "param_null") {

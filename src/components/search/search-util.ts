@@ -7,48 +7,19 @@ import { checkBlockFold, getBlockIndex, getBlocksIndexes, lsNotebooks, sql } fro
 import { highlightBlockContent } from "@/utils/html-util";
 import { convertIalStringToObject, convertIconInIal } from "@/utils/icon-util";
 import { getObjectSizeInKB } from "@/utils/object-util";
+import exp from "constants";
 import { Constants, TProtyleAction } from "siyuan";
 
 
 
-export async function getDocumentSearchResult(searchKey: string, pageNum: number): Promise<DocumentSqlQueryModel> {
+export async function getDocumentSearchResult(documentSearchCriterion: DocumentQueryCriteria): Promise<DocumentSqlQueryModel> {
     const startTime = performance.now(); // 记录开始时间
-    // 去除多余的空格，并将输入框的值按空格分割成数组
-    let keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
-
-    // 过滤掉空的搜索条件并使用 Set 存储唯一的关键词
-    const uniqueKeywordsSet = new Set(
-        keywords.filter((keyword) => keyword.length > 0),
-    );
-
-    // 将 Set 转换为数组
-    keywords = Array.from(uniqueKeywordsSet);
-
     let result = new DocumentSqlQueryModel();
 
-    if (!keywords || keywords.length <= 0) {
+    if (!documentSearchCriterion) {
         result.status = "param_null";
         return result;
     }
-
-    let pageSize = SettingConfig.ins.pageSize;
-    let types = SettingConfig.ins.includeTypes;
-    let queryFields = SettingConfig.ins.includeQueryFields;
-    let excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
-    let pages = [pageNum, pageSize];
-    let documentSortMethod = SettingConfig.ins.documentSortMethod;
-    let contentBlockSortMethod = SettingConfig.ins.contentBlockSortMethod;
-
-    let documentSearchCriterion: DocumentQueryCriteria =
-        new DocumentQueryCriteria(
-            keywords,
-            pages,
-            documentSortMethod,
-            contentBlockSortMethod,
-            types,
-            queryFields,
-            excludeNotebookIds,
-        );
 
     let documentSearchSql = generateDocumentSearchSql(
         documentSearchCriterion,
@@ -214,6 +185,45 @@ export async function processSearchResults(
     }
 
     return searchResults;
+}
+
+
+export function getDocumentQueryCriteria(searchKey: string, pageNum: number) {
+    // 去除多余的空格，并将输入框的值按空格分割成数组
+    let keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
+
+    // 过滤掉空的搜索条件并使用 Set 存储唯一的关键词
+    const uniqueKeywordsSet = new Set(
+        keywords.filter((keyword) => keyword.length > 0),
+    );
+
+    // 将 Set 转换为数组
+    keywords = Array.from(uniqueKeywordsSet);
+
+    if (!keywords || keywords.length <= 0) {
+        return null;
+    }
+
+    let pageSize = SettingConfig.ins.pageSize;
+    let types = SettingConfig.ins.includeTypes;
+    let queryFields = SettingConfig.ins.includeQueryFields;
+    let excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
+    let pages = [pageNum, pageSize];
+    let documentSortMethod = SettingConfig.ins.documentSortMethod;
+    let contentBlockSortMethod = SettingConfig.ins.contentBlockSortMethod;
+
+    let documentSearchCriterion: DocumentQueryCriteria =
+        new DocumentQueryCriteria(
+            keywords,
+            pages,
+            documentSortMethod,
+            contentBlockSortMethod,
+            types,
+            queryFields,
+            excludeNotebookIds,
+        );
+
+    return documentSearchCriterion;
 }
 
 function documentSort(searchResults: DocumentItem[], documentSortMethod: DocumentSortMethod) {
@@ -750,10 +760,10 @@ async function searchItemSortByContent(blockItems: BlockItem[]) {
         let bIndex = idMap.get(b.block.id) || 0;
         let result = aIndex - bIndex;
         if (result == 0) {
-            result = a.block.sort - b.block.sort;
+            result = Number(b.block.created) - Number(a.block.created);
         }
         if (result == 0) {
-            result = Number(b.block.updated) - Number(a.block.updated);
+            result = a.block.sort - b.block.sort;
         }
         return result;
     });

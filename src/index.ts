@@ -57,9 +57,10 @@ export default class PluginSample extends Plugin {
         });
 
         this.eventBus.on('switch-protyle', (e: any) => {
-            EnvConfig.ins.currentDocId = e.detail.protyle.block.rootID;
+            // console.log("switch-protyle " + JSON.stringify(e.detail.protyle.block));
+            EnvConfig.ins.lastViewedDocId = e.detail.protyle.block.rootID;
             // utils.setCurrentBoxId(e.detail.protyle.notebookId)
-          })
+        })
 
     }
 

@@ -70,5 +70,6 @@
     "doubleClickTimeThreshold": "双击时间阈值(毫秒)",
     "previewRefreshHighlightDelayTips": "用于代码块、数据库这种需要时间渲染的块高亮，太短可能会失败，不需要可以设置为0",
     "previewRefreshHighlightDelay": "刷新预览区高亮延迟(毫秒)",
-    "settingHub": "设置中心"
+    "settingHub": "设置中心",
+    "switchCurrentDocumentSearchFailureMessage":"文档搜索插件: 没有获取到打开的文档，可切换页签或重新打开文档。"
 }

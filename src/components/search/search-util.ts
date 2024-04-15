@@ -7,7 +7,6 @@ import { checkBlockFold, getBlockIndex, getBlocksIndexes, lsNotebooks, sql } fro
 import { highlightBlockContent } from "@/utils/html-util";
 import { convertIalStringToObject, convertIconInIal } from "@/utils/icon-util";
 import { getObjectSizeInKB } from "@/utils/object-util";
-import exp from "constants";
 import { Constants, TProtyleAction } from "siyuan";
 
 

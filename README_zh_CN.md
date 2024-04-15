@@ -39,7 +39,9 @@
 
 #### Dock栏搜索 支持在当前文档搜索
 ![Alt text](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/search-in-document.png?raw=true)
+
 关闭是全局搜索，打开后在当前文档搜索；打开后或强制使用原文排序，如果想要切换排序可以右击文档进行切换。
+
 实际上是读取光标最后聚焦的文档，如果没有定位到想要的文档，可以切换页签或重新打开该文档。
 
 

@@ -40,7 +40,9 @@ If the highlighting for **code block, database** fails, you can adjust the "Prev
 
 #### Dock Search Supports Searching in Current Document
 ![Alt text](https://github.com/Misuzu2027/syplugin-document-search/blob/main/src/assets/imgs/search-in-document.png?raw=true)
+
 Closing is for global search, opening is for searching in the current document; when opened, it forces the use of original order. If you want to switch sorting, you can right-click on the document to do so.
+
 In fact, it reads the document where the cursor is last focused. If the desired document is not located, you can switch tabs or reopen the document.
 
 

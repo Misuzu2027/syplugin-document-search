@@ -59,19 +59,31 @@ In fact, it reads the document where the cursor is last focused. If the desired 
 You can hide unused Docks in the plugin's Dock Settings.
 Note: The hiding will be synchronized on mobile.
 
+
 ## Default Configuration
-* Document-based Search
-  * Default block types for queries:
-    * Document, Heading, Code Block, Math Block, Table Block, Paragraph Block, HTML Block, Database, Audio, Video
-  * Default matching attributes for blocks: Name, Alias, Memo
-  * Default sorting:
-    * Document sorting: Descending by relevance
-    * Content block sorting: Type
-  * Documents per page: 10
-  * Default maximum expansion count: 100
-* Flat Document Tree
-  * Default sorting: Descending by modification time
-  * Display 30 items
+
+### Document-based Search
+
+* Default block types for queries:
+  * Document, Heading, Code Block, Math Block, Table Block, Paragraph Block, HTML Block, Database, Audio, Video
+* Default matching attributes for blocks: Name, Alias, Memo
+* Default sorting:
+  * Document sorting: Descending by relevance
+  * Content block sorting: Type
+* Documents per page: 10
+* Default maximum expansion count: 100
+
+
+### Flat Document Tree
+
+* Default sorting: Descending by modification time
+* Display 30 items
+
+
+### keyboard shortcuts
+
+* Currently supported keyboard shortcuts: Open document search tab, Document search Dock, Flat document tree Dock.
+* All can be found and modified in "Settings" -> "Keymap" -> "document dearch" in SiYuan.
 
 # Changelog
 > [Changelog(Chinese)](./CHANGELOG_zh_CN.md)

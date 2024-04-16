@@ -1,5 +1,5 @@
 {
-    "openDocumentSearchTab": "打开文档搜索页签",
+    "openDocumentSearchTab": "打开基于文档搜索页签",
     "table": "表格",
     "mathBlock": "公式块",
     "quoteBlock": "引述块",
@@ -46,6 +46,8 @@
     "reference": "引用",
     "documentBasedSearch": "基于文档搜索",
     "flatDocumentTree": "扁平化文档树",
+    "documentBasedSearchDock": "基于文档搜索 Dock",
+    "flatDocumentTreeDock": "扁平化文档树 Dock",
     "previousLabel": "上一页",
     "nextLabel": "下一页",
     "findInDoc": "匹配到 ${x} 个文档",

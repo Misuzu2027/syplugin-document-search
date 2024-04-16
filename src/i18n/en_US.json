@@ -1,5 +1,5 @@
 {
-    "openDocumentSearchTab": "Open Document Search Tab",
+    "openDocumentSearchTab": "Open Document-based Search Tab",
     "table": "Table",
     "mathBlock": "Formula block",
     "quoteBlock": "Blockquote",
@@ -46,6 +46,8 @@
     "reference": "Ref",
     "documentBasedSearch": "Document-based Search",
     "flatDocumentTree": "Flat Document Tree",
+    "documentBasedSearchDock": "Document-based Search Dock",
+    "flatDocumentTreeDock": "Flat Document Tree Dock",
     "previousLabel": "Previous",
     "nextLabel": "Next",
     "findInDoc": "Found ${x} documents",

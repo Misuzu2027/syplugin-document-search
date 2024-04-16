@@ -759,7 +759,7 @@ async function searchItemSortByContent(blockItems: BlockItem[]) {
         let bIndex = idMap.get(b.block.id) || 0;
         let result = aIndex - bIndex;
         if (result == 0) {
-            result = Number(b.block.created) - Number(a.block.created);
+            result = Number(a.block.created) - Number(b.block.created);
         }
         if (result == 0) {
             result = a.block.sort - b.block.sort;
@@ -786,6 +786,9 @@ async function searchItemSortByTypeAndContent(blockItems: BlockItem[]) {
             let aIndex = idMap.get(a.block.id) || 0;
             let bIndex = idMap.get(b.block.id) || 0;
             result = aIndex - bIndex;
+        }
+        if (result == 0) {
+            result = Number(a.block.created) - Number(b.block.created);
         }
         return result;
     });

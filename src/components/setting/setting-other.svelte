@@ -115,7 +115,7 @@
         >
         <span class="fn__space"></span>
         <div class="fn__flex-1 fn__flex-center">
-            {EnvConfig.ins.i18n.contentBlockSortMethod}
+            {EnvConfig.ins.i18n.documentsPerPage}
         </div>
         <span class="fn__space"></span>
         <input

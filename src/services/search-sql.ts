@@ -61,6 +61,10 @@ export function generateDocumentListSql(
     } else if (documentSortMethod == 'refCountDesc') {
         columns.push(" (SELECT count(1) FROM refs WHERE def_block_root_id = blocks.id) refCount ");
         orders = [" refCount DESC ", " updated DESC "]
+    } else if (documentSortMethod == 'alphabeticAsc') {
+        orders = ["concatContent ASC", " updated DESC "]
+    } else if (documentSortMethod == 'alphabeticDesc') {
+        orders = ["concatContent DESC", " updated DESC "]
     }
 
     let columnSql = columns.join(" , ");
@@ -128,6 +132,10 @@ export function generateDocumentSearchSql(
     } else if (contentBlockSortMethod == 'rankDesc') {
         let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", keywords, false);
         orders = [orderCaseCombinationSql, " sort ASC ", " updated DESC "]
+    } else if (contentBlockSortMethod == 'alphabeticAsc') {
+        orders = ["concatContent ASC", " updated DESC "]
+    } else if (contentBlockSortMethod == 'alphabeticDesc') {
+        orders = ["concatContent DESC", " updated DESC "]
     }
     let orderSql = generateOrderSql(orders);
 
@@ -207,9 +215,13 @@ function generateDocumentIdContentTableSql(
     } else if (documentSortMethod == 'rankAsc') {
         let tempTableOrderCaseCombinationSql = generateRelevanceOrderSql("documentContent", keywords, true);
         orders = [tempTableOrderCaseCombinationSql, " MAX(updated) DESC "]
-    } else { // rankDesc 相关度降序
+    } else if (documentSortMethod == 'rankDesc') { // rankDesc 相关度降序
         let tempTableOrderCaseCombinationSql = generateRelevanceOrderSql("documentContent", keywords, false);
         orders = [tempTableOrderCaseCombinationSql, " MAX(updated) DESC "]
+    } else if (documentSortMethod == 'alphabeticAsc') {
+        orders = ["documentContent ASC", " updated DESC "]
+    } else if (documentSortMethod == 'alphabeticDesc') {
+        orders = ["documentContent DESC", " updated DESC "]
     }
 
     let documentIdContentTableSql = generateDocumentContentLikeSql(

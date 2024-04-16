@@ -282,10 +282,9 @@ function getDocumentSortFun(documentSortMethod: DocumentSortMethod)
                 let aRank: number = calculateBlockRank(a.block);
                 let bRank: number = calculateBlockRank(b.block);
                 let result = aRank - bRank;
-                result =
-                    result == 0
-                        ? Number(b.block.updated) - Number(a.block.updated)
-                        : result;
+                if (result == 0) {
+                    result = Number(b.block.updated) - Number(a.block.updated);
+                }
                 return result;
             };
             break;
@@ -297,10 +296,37 @@ function getDocumentSortFun(documentSortMethod: DocumentSortMethod)
                 let aRank: number = calculateBlockRank(a.block);
                 let bRank: number = calculateBlockRank(b.block);
                 let result = bRank - aRank;
-                result =
-                    result == 0
-                        ? Number(b.block.updated) - Number(a.block.updated)
-                        : result;
+                if (result == 0) {
+                    result = Number(b.block.updated) - Number(a.block.updated);
+                }
+                return result;
+            };
+            break;
+        case "alphabeticAsc":
+            documentSortFun = function (
+                a: DocumentItem,
+                b: DocumentItem,
+            ): number {
+                let aContent = a.block.content.replace("<mark>","").replace("</mark>","");
+                let bContent = b.block.content.replace("<mark>","").replace("</mark>","");
+                let result = aContent.localeCompare(bContent, undefined, { sensitivity: 'base', usage: 'sort', numeric: true });
+                if (result == 0) {
+                    result = Number(b.block.updated) - Number(a.block.updated);
+                }
+                return result;
+            };
+            break;
+        case "alphabeticDesc":
+            documentSortFun = function (
+                a: DocumentItem,
+                b: DocumentItem,
+            ): number {
+                let aContent = a.block.content.replace("<mark>","").replace("</mark>","");
+                let bContent = b.block.content.replace("<mark>","").replace("</mark>","");
+                let result = bContent.localeCompare(aContent, undefined, { sensitivity: 'base', usage: 'sort', numeric: true });
+                if (result == 0) {
+                    result = Number(b.block.updated) - Number(a.block.updated);
+                }
                 return result;
             };
             break;
@@ -468,6 +494,46 @@ function getBlockSortFun(contentBlockSortMethod: ContentBlockSortMethod) {
                     if (result == 0) {
                         result = Number(b.block.updated) - Number(a.block.updated);
                     }
+                }
+                return result;
+            };
+            break;
+        case "alphabeticAsc":
+            blockSortFun = function (
+                a: BlockItem,
+                b: BlockItem,
+            ): number {
+                if (a.block.type === "d") {
+                    return -1;
+                }
+                if (b.block.type === "d") {
+                    return 1;
+                }
+                let aContent = a.block.content.replace("<mark>","").replace("</mark>","");
+                let bContent = b.block.content.replace("<mark>","").replace("</mark>","");
+                let result = aContent.localeCompare(bContent, undefined, { sensitivity: 'base', usage: 'sort', numeric: true });
+                if (result == 0) {
+                    result = Number(b.block.updated) - Number(a.block.updated);
+                }
+                return result;
+            };
+            break;
+        case "alphabeticDesc":
+            blockSortFun = function (
+                a: BlockItem,
+                b: BlockItem,
+            ): number {
+                if (a.block.type === "d") {
+                    return -1;
+                }
+                if (b.block.type === "d") {
+                    return 1;
+                }
+                let aContent = a.block.content.replace("<mark>","").replace("</mark>","");
+                let bContent = b.block.content.replace("<mark>","").replace("</mark>","");
+                let result = bContent.localeCompare(aContent, undefined, { sensitivity: 'base', usage: 'sort', numeric: true });
+                if (result == 0) {
+                    result = Number(b.block.updated) - Number(a.block.updated);
                 }
                 return result;
             };

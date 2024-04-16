@@ -15,6 +15,8 @@ type DocumentSortMethod =
     | "rankDesc"
     | "refCountAsc"
     | "refCountDesc"
+    | "alphabeticAsc"
+    | "alphabeticDesc"
     ;
 
 type ContentBlockSortMethod =

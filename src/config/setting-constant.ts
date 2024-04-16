@@ -159,6 +159,14 @@ export function SETTING_DOCUMENT_SORT_METHOD_ELEMENT() {
             text: EnvConfig.ins.i18n.createdDESC,
             value: "createdDesc",
         },
+        {
+            text: EnvConfig.ins.i18n.fileNameASC,
+            value: "alphabeticAsc",
+        },
+        {
+            text: EnvConfig.ins.i18n.fileNameDESC,
+            value: "alphabeticDesc",
+        },
     ];
 }
 
@@ -243,6 +251,14 @@ export function SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT() {
         {
             text: EnvConfig.ins.i18n.refCountDESC,
             value: "refCountDesc",
+        },
+        {
+            text: EnvConfig.ins.i18n.fileNameASC,
+            value: "alphabeticAsc",
+        },
+        {
+            text: EnvConfig.ins.i18n.fileNameDESC,
+            value: "alphabeticDesc",
         },
     ];
 }

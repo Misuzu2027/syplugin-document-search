@@ -34,7 +34,7 @@
     let searchInputKey: string = "";
     let lastClientWidth;
     let documentItems: DocumentTreeItemInfo[] = [];
-    let flatDocTreeSortMethod: DocumentSortMethod= "modifiedDesc";
+    let flatDocTreeSortMethod: DocumentSortMethod = "modifiedDesc";
 
     onMount(async () => {
         resize();
@@ -92,7 +92,8 @@
     }
 
     async function refreshFileTree(searchKey: string, pageNum: number) {
-        isSearching++;
+        // 每次查询改为1，防止因为异常，加载图案不会消失。
+        isSearching = 1;
 
         // 去除多余的空格，并将输入框的值按空格分割成数组
         let keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
@@ -397,7 +398,10 @@
         </ul>
     {/each}
 </div>
-<div class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}">
+<div
+    class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}"
+    style="top:85px"
+>
     <!-- svelte-ignore a11y-missing-attribute -->
     <img width="120px" src="/stage/loading-pure.svg" />
 </div>

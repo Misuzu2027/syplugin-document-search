@@ -124,7 +124,8 @@
     }
 
     async function refreshSearch(searchKey: string, pageNum: number) {
-        isSearching++;
+        // 每次查询改为2，防止因为异常，加载图案不会消失。目前获取到查询-1，处理完搜索结果-1。
+        isSearching = 2;
 
         let documentQueryCriteria = getDocumentQueryCriteria(
             searchKey,
@@ -150,6 +151,7 @@
             totalPage = 0;
             lastKeywords = [];
             documentItemSearchResult = [];
+            isSearching = 0;
             return;
         }
         selectedItemIndex = -1;
@@ -559,7 +561,10 @@
         {/if}
     </div>
 </div>
-<div class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}">
+<div
+    class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}"
+    style="top:85px"
+>
     <!-- svelte-ignore a11y-missing-attribute -->
     <img width="120px" src="/stage/loading-pure.svg" />
 </div>

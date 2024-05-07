@@ -24,7 +24,17 @@
                 ><use xlink:href={element.icon}></use></svg
             >
             <span class="fn__space"></span>
-            <div class="fn__flex-1 fn__flex-center">{element.text}</div>
+            <div class="fn__flex-1 fn__flex-center">
+                {element.text}
+                {#if element.containerBlockTip1}
+                    <sup>
+                        1
+                        {#if element.containerBlockTip2}
+                            2
+                        {/if}
+                    </sup>
+                {/if}
+            </div>
             <span class="fn__space"></span>
             <input
                 class="b3-switch fn__flex-center"
@@ -36,4 +46,13 @@
             />
         </label>
     {/each}
+    <span class="fn__space"></span>
+    <div class="fn__flex-1">
+        <div class="b3-label__text">
+            [1] {window.siyuan.languages.containerBlockTip1}
+        </div>
+        <div class="b3-label__text">
+            [2] {window.siyuan.languages.containerBlockTip2}
+        </div>
+    </div>
 </div>

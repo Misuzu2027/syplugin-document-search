@@ -570,8 +570,4 @@
 </div>
 
 <style>
-    input.disabled {
-        opacity: 0.38;
-        cursor: not-allowed;
-    }
 </style>

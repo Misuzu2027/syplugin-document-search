@@ -15,46 +15,16 @@ export function SETTING_BLOCK_TYPE_ELEMENT() {
             value: "t",
         },
         {
-            icon: "#iconQuote",
-            text: EnvConfig.ins.i18n.quoteBlock,
-            dataType: "quoteBlock",
-            value: "b",
-        },
-        {
-            icon: "#iconSuper",
-            text: EnvConfig.ins.i18n.superBlock,
-            dataType: "superBlock",
-            value: "s",
-        },
-        {
             icon: "#iconParagraph",
             text: EnvConfig.ins.i18n.paragraph,
             dataType: "paragraph",
             value: "p",
         },
         {
-            icon: "#iconFile",
-            text: EnvConfig.ins.i18n.doc,
-            dataType: "document",
-            value: "d",
-        },
-        {
             icon: "#iconHeadings",
             text: EnvConfig.ins.i18n.headings,
             dataType: "heading",
             value: "h",
-        },
-        {
-            icon: "#iconList",
-            text: EnvConfig.ins.i18n.list,
-            dataType: "checkbox",
-            value: "l",
-        },
-        {
-            icon: "#iconListItem",
-            text: EnvConfig.ins.i18n.listItem,
-            dataType: "listItem",
-            value: "i",
         },
         {
             icon: "#iconCode",
@@ -69,16 +39,16 @@ export function SETTING_BLOCK_TYPE_ELEMENT() {
             value: "html",
         },
         {
-            icon: "#iconSQL",
-            text: EnvConfig.ins.i18n.embedBlock,
-            dataType: "embedBlock",
-            value: "query_embed",
-        },
-        {
             icon: "#iconDatabase",
             text: EnvConfig.ins.i18n.database,
             dataType: "databaseBlock",
             value: "av",
+        },
+        {
+            icon: "#iconSQL",
+            text: EnvConfig.ins.i18n.embedBlock,
+            dataType: "embedBlock",
+            value: "query_embed",
         },
         {
             icon: "#iconVideo",
@@ -103,6 +73,42 @@ export function SETTING_BLOCK_TYPE_ELEMENT() {
             text: EnvConfig.ins.i18n.widget,
             dataType: "widgetBlock",
             value: "widget",
+        },
+        {
+            icon: "#iconFile",
+            text: EnvConfig.ins.i18n.doc,
+            dataType: "document",
+            value: "d",
+            containerBlockTip1: true,
+            containerBlockTip2: true,
+        },
+        {
+            icon: "#iconQuote",
+            text: EnvConfig.ins.i18n.quoteBlock,
+            dataType: "quoteBlock",
+            value: "b",
+            containerBlockTip1: true,
+        },
+        {
+            icon: "#iconSuper",
+            text: EnvConfig.ins.i18n.superBlock,
+            dataType: "superBlock",
+            value: "s",
+            containerBlockTip1: true,
+        },
+        {
+            icon: "#iconList",
+            text: EnvConfig.ins.i18n.list,
+            dataType: "checkbox",
+            value: "l",
+            containerBlockTip1: true,
+        },
+        {
+            icon: "#iconListItem",
+            text: EnvConfig.ins.i18n.listItem,
+            dataType: "listItem",
+            value: "i",
+            containerBlockTip1: true,
         },
     ];
 }

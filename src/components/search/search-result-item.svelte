@@ -136,7 +136,7 @@
             <span
                 class="b3-list-item__text ariaLabel"
                 style="color: var(--b3-theme-on-surface)"
-                aria-label={item.path}
+                aria-label={item.ariaLabel}
                 data-position="parentE"
             >
                 {@html item.block.content}

@@ -8,6 +8,7 @@ import { highlightBlockContent } from "@/utils/html-util";
 import { convertIalStringToObject, convertIconInIal } from "@/utils/icon-util";
 import { getObjectSizeInKB } from "@/utils/object-util";
 import { Constants, TProtyleAction } from "siyuan";
+import { getFileArialLabel } from "../doc-tree/doc-tree-util";
 
 
 
@@ -135,8 +136,9 @@ export async function processSearchResults(
                 let ial = convertIalStringToObject(block.ial);
                 blockItem.icon = convertIconInIal(ial.icon);
             }
-            documentItem.path =
-                notebookMap.get(block.box).name + block.hpath;
+            // documentItem.path =
+            //     notebookMap.get(block.box).name + block.hpath;
+            documentItem.ariaLabel = getFileArialLabel(block, notebookMap.get(block.box).name);
             searchResults.push(documentItem);
             documentBlockMap.set(rootId, documentItem);
         }
@@ -307,8 +309,8 @@ function getDocumentSortFun(documentSortMethod: DocumentSortMethod)
                 a: DocumentItem,
                 b: DocumentItem,
             ): number {
-                let aContent = a.block.content.replace("<mark>","").replace("</mark>","");
-                let bContent = b.block.content.replace("<mark>","").replace("</mark>","");
+                let aContent = a.block.content.replace("<mark>", "").replace("</mark>", "");
+                let bContent = b.block.content.replace("<mark>", "").replace("</mark>", "");
                 let result = aContent.localeCompare(bContent, undefined, { sensitivity: 'base', usage: 'sort', numeric: true });
                 if (result == 0) {
                     result = Number(b.block.updated) - Number(a.block.updated);
@@ -321,8 +323,8 @@ function getDocumentSortFun(documentSortMethod: DocumentSortMethod)
                 a: DocumentItem,
                 b: DocumentItem,
             ): number {
-                let aContent = a.block.content.replace("<mark>","").replace("</mark>","");
-                let bContent = b.block.content.replace("<mark>","").replace("</mark>","");
+                let aContent = a.block.content.replace("<mark>", "").replace("</mark>", "");
+                let bContent = b.block.content.replace("<mark>", "").replace("</mark>", "");
                 let result = bContent.localeCompare(aContent, undefined, { sensitivity: 'base', usage: 'sort', numeric: true });
                 if (result == 0) {
                     result = Number(b.block.updated) - Number(a.block.updated);
@@ -509,8 +511,8 @@ function getBlockSortFun(contentBlockSortMethod: ContentBlockSortMethod) {
                 if (b.block.type === "d") {
                     return 1;
                 }
-                let aContent = a.block.content.replace("<mark>","").replace("</mark>","");
-                let bContent = b.block.content.replace("<mark>","").replace("</mark>","");
+                let aContent = a.block.content.replace("<mark>", "").replace("</mark>", "");
+                let bContent = b.block.content.replace("<mark>", "").replace("</mark>", "");
                 let result = aContent.localeCompare(bContent, undefined, { sensitivity: 'base', usage: 'sort', numeric: true });
                 if (result == 0) {
                     result = Number(b.block.updated) - Number(a.block.updated);
@@ -529,8 +531,8 @@ function getBlockSortFun(contentBlockSortMethod: ContentBlockSortMethod) {
                 if (b.block.type === "d") {
                     return 1;
                 }
-                let aContent = a.block.content.replace("<mark>","").replace("</mark>","");
-                let bContent = b.block.content.replace("<mark>","").replace("</mark>","");
+                let aContent = a.block.content.replace("<mark>", "").replace("</mark>", "");
+                let bContent = b.block.content.replace("<mark>", "").replace("</mark>", "");
                 let result = bContent.localeCompare(aContent, undefined, { sensitivity: 'base', usage: 'sort', numeric: true });
                 if (result == 0) {
                     result = Number(b.block.updated) - Number(a.block.updated);

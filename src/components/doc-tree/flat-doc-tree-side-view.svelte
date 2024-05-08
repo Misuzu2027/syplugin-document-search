@@ -20,12 +20,8 @@
         convertIconInIal,
     } from "@/utils/icon-util";
     import { SettingConfig } from "@/services/setting-config";
-    import { removePrefixAndSuffix } from "@/utils/string-util";
     import { SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
-    import {
-        convertDateTimeInBlock,
-        formatRelativeTimeInBlock,
-    } from "@/utils/datetime-util";
+    import { getFileArialLabel } from "./doc-tree-util";
 
     let documentSearchInputElement: HTMLInputElement;
     let selectedItemIndex: number = -1;
@@ -166,43 +162,43 @@
         return documentBlockInfos;
     }
 
-    function getFileArialLabel(block: any, boxName: string): string {
-        let ariaLabelRow: string[] = [];
-        // ariaLabelRow.push(block.content);
-        if (block.name) {
-            ariaLabelRow.push(
-                `<br>${window.siyuan.languages.name} ${block.name}`,
-            );
-        }
-        if (block.alias) {
-            ariaLabelRow.push(
-                `<br>${window.siyuan.languages.alias} ${block.alias}`,
-            );
-        }
-        if (block.memo) {
-            ariaLabelRow.push(
-                `<br>${window.siyuan.languages.memo} ${block.memo}`,
-            );
-        }
+    // function getFileArialLabel(block: any, boxName: string): string {
+    //     let ariaLabelRow: string[] = [];
+    //     // ariaLabelRow.push(block.content);
+    //     if (block.name) {
+    //         ariaLabelRow.push(
+    //             `<br>${window.siyuan.languages.name} ${block.name}`,
+    //         );
+    //     }
+    //     if (block.alias) {
+    //         ariaLabelRow.push(
+    //             `<br>${window.siyuan.languages.alias} ${block.alias}`,
+    //         );
+    //     }
+    //     if (block.memo) {
+    //         ariaLabelRow.push(
+    //             `<br>${window.siyuan.languages.memo} ${block.memo}`,
+    //         );
+    //     }
 
-        ariaLabelRow.push(`<br>${EnvConfig.ins.i18n.notebook} ${boxName}`);
-        ariaLabelRow.push(`<br>${EnvConfig.ins.i18n.path} ${block.hpath}`);
+    //     ariaLabelRow.push(`<br>${EnvConfig.ins.i18n.notebook} ${boxName}`);
+    //     ariaLabelRow.push(`<br>${EnvConfig.ins.i18n.path} ${block.hpath}`);
 
-        let updated = formatRelativeTimeInBlock(block.updated);
-        let created = convertDateTimeInBlock(block.created);
+    //     let updated = formatRelativeTimeInBlock(block.updated);
+    //     let created = convertDateTimeInBlock(block.created);
 
-        ariaLabelRow.push(
-            `<br>${window.siyuan.languages.modifiedAt} ${updated}`,
-        );
-        ariaLabelRow.push(
-            `<br>${window.siyuan.languages.createdAt} ${created}`,
-        );
+    //     ariaLabelRow.push(
+    //         `<br>${window.siyuan.languages.modifiedAt} ${updated}`,
+    //     );
+    //     ariaLabelRow.push(
+    //         `<br>${window.siyuan.languages.createdAt} ${created}`,
+    //     );
 
-        let ariaLabel = ariaLabelRow.join("");
-        ariaLabel = removePrefixAndSuffix(ariaLabel, "<br>", "<br>");
+    //     let ariaLabel = ariaLabelRow.join("");
+    //     ariaLabel = removePrefixAndSuffix(ariaLabel, "<br>", "<br>");
 
-        return ariaLabel;
-    }
+    //     return ariaLabel;
+    // }
 
     function handleKeyDownSelectItem(event: KeyboardEvent) {
         let selectedItem = selectItemByArrowKeys(

@@ -50,6 +50,7 @@ export default class PluginSample extends Plugin {
 
         this.addCommand({
             langKey: EnvConfig.ins.i18n.openDocumentSearchTab,
+            langText: EnvConfig.ins.i18n.openDocumentSearchTab,
             hotkey: "⇧⌘Q",
             callback: () => {
                 this.openDocumentSearchTab();

@@ -7,6 +7,7 @@ export class DocumentItem {
     icon: string;
     index: number;
     path: string;
+    ariaLabel: string;
 }
 
 export class BlockItem {

@@ -57,13 +57,16 @@
         if (!document) {
             return;
         }
-        documentSearchInputFocus();
 
-        if (clientWidth) {
+        if (clientWidth != undefined && clientWidth != null) {
+            let lastHiddenSearchResult = hiddenSearchResult;
             if (clientWidth == 0) {
                 hiddenSearchResult = true;
             } else {
                 hiddenSearchResult = false;
+            }
+            if (!hiddenSearchResult && lastHiddenSearchResult) {
+                documentSearchInputFocus();
             }
         }
     }
@@ -72,6 +75,7 @@
         if (!documentSearchInputElement) {
             return;
         }
+        documentSearchInputElement.select();
         documentSearchInputElement.focus();
     }
 

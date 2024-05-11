@@ -35,7 +35,7 @@
     let selectedItemIndex: number = -1;
     let inputChangeTimeoutId;
     let isSearching: number = 0;
-    let hiddenSearchResult: boolean = false;
+    let hiddenSearchResult: boolean = true;
     let lastKeywords: string[];
     let searchResultDocumentCount: number = null;
     let curPage: number = 0;

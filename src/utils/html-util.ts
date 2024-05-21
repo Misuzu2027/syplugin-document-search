@@ -11,10 +11,12 @@ export function highlightBlockContent(block: Block, keywords: string[]) {
     let nameHml = getHighlightedContent(block.name, keywords);
     let aliasHtml = getHighlightedContent(block.alias, keywords);
     let memoHtml = getHighlightedContent(block.memo, keywords);
+    let tagHtml = getHighlightedContent(block.tag, keywords);
     block.content = contentHtml;
     block.name = nameHml;
     block.alias = aliasHtml;
     block.memo = memoHtml;
+    block.tag = tagHtml;
 }
 
 function getHighlightedContent(

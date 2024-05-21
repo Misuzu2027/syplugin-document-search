@@ -15,6 +15,11 @@ export function getFileArialLabel(block: any, boxName: string): string {
             `<br>${window.siyuan.languages.alias} ${block.alias}`,
         );
     }
+    if (block.tag) {
+        ariaLabelRow.push(
+            `<br>${window.siyuan.languages.tag} ${block.tag}`,
+        );
+    }
     if (block.memo) {
         ariaLabelRow.push(
             `<br>${window.siyuan.languages.memo} ${block.memo}`,

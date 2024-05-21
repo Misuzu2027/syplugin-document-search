@@ -8,12 +8,14 @@
     } from "@/components/search/search-util";
     import { MenuItem } from "@/lib/Menu";
     import { EnvConfig } from "@/config/env-config";
+    import { SettingConfig } from "@/services/setting-config";
 
     export let documentItemSearchResult: DocumentItem[];
     export let clickCallback: (event, item: BlockItem) => void;
     export let selectedIndex: number = 0;
 
     let isSearching: number = 0;
+    let itemClickCount: number = 0;
 
     function itemClick(event, item: BlockItem) {
         if (clickCallback) {
@@ -23,6 +25,23 @@
 
     function handleKeyDownDefault(event) {
         console.log(event.key);
+    }
+
+    function clickDocBlockItem(documentItem: DocumentItem) {
+        let doubleClickTimeout = SettingConfig.ins.doubleClickTimeout;
+
+        itemClickCount++;
+        if (itemClickCount === 1) {
+            // 单击逻辑
+            toggleItemVisibility(documentItem.block);
+            setTimeout(() => {
+                itemClickCount = 0; // 重置计数
+            }, doubleClickTimeout);
+        } else if (itemClickCount === 2) {
+            // 双击就相当于点击了一下文档块
+            mockClickDocBlockItem(documentItem);
+            itemClickCount = 0; // 重置计数
+        }
     }
 
     function toggleItemVisibility(block: Block) {
@@ -64,10 +83,26 @@
                 ),
             }).element,
         );
+        window.siyuan.menus.menu.append(
+            new MenuItem({
+                label: window.siyuan.languages.openBy,
+                type: "submenu",
+                click: () => {
+                    mockClickDocBlockItem(documentItem);
+                },
+            }).element,
+        );
 
         window.siyuan.menus.menu.popup({ x: event.clientX, y: event.clientY });
 
         // console.log(`文档右击位置 x : ${event.clientX}, y : ${event.clientY}`);
+    }
+
+    function mockClickDocBlockItem(documentItem: DocumentItem) {
+        let docBlockItem = new BlockItem();
+        docBlockItem.block = documentItem.block;
+        docBlockItem.index = documentItem.index;
+        itemClick(null, docBlockItem);
     }
 
     async function blockSortSubMenuCallback(
@@ -102,7 +137,7 @@
             class="b3-list-item {item.index === selectedIndex
                 ? 'b3-list-item--focus'
                 : ''} "
-            on:click={() => toggleItemVisibility(item.block)}
+            on:click={() => clickDocBlockItem(item)}
             on:contextmenu|stopPropagation|preventDefault={(event) =>
                 documentItemContextmenuEvent(event, item)}
             on:keydown={handleKeyDownDefault}

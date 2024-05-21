@@ -191,8 +191,10 @@
             itemClickCount = 0; // 重置计数
         }
 
-        event.stopPropagation();
-        event.preventDefault();
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
     }
 
     function openBlockTab(blockId: string) {

@@ -197,8 +197,10 @@
         // documentSearchInputFocus();
 
         openBlockTab(blockId, rootId);
-        event.stopPropagation();
-        event.preventDefault();
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
     }
 
     async function openBlockTab(blockId: string, rootId: string) {

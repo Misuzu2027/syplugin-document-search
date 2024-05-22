@@ -46,6 +46,9 @@
     let isSearchInCurrentDoc: boolean = false;
 
     onMount(async () => {
+        if (EnvConfig.ins.isMobile) {
+            hiddenSearchResult = false;
+        }
         resize();
     });
 

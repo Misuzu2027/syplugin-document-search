@@ -27,7 +27,7 @@
         getDocumentQueryCriteria,
     } from "@/components/search/search-util";
     import { handleSearchDragMousdown } from "@/lib/SearchUtil";
-    import { checkBlockFold } from "@/utils/api";
+    import { getBlockIsFolded } from "@/utils/api";
 
     let element: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
@@ -231,7 +231,7 @@
             return;
         }
         previewProtyleMatchFocusIndex = 0;
-        let zoomIn = await checkBlockFold(blockId);
+        let zoomIn = await getBlockIsFolded(blockId);
         let actions = getProtyleActionByZoomIn(zoomIn);
 
         if (

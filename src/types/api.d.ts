@@ -63,3 +63,8 @@ interface IResExportResources {
     path: string;
 }
 
+
+interface IResCheckBlockFold{
+    isFolded: boolean;
+    isRoot: boolean;
+}

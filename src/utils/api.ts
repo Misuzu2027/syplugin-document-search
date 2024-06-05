@@ -7,6 +7,8 @@
  */
 
 import { fetchPost, fetchSyncPost, IWebSocketData } from "siyuan";
+import { isBoolean } from "./object-util";
+
 
 
 async function request(url: string, data: any) {
@@ -272,7 +274,20 @@ export async function getBlocksIndexes(ids: BlockId[]): Promise<Object> {
     return request(url, data);
 }
 
-export async function checkBlockFold(id: string): Promise<boolean> {
+export async function getBlockIsFolded(id: string): Promise<boolean> {
+
+    let response = await checkBlockFold(id);
+    let result: boolean;
+    if (isBoolean(response)) {
+        result = response as boolean;
+    } else {
+        result = response.isFolded;
+    }
+    console.log(`getBlockIsFolded response : ${JSON.stringify(response)}, result : ${result} `)
+    return result;
+};
+
+export async function checkBlockFold(id: string): Promise<any> {
     if (!id) {
         // 参数校验失败，返回拒绝
         return Promise.reject(new Error('参数错误'));

@@ -25,7 +25,7 @@
         getOpenTabActionByZoomIn,
         getDocumentQueryCriteria,
     } from "@/components/search/search-util";
-    import { checkBlockFold } from "@/utils/api";
+    import { getBlockIsFolded } from "@/utils/api";
 
     // let element: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
@@ -213,7 +213,7 @@
             previewProtyleMatchFocusIndex = 0;
         }
 
-        let zoomIn = await checkBlockFold(blockId);
+        let zoomIn = await getBlockIsFolded(blockId);
         let actions: TProtyleAction[] = getOpenTabActionByZoomIn(zoomIn);
 
         if (EnvConfig.ins.isMobile) {

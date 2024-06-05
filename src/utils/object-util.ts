@@ -14,3 +14,12 @@ export function getObjectSizeInKB(obj: any): number {
     }
     return 0;
 }
+
+
+export function isBoolean(value: any): value is boolean {
+    return typeof value === 'boolean';
+}
+
+export function isObject(value: any): value is object {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}

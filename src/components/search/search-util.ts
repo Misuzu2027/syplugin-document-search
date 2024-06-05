@@ -3,7 +3,7 @@ import { DocumentItem, BlockItem, DocumentSqlQueryModel } from "@/config/search-
 import { SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
 import { DocumentQueryCriteria, generateDocumentSearchSql } from "@/services/search-sql";
 import { SettingConfig } from "@/services/setting-config";
-import { checkBlockFold, getBlockIndex, getBlocksIndexes, lsNotebooks, sql } from "@/utils/api";
+import { getBlockIsFolded, getBlockIndex, getBlocksIndexes, lsNotebooks, sql } from "@/utils/api";
 import { highlightBlockContent } from "@/utils/html-util";
 import { convertIalStringToObject, convertIconInIal } from "@/utils/icon-util";
 import { getObjectSizeInKB } from "@/utils/object-util";
@@ -577,7 +577,7 @@ function countKeywords(content: string, keywords: string[]): number {
 
 
 export async function getOpenTabAction(blockId: string): Promise<TProtyleAction[]> {
-    let zoomIn = await checkBlockFold(blockId)
+    let zoomIn = await getBlockIsFolded(blockId);
 
     return getOpenTabActionByZoomIn(zoomIn);
 }
@@ -600,7 +600,7 @@ export function getOpenTabActionByZoomIn(zoomIn: boolean): TProtyleAction[] {
 }
 
 export async function getProtyleAction(blockId: string): Promise<TProtyleAction[]> {
-    let zoomIn = await checkBlockFold(blockId)
+    let zoomIn = await getBlockIsFolded(blockId);
 
     return getProtyleActionByZoomIn(zoomIn);
 }

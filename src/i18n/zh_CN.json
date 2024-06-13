@@ -68,6 +68,7 @@
     "documentsPerPage": "每页文档数量",
     "blockCountBehaviorTips": "如果查询结果的块数量小于当前值，默认展开全部文档；反之会默认折叠全部文档。",
     "defaultExpansionCount": "默认展开数",
+    "alwaysExpandSingleDoc": "单篇文档始终展开",
     "displayDocBlock": "显示文档块",
     "doubleClickTimeThreshold": "双击时间阈值(毫秒)",
     "previewRefreshHighlightDelayTips": "用于代码块、数据库这种需要时间渲染的块高亮，太短可能会失败，不需要可以设置为0",

@@ -68,6 +68,7 @@
     "documentsPerPage": "Documents Per Page",
     "blockCountBehaviorTips": "If the number of blocks in the query result is less than the current value, all documents will be expanded by default; otherwise, all documents will be collapsed by default.",
     "defaultExpansionCount": "Default Expansion Count",
+    "alwaysExpandSingleDoc": "Always Expand Single Document",
     "displayDocBlock": "Display Document Blocks",
     "doubleClickTimeThreshold": "Double Click Time Threshold (Milliseconds)",
     "previewRefreshHighlightDelayTips": "For code blocks, databases, and other blocks that require time to render, too short a delay may fail. Set to 0 if not needed.",

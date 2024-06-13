@@ -24,6 +24,7 @@
         findScrollingElement,
         getOpenTabActionByZoomIn,
         getDocumentQueryCriteria,
+        bgFade,
     } from "@/components/search/search-util";
     import { getBlockIsFolded } from "@/utils/api";
 
@@ -241,18 +242,23 @@
             rootId != blockId &&
             rootId == EnvConfig.ins.lastViewedDocId &&
             lastDocumentContentElement &&
-            document.contains(lastDocumentContentElement) &&
-            lastDocumentContentElement.querySelector(
-                `[data-node-id="${blockId}"]`,
-            )
+            document.contains(lastDocumentContentElement)
         ) {
-            highlightElementTextByCss(
-                lastDocumentContentElement,
-                lastKeywords,
-                blockId,
-                previewProtyleMatchFocusIndex,
-                renderNextSearchMarkByRange,
-            );
+            let targetNodeElement: Element | null =
+                lastDocumentContentElement.querySelector(
+                    `[data-node-id="${blockId}"]`,
+                );
+            if (targetNodeElement) {
+                highlightElementTextByCss(
+                    lastDocumentContentElement,
+                    lastKeywords,
+                    blockId,
+                    previewProtyleMatchFocusIndex,
+                    renderNextSearchMarkByRange,
+                );
+
+                bgFade(targetNodeElement);
+            }
             return;
         }
 

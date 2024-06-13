@@ -15,6 +15,7 @@ export class SettingConfig {
         includeAttrFields: ["name", "alias", "memo"] as string[], // 查询的属性字段
         excludeNotebookIds: [] as string[], // 排除的笔记本ID
         maxExpandCount: 100 as number,  // 最大展开数量，查询结果超过这个数量会自动折叠
+        alwaysExpandSingleDoc: false as boolean, // 查询结果为单个文档时，始终展开所有结果。
         showChildDocument: true as boolean, // 是否在分组下面显示文档块，主要是方便复制文档块的id或引用块。
         documentSortMethod: "rankDesc" as DocumentSortMethod, // 文档排序方式，默认：相关度降序
         contentBlockSortMethod: "type" as ContentBlockSortMethod, // 内容块排序方式，默认：类型
@@ -112,6 +113,11 @@ export class SettingConfig {
         return this.settings.maxExpandCount;
     }
 
+    get alwaysExpandSingleDoc(): boolean {
+        return this.settings.alwaysExpandSingleDoc;
+    }
+
+
     get showChildDocument(): boolean {
         return this.settings.showChildDocument;
     }
@@ -162,6 +168,11 @@ export class SettingConfig {
 
     updateMaxExpandCount(maxExpandCount: number) {
         this.settings.maxExpandCount = maxExpandCount;
+        this.save();
+    }
+
+    updateAlwaysExpandSingleDoc(alwaysExpandSingleDoc: boolean) {
+        this.settings.alwaysExpandSingleDoc = alwaysExpandSingleDoc;
         this.save();
     }
 

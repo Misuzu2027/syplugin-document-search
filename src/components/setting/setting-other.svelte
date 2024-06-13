@@ -11,6 +11,8 @@
         SettingConfig.ins.contentBlockSortMethod;
     let pageSize: number = SettingConfig.ins.pageSize;
     let maxExpandCount: number = SettingConfig.ins.maxExpandCount;
+    let alwaysExpandSingleDoc: boolean =
+        SettingConfig.ins.alwaysExpandSingleDoc;
     let showChildDocument: boolean = SettingConfig.ins.showChildDocument;
     let doubleClickTimeout = SettingConfig.ins.doubleClickTimeout;
     let refreshPreviewHighlightTimeout =
@@ -34,6 +36,19 @@
     function maxExpandCountChange(event) {
         maxExpandCount = event.target.value;
         SettingConfig.ins.updateMaxExpandCount(maxExpandCount);
+    }
+
+    function alwaysExpandSingleDocChange(event) {
+        let tempAlwaysExpandSingleDoc = alwaysExpandSingleDoc;
+        if (event.target.checked) {
+            tempAlwaysExpandSingleDoc = true;
+        } else {
+            tempAlwaysExpandSingleDoc = false;
+        }
+        SettingConfig.ins.updateAlwaysExpandSingleDoc(
+            tempAlwaysExpandSingleDoc,
+        );
+        alwaysExpandSingleDoc = SettingConfig.ins.alwaysExpandSingleDoc;
     }
 
     function showChildDocumentChange(event) {
@@ -145,6 +160,24 @@
             min="0"
             bind:value={maxExpandCount}
             on:change={maxExpandCountChange}
+        />
+    </label>
+
+    <label class="fn__flex b3-label config__item">
+        <svg class="ft__on-surface svg fn__flex-center"
+            ><use xlink:href="#iconExpand"></use></svg
+        >
+        <span class="fn__space"></span>
+        <div class="fn__flex-1 fn__flex-center ariaLabel">
+            {EnvConfig.ins.i18n.alwaysExpandSingleDoc}
+        </div>
+        <div class="b3-label__text"></div>
+        <span class="fn__space"></span>
+        <input
+            class="b3-switch fn__flex-center"
+            type="checkbox"
+            checked={alwaysExpandSingleDoc}
+            on:change={alwaysExpandSingleDocChange}
         />
     </label>
     <label class="fn__flex b3-label config__item">

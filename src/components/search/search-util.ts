@@ -62,6 +62,17 @@ export function getNodeId(node: Node | null): string | null {
     return getNodeId(node.parentNode);
 }
 
+let bgFadeTimeoutId: NodeJS.Timeout;
+
+export function bgFade(element: Element) {
+    if (bgFadeTimeoutId) {
+        clearTimeout(bgFadeTimeoutId);
+    }
+    element.classList.add("protyle-wysiwyg--hl");
+    bgFadeTimeoutId = setTimeout(function () {
+        element.classList.remove("protyle-wysiwyg--hl");
+    }, 1024);
+};
 
 
 export async function getNotebookMap(): Promise<Map<string, Notebook>> {
@@ -142,6 +153,10 @@ export async function processSearchResults(
             searchResults.push(documentItem);
             documentBlockMap.set(rootId, documentItem);
         }
+    }
+
+    if (SettingConfig.ins.alwaysExpandSingleDoc && searchResults.length == 1) {
+        searchResults[0].isCollapsed = false;
     }
 
     // 文档排序

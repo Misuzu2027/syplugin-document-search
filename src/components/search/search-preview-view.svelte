@@ -25,6 +25,7 @@
         getDocumentSearchResult,
         getProtyleActionByZoomIn,
         getDocumentQueryCriteria,
+        bgFade,
     } from "@/components/search/search-util";
     import { handleSearchDragMousdown } from "@/lib/SearchUtil";
     import { getBlockIsFolded } from "@/utils/api";
@@ -237,19 +238,24 @@
         if (
             !zoomIn &&
             previewProtyle.protyle.block.rootID == rootId &&
-            document.contains(previewProtyle.protyle.contentElement) &&
-            previewProtyle.protyle.contentElement.querySelector(
-                `[data-node-id="${blockId}"]`,
-            )
+            document.contains(previewProtyle.protyle.contentElement)
         ) {
-            highlightElementTextByCss(
-                previewProtyle.protyle.contentElement,
-                lastKeywords,
-                blockId,
-                previewProtyleMatchFocusIndex,
-                renderNextSearchMarkSmoothByRange,
-            );
-            return;
+            let targetNodeElement: Element | null =
+                previewProtyle.protyle.contentElement.querySelector(
+                    `[data-node-id="${blockId}"]`,
+                );
+            if (targetNodeElement) {
+                highlightElementTextByCss(
+                    previewProtyle.protyle.contentElement,
+                    lastKeywords,
+                    blockId,
+                    previewProtyleMatchFocusIndex,
+                    renderNextSearchMarkSmoothByRange,
+                );
+                bgFade(targetNodeElement);
+
+                return;
+            }
         }
 
         let tempDivElement = document.createElement("div");

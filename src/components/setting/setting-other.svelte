@@ -14,6 +14,8 @@
     let alwaysExpandSingleDoc: boolean =
         SettingConfig.ins.alwaysExpandSingleDoc;
     let showChildDocument: boolean = SettingConfig.ins.showChildDocument;
+    let swapDocItemClickLogic: boolean =
+        SettingConfig.ins.swapDocItemClickLogic;
     let doubleClickTimeout = SettingConfig.ins.doubleClickTimeout;
     let refreshPreviewHighlightTimeout =
         SettingConfig.ins.refreshPreviewHighlightTimeout;
@@ -49,6 +51,13 @@
             tempAlwaysExpandSingleDoc,
         );
         alwaysExpandSingleDoc = SettingConfig.ins.alwaysExpandSingleDoc;
+    }
+
+    function swapDocItemClickLogicChange(event) {
+        swapDocItemClickLogic = event.target.value;
+        SettingConfig.ins.updateSwapDocItemClickLogic(
+            swapDocItemClickLogic,
+        );
     }
 
     function showChildDocumentChange(event) {
@@ -194,6 +203,25 @@
             type="checkbox"
             checked={showChildDocument}
             on:change={showChildDocumentChange}
+        />
+    </label>
+    <label class="fn__flex b3-label config__item">
+        <svg class="ft__on-surface svg fn__flex-center"
+            ><use xlink:href="#iconFile"></use></svg
+        >
+        <span class="fn__space"></span>
+        <div
+            class="fn__flex-1 fn__flex-center ariaLabel"
+            aria-label={EnvConfig.ins.i18n.swapDocumentItemClickLogicTips}
+        >
+            {EnvConfig.ins.i18n.swapDocumentItemClickLogic}
+        </div>
+        <span class="fn__space"></span>
+        <input
+            class="b3-switch fn__flex-center"
+            type="checkbox"
+            checked={swapDocItemClickLogic}
+            on:change={swapDocItemClickLogicChange}
         />
     </label>
     <label class="fn__flex b3-label config__item">

@@ -16,6 +16,7 @@
 
     let isSearching: number = 0;
     let itemClickCount: number = 0;
+    // let docItemClickTimeout: NodeJS.Timeout = null;
 
     function itemClick(event, item: BlockItem) {
         if (clickCallback) {
@@ -27,20 +28,36 @@
         console.log(event.key);
     }
 
-    function clickDocBlockItem(documentItem: DocumentItem) {
+    function clickDocItem(documentItem: DocumentItem) {
         let doubleClickTimeout = SettingConfig.ins.doubleClickTimeout;
 
         itemClickCount++;
         if (itemClickCount === 1) {
+            executeDocItemAction(documentItem, true);
             // 单击逻辑
-            toggleItemVisibility(documentItem.block);
             setTimeout(() => {
                 itemClickCount = 0; // 重置计数
             }, doubleClickTimeout);
         } else if (itemClickCount === 2) {
             // 双击就相当于点击了一下文档块
-            mockClickDocBlockItem(documentItem);
+            executeDocItemAction(documentItem, false);
             itemClickCount = 0; // 重置计数
+        }
+    }
+
+    function executeDocItemAction(
+        documentItem: DocumentItem,
+        isSingleClick: boolean,
+    ) {
+        let swapDocItemClickLogic = SettingConfig.ins.swapDocItemClickLogic;
+        if (swapDocItemClickLogic) {
+            isSingleClick
+                ? mockClickDocBlockItem(documentItem)
+                : toggleItemVisibility(documentItem.block);
+        } else {
+            isSingleClick
+                ? toggleItemVisibility(documentItem.block)
+                : mockClickDocBlockItem(documentItem);
         }
     }
 
@@ -137,7 +154,7 @@
             class="b3-list-item {item.index === selectedIndex
                 ? 'b3-list-item--focus'
                 : ''} "
-            on:click={() => clickDocBlockItem(item)}
+            on:click={() => clickDocItem(item)}
             on:contextmenu|stopPropagation|preventDefault={(event) =>
                 documentItemContextmenuEvent(event, item)}
             on:keydown={handleKeyDownDefault}

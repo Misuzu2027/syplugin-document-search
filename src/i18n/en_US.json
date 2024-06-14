@@ -74,5 +74,7 @@
     "previewRefreshHighlightDelayTips": "For code blocks, databases, and other blocks that require time to render, too short a delay may fail. Set to 0 if not needed.",
     "previewRefreshHighlightDelay": "Preview Refresh Highlight Delay (Milliseconds)",
     "settingHub": "Settings Hub",
-    "switchCurrentDocumentSearchFailureMessage": "Document Search Plugin: Failed to retrieve the opened document. You can switch tabs or reopen the document."
+    "switchCurrentDocumentSearchFailureMessage": "Document Search Plugin: Failed to retrieve the opened document. You can switch tabs or reopen the document.",
+    "swapDocumentItemClickLogic":"Swap Document Item Click Logic",
+    "swapDocumentItemClickLogicTips":"When disabled, click to expand search results and double-click to open the document; when enabled, click to open the document and double-click to expand search results."
 }

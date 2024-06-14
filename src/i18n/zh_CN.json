@@ -74,5 +74,7 @@
     "previewRefreshHighlightDelayTips": "用于代码块、数据库这种需要时间渲染的块高亮，太短可能会失败，不需要可以设置为0",
     "previewRefreshHighlightDelay": "刷新预览区高亮延迟(毫秒)",
     "settingHub": "设置中心",
-    "switchCurrentDocumentSearchFailureMessage":"文档搜索插件: 没有获取到打开的文档，可切换页签或重新打开文档。"
+    "switchCurrentDocumentSearchFailureMessage": "文档搜索插件: 没有获取到打开的文档，可切换页签或重新打开文档。",
+    "swapDocumentItemClickLogic":"交换文档项点击逻辑",
+    "swapDocumentItemClickLogicTips":"禁用时，单击展开搜索结果，双击打开文档；启用时，单击打开文档，双击展开搜索结果。"
 }

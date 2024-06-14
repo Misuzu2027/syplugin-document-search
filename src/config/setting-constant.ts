@@ -268,3 +268,17 @@ export function SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT() {
         },
     ];
 }
+
+
+export function SEARCH_RESULT_EXPAND_COLLAPSE_MODE() {
+    return [
+        {
+            text: EnvConfig.ins.i18n.click,
+            value: "click",
+        },
+        {
+            text: EnvConfig.ins.i18n.doubleClick,
+            value: "doubleClick",
+        },
+    ];
+}

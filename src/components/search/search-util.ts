@@ -67,7 +67,11 @@ let bgFadeTimeoutId: NodeJS.Timeout;
 export function bgFade(element: Element) {
     if (bgFadeTimeoutId) {
         clearTimeout(bgFadeTimeoutId);
+        bgFadeTimeoutId = null;
     }
+    element.parentElement.querySelectorAll(".protyle-wysiwyg--hl").forEach((hlItem) => {
+        hlItem.classList.remove("protyle-wysiwyg--hl");
+    });
     element.classList.add("protyle-wysiwyg--hl");
     bgFadeTimeoutId = setTimeout(function () {
         element.classList.remove("protyle-wysiwyg--hl");

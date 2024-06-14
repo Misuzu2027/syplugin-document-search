@@ -25,3 +25,9 @@ type ContentBlockSortMethod =
     | "typeAndContent"
     | DocumentSortMethod
     ;
+
+
+type ClickMode =
+    | "click"
+    | "doubleClick"
+    ;

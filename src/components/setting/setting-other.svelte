@@ -54,10 +54,16 @@
     }
 
     function swapDocItemClickLogicChange(event) {
-        swapDocItemClickLogic = event.target.value;
+        let tempSwapDocItemClickLogic = swapDocItemClickLogic;
+        if (event.target.checked) {
+            tempSwapDocItemClickLogic = true;
+        } else {
+            tempSwapDocItemClickLogic = false;
+        }
         SettingConfig.ins.updateSwapDocItemClickLogic(
-            swapDocItemClickLogic,
+            tempSwapDocItemClickLogic,
         );
+        swapDocItemClickLogic = SettingConfig.ins.swapDocItemClickLogic;
     }
 
     function showChildDocumentChange(event) {

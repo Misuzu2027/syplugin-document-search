@@ -269,7 +269,7 @@
                 action: actions,
             },
             afterOpen() {
-                let tmpBlockId;
+                let tmpBlockId = "";
                 if (rootId != blockId) {
                     tmpBlockId = blockId;
                 }

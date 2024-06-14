@@ -161,12 +161,13 @@
             data-node-id={item.block.id}
             data-root-id={item.block.root_id}
         >
-            <!-- 按钮折叠改为移动到整个文档标签。                on:click|stopPropagation={() =>
-                    toggleItemVisibility(item.block)} -->
             <span
                 class="b3-list-item__toggle b3-list-item__toggle--hl
                 {item.subItems && item.subItems.length > 0 ? '' : 'disabled'}
                 "
+                on:click|stopPropagation|preventDefault={() =>
+                    toggleItemVisibility(item.block)}
+                on:keydown={handleKeyDownDefault}
             >
                 <svg
                     class="b3-list-item__arrow

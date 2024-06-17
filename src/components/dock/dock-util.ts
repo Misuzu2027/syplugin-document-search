@@ -77,7 +77,7 @@ function addFlatDocTreeDock() {
     let dockRet = plugin.addDock({
         config: {
             position: position,
-            size: { width: 240, height: 0 },
+            size: { width: 250, height: 0 },
             icon: CUSTOM_ICON_MAP.iconFlatDocTree.id,
             title: EnvConfig.ins.i18n.flatDocumentTreeDock,
             hotkey: "⌥E",

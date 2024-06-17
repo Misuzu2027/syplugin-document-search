@@ -75,6 +75,9 @@
     "previewRefreshHighlightDelay": "Preview Refresh Highlight Delay (Milliseconds)",
     "settingHub": "Settings Hub",
     "switchCurrentDocumentSearchFailureMessage": "Document Search Plugin: Failed to retrieve the opened document. You can switch tabs or reopen the document.",
-    "swapDocumentItemClickLogic":"Swap Document Item Click Logic",
-    "swapDocumentItemClickLogicTips":"When disabled, click to expand search results and double-click to open the document; when enabled, click to open the document and double-click to expand search results."
+    "swapDocumentItemClickLogic": "Swap Document Item Click Logic",
+    "swapDocumentItemClickLogicTips": "When disabled, click to expand search results and double-click to open the document; when enabled, click to open the document and double-click to expand search results.",
+    "allNotebooks": "All Notebooks",
+    "specifyNotebook": "Specify Notebook",
+    "searchInTheCurrentDocument": "Search in the current document"
 }

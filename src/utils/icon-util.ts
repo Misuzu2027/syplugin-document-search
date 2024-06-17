@@ -6,7 +6,19 @@ export function convertIconInIal(icon: string): string {
             return `<img class="" src="/emojis/${icon}">`;
         } else {
             // 如果是Emoji，转换为表情符号
-            const emoji = String.fromCodePoint(parseInt(icon, 16));
+            let emoji = "";
+            try {
+                icon.split("-").forEach(item => {
+                    if (item.length < 5) {
+                        emoji += String.fromCodePoint(parseInt("0" + item, 16));
+                    } else {
+                        emoji += String.fromCodePoint(parseInt(item, 16));
+                    }
+                });
+            } catch (e) {
+                // 自定义表情搜索报错 https://github.com/siyuan-note/siyuan/issues/5883
+                // 这里忽略错误不做处理
+            }
             return emoji;
         }
     }

@@ -165,6 +165,7 @@
                 class="b3-list-item__toggle b3-list-item__toggle--hl
                 {item.subItems && item.subItems.length > 0 ? '' : 'disabled'}
                 "
+                style="padding:0 8px"
                 on:click|stopPropagation|preventDefault={() =>
                     toggleItemVisibility(item.block)}
                 on:keydown={handleKeyDownDefault}

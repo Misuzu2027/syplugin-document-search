@@ -25,6 +25,7 @@
         getOpenTabActionByZoomIn,
         getDocumentQueryCriteria,
         bgFade,
+        getNotebookMap,
     } from "@/components/search/search-util";
     import { getBlockIsFolded } from "@/utils/api";
 
@@ -45,6 +46,8 @@
     let lastBlockId: string;
     let lastDocumentContentElement: HTMLElement;
     let isSearchInCurrentDoc: boolean = false;
+    let notebookMap: Map<string, Notebook> = new Map();
+    let specifiedNotebookId: string = "";
 
     onMount(async () => {
         if (EnvConfig.ins.isMobile) {
@@ -61,7 +64,6 @@
         if (!document) {
             return;
         }
-
         if (clientWidth != undefined && clientWidth != null) {
             let lastHiddenSearchResult = hiddenSearchResult;
             if (clientWidth == 0) {
@@ -73,6 +75,13 @@
                 documentSearchInputFocus();
             }
         }
+
+        refreshData();
+    }
+
+    async function refreshData() {
+        notebookMap.clear();
+        notebookMap = await getNotebookMap();
     }
 
     function documentSearchInputFocus() {
@@ -134,9 +143,13 @@
     async function refreshSearch(searchKey: string, pageNum: number) {
         // 每次查询改为2，防止因为异常，加载图案不会消失。目前获取到查询-1，处理完搜索结果-1。
         isSearching = 2;
-
+        let includeNotebookIds = [];
+        if (specifiedNotebookId) {
+            includeNotebookIds.push(specifiedNotebookId);
+        }
         let documentQueryCriteria = getDocumentQueryCriteria(
             searchKey,
+            includeNotebookIds,
             pageNum,
         );
         if (documentQueryCriteria) {
@@ -365,13 +378,18 @@
     function changeCheckboxSearchInCurrentDoc(event) {
         if (event.target.checked && !EnvConfig.ins.lastViewedDocId) {
             showMessage(
-                `文档搜索插件: 没有获取到打开的文档，可切换页签或重新打开文档。`,
+                EnvConfig.ins.i18n.switchCurrentDocumentSearchFailureMessage,
                 4000,
                 "info",
             );
             event.target.checked = false;
         }
         isSearchInCurrentDoc = event.target.checked;
+        refreshSearch(searchInputKey, 1);
+    }
+
+    function specifiedNotebookIdChange(event) {
+        specifiedNotebookId = event.target.value;
         refreshSearch(searchInputKey, 1);
     }
 </script>
@@ -425,15 +443,6 @@
             <svg><use xlink:href="#iconSearchSettingOther"></use></svg>
         </span>
 
-        <span class="fn__space"></span>
-        <span>
-            <input
-                class="b3-switch fn__flex-center"
-                type="checkbox"
-                on:change={changeCheckboxSearchInCurrentDoc}
-            />
-        </span>
-
         <span class="fn__flex-1" style="min-height: 100%"></span>
         <span class="fn__space"></span>
 
@@ -457,6 +466,40 @@
             on:keydown={handleKeyDownDefault}
         >
             <svg><use xlink:href="#iconContract"></use></svg>
+        </span>
+    </div>
+    <div class="block__icons" style="overflow: auto">
+        <span class="fn__space"></span>
+        <select
+            class="b3-select fn__flex-center ariaLabel"
+            style="max-width: 160px;"
+            aria-label={EnvConfig.ins.i18n.specifyNotebook}
+            on:change={specifiedNotebookIdChange}
+            disabled={isSearchInCurrentDoc}
+        >
+            <option value=""> 🌐 {EnvConfig.ins.i18n.allNotebooks} </option>
+            {#each Array.from(notebookMap.entries()) as [key, item] (key)}
+                <option
+                    value={item.id}
+                    selected={item.id == specifiedNotebookId}
+                >
+                    {#if item.icon}
+                        {@html item.icon}
+                    {:else}
+                        🗃
+                    {/if}
+                    {item.name}
+                </option>
+            {/each}
+        </select>
+        <span class="fn__space"></span>
+        <span>
+            <input
+                class="b3-switch fn__flex-center ariaLabel"
+                type="checkbox"
+                aria-label={EnvConfig.ins.i18n.searchInTheCurrentDocument}
+                on:change={changeCheckboxSearchInCurrentDoc}
+            />
         </span>
     </div>
     <div

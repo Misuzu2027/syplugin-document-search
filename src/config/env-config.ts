@@ -1,3 +1,5 @@
+import { lsNotebooks } from "@/utils/api";
+import { convertIconInIal } from "@/utils/icon-util";
 import Instance from "@/utils/Instance";
 import { App, I18N, IDockModel, IPluginDockTab, Plugin, getFrontend } from "siyuan";
 
@@ -45,6 +47,20 @@ export class EnvConfig {
     docSearchDock: { config: IPluginDockTab, model: IDockModel };
     flatDocTreeDock: { config: IPluginDockTab, model: IDockModel };
 
+    private _notebookMap: Map<string, Notebook> = new Map();
+    public async notebookMap(cache: boolean): Promise<Map<string, Notebook>> {
+        if (cache && this._notebookMap && this._notebookMap.size > 0) {
+            return this._notebookMap
+        } else {
+            let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
+            this._notebookMap.clear();
+            for (const notebook of notebooks) {
+                notebook.icon = convertIconInIal(notebook.icon);
+                this._notebookMap.set(notebook.id, notebook);
+            }
+        }
+        return this._notebookMap;
+    }
 
 
 }

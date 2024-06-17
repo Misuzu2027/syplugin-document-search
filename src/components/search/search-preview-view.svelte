@@ -26,6 +26,7 @@
         getProtyleActionByZoomIn,
         getDocumentQueryCriteria,
         bgFade,
+        getNotebookMap,
     } from "@/components/search/search-util";
     import { handleSearchDragMousdown } from "@/lib/SearchUtil";
     import { getBlockIsFolded } from "@/utils/api";
@@ -46,6 +47,8 @@
     let searchResultDocumentCount: number = null;
     let curPage: number = 0;
     let totalPage: number = 0;
+    let notebookMap: Map<string, Notebook> = new Map();
+    let specifiedNotebookId: string = "";
 
     onMount(async () => {
         previewProtyle = new Protyle(EnvConfig.ins.app, previewDivElement, {
@@ -72,6 +75,12 @@
                 element.offsetWidth / 2 + "px";
         }
         documentSearchInputFocus();
+        refreshData();
+    }
+
+    async function refreshData() {
+        notebookMap.clear();
+        notebookMap = await getNotebookMap();
     }
 
     function documentSearchInputFocus() {
@@ -125,8 +134,13 @@
 
     async function refreshSearch(searchKey: string, pageNum: number) {
         isSearching++;
+        let includeNotebookIds = [];
+        if (specifiedNotebookId) {
+            includeNotebookIds.push(specifiedNotebookId);
+        }
         let documentQueryCriteria = getDocumentQueryCriteria(
             searchKey,
+            includeNotebookIds,
             pageNum,
         );
         let result: DocumentSqlQueryModel = await getDocumentSearchResult(
@@ -368,6 +382,11 @@
     function clickSearchSettingOther() {
         openSettingsDialog("settingOther");
     }
+
+    function specifiedNotebookIdChange(event) {
+        specifiedNotebookId = event.target.value;
+        refreshSearch(searchInputKey, 1);
+    }
 </script>
 
 <div class="fn__flex-column" style="height: 100%;" bind:this={element}>
@@ -420,6 +439,28 @@
         </span>
         <span class="fn__space"></span>
         <span class="fn__flex-1" style="min-height: 100%"></span>
+        <span class="fn__space"></span>
+        <select
+            class="b3-select fn__flex-center ariaLabel"
+            style="max-width: 200px;"
+            aria-label={EnvConfig.ins.i18n.specifyNotebook}
+            on:change={specifiedNotebookIdChange}
+        >
+            <option value=""> 🌐{EnvConfig.ins.i18n.allNotebooks} </option>
+            {#each Array.from(notebookMap.entries()) as [key, item] (key)}
+                <option
+                    value={item.id}
+                    selected={item.id == specifiedNotebookId}
+                >
+                    {#if item.icon}
+                        {@html item.icon}
+                    {:else}
+                        🗃
+                    {/if}
+                    {item.name}
+                </option>
+            {/each}
+        </select>
 
         <span class="fn__space"></span>
         <span

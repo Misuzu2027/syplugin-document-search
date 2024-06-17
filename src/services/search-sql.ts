@@ -6,6 +6,7 @@ export class DocumentQueryCriteria {
     includeTypes: string[];
     includeConcatFields: string[];
     includeRootIds: string[];
+    includeNotebookIds: string[];
     excludeNotebookIds: string[];
 
     constructor(
@@ -15,6 +16,7 @@ export class DocumentQueryCriteria {
         contentBlockSortMethod: ContentBlockSortMethod,
         includeTypes: string[],
         includeConcatFields: string[],
+        includeNotebookIds: string[],
         excludeNotebookIds: string[],
     ) {
         this.keywords = keywords;
@@ -23,6 +25,7 @@ export class DocumentQueryCriteria {
         this.contentBlockSortMethod = contentBlockSortMethod;
         this.includeTypes = includeTypes;
         this.includeConcatFields = includeConcatFields;
+        this.includeNotebookIds = includeNotebookIds;
         this.excludeNotebookIds = excludeNotebookIds;
     }
 }
@@ -35,6 +38,7 @@ export function generateDocumentListSql(
 
     let keywords = queryCriteria.keywords;
     let pages = queryCriteria.pages;
+    let includeNotebookIds = queryCriteria.includeNotebookIds;
     let documentSortMethod = queryCriteria.documentSortMethod;
     let includeConcatFields = queryCriteria.includeConcatFields;
     let columns: string[] = [" * "];
@@ -44,6 +48,11 @@ export function generateDocumentListSql(
         let concatConcatFieldSql = getConcatFieldSql("concatContent", includeConcatFields);
         contentParamSql = " AND " + generateAndLikeConditions("concatContent", keywords);
         columns.push(` ${concatConcatFieldSql} `);
+    }
+
+    let boxInSql = " "
+    if (includeNotebookIds && includeNotebookIds.length > 0) {
+        boxInSql = generateAndInConditions("box", includeNotebookIds);
     }
 
     let orders = [];
@@ -85,6 +94,7 @@ export function generateDocumentListSql(
     WHERE
         type = 'd' 
         ${contentParamSql}
+        ${boxInSql}
 
     ${orderSql}
     ${limitSql}
@@ -168,8 +178,8 @@ export function generateDocumentCountSql(queryCriteria: DocumentQueryCriteria) {
     let keywords = queryCriteria.keywords;
     let includeTypes = queryCriteria.includeTypes;
     let includeRootIds = queryCriteria.includeRootIds;
+    let includeNotebookIds = queryCriteria.includeNotebookIds;
     let excludeNotebookIds = queryCriteria.excludeNotebookIds;
-
     let concatContentFields: string[] = queryCriteria.includeConcatFields;
     let concatConcatFieldSql = getConcatFieldSql("documentContent", concatContentFields);
 
@@ -180,7 +190,7 @@ export function generateDocumentCountSql(queryCriteria: DocumentQueryCriteria) {
     let contentLikeField = "GROUP_CONCAT( documentContent )";
     let pages = [1, 99999999];
     let documentContentLikeCountSql = generateDocumentContentLikeSql(
-        columns, keywords, contentLikeField, includeTypes, includeRootIds, excludeNotebookIds, null, pages);
+        columns, keywords, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, null, pages);
 
     let documentCountSql = `SELECT count(1) AS documentCount FROM (${documentContentLikeCountSql})`;
 
@@ -194,8 +204,9 @@ function generateDocumentIdContentTableSql(
     let pages = queryCriteria.pages;
     let documentSortMethod = queryCriteria.documentSortMethod;
     let includeTypes = queryCriteria.includeTypes;
-    let includeRootIds = queryCriteria.includeRootIds;
     let includeConcatFields = queryCriteria.includeConcatFields;
+    let includeRootIds = queryCriteria.includeRootIds;
+    let includeNotebookIds = queryCriteria.includeNotebookIds;
     let excludeNotebookIds = queryCriteria.excludeNotebookIds;
 
     let concatDocumentConcatFieldSql = getConcatFieldSql(null, includeConcatFields);
@@ -225,7 +236,7 @@ function generateDocumentIdContentTableSql(
     }
 
     let documentIdContentTableSql = generateDocumentContentLikeSql(
-        columns, keywords, contentLikeField, includeTypes, includeRootIds, excludeNotebookIds, orders, null);
+        columns, keywords, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, orders, null);
 
     return documentIdContentTableSql;
 }
@@ -236,6 +247,7 @@ function generateDocumentContentLikeSql(
     contentLikeField: string,
     includeTypes: string[],
     includeRootIds: string[],
+    includeNotebookIds: string[],
     excludeNotebookIds: string[],
     orders: string[],
     pages: number[]): string {
@@ -243,10 +255,13 @@ function generateDocumentContentLikeSql(
     let columnSql = columns.join(",");
     let typeInSql = generateAndInConditions("type", includeTypes);
     let rootIdInSql = " ";
+    let boxInSql = " ";
     let boxNotInSql = " ";
     // 如果文档id不为空，则忽略过滤的笔记本id。
     if (includeRootIds && includeRootIds.length > 0) {
         rootIdInSql = generateAndInConditions("root_id", includeRootIds);
+    } else if (includeNotebookIds && includeNotebookIds.length > 0) {
+        boxInSql = generateAndInConditions("box", includeNotebookIds);
     } else {
         boxNotInSql = generateAndNotInConditions("box", excludeNotebookIds);
     }
@@ -276,6 +291,7 @@ function generateDocumentContentLikeSql(
             1 = 1 
             ${typeInSql}
             ${rootIdInSql}
+            ${boxInSql}
             ${boxNotInSql}
         GROUP BY
             root_id 

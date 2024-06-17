@@ -4,7 +4,7 @@
         generateDocumentListSql,
     } from "@/services/search-sql";
     import { onMount } from "svelte";
-    import { sql } from "@/utils/api";
+    import { lsNotebooks, sql } from "@/utils/api";
     import { DocumentTreeItemInfo } from "@/config/document-model";
     import { escapeAttr, highlightBlockContent } from "@/utils/html-util";
     import {
@@ -31,9 +31,12 @@
     let lastClientWidth;
     let documentItems: DocumentTreeItemInfo[] = [];
     let flatDocTreeSortMethod: DocumentSortMethod = "modifiedDesc";
+    let notebookMap: Map<string, Notebook> = new Map();
+    let specifiedNotebookId: string = "";
 
     onMount(async () => {
         resize();
+
         // EnvConfig.ins.plugin.eventBus.on(
         //     "open-menu-doctree",
         //     handleOpenMenuDoctreeEvent,
@@ -50,10 +53,27 @@
             refreshFileTree(searchInputKey, 1);
         }
         lastClientWidth = clientWidth;
+
+        refreshData();
+    }
+
+    async function refreshData() {
+        let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
+        notebookMap.clear();
+        for (const notebook of notebooks) {
+            notebook.icon = convertIconInIal(notebook.icon);
+            notebookMap.set(notebook.id, notebook);
+        }
+        notebookMap = notebookMap;
     }
 
     function documentSortMethodChange(event) {
         flatDocTreeSortMethod = event.target.value;
+        refreshFileTree(searchInputKey, 1);
+    }
+
+    function specifiedNotebookIdChange(event) {
+        specifiedNotebookId = event.target.value;
         refreshFileTree(searchInputKey, 1);
     }
 
@@ -100,6 +120,11 @@
 
         let includeConcatFields = SettingConfig.ins.includeQueryFields;
 
+        let includeNotebookIds = [];
+        if (specifiedNotebookId) {
+            includeNotebookIds.push(specifiedNotebookId);
+        }
+
         // 将 Set 转换为数组
         keywords = Array.from(uniqueKeywordsSet);
         let queryCriteria: DocumentQueryCriteria = new DocumentQueryCriteria(
@@ -109,6 +134,7 @@
             null,
             null,
             includeConcatFields,
+            includeNotebookIds,
             null,
         );
 
@@ -283,116 +309,148 @@
     function handleKeyDownDefault() {}
 </script>
 
-<div class="flat_doc_tree--top">
-    <div class="block__icons" style="overflow: auto">
-        <span style="display: flex;align-items: center;padding:5px;"
-            >{EnvConfig.ins.i18n.sort} :
-        </span>
-        <select
-            class="b3-select fn__flex-center"
-            on:change={documentSortMethodChange}
+<div class="fn__flex-column" style="height: 100%;">
+    <div class="flat_doc_tree--top">
+        <div
+            class="block__icons"
+            style="overflow: auto;flex-wrap: wrap;height:auto"
         >
-            {#each SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT() as element}
-                <option
-                    value={element.value}
-                    selected={element.value == flatDocTreeSortMethod}
+            <div style="display:flex;padding:3px 2px">
+                <select
+                    class="b3-select fn__flex-center ariaLabel"
+                    style="max-width: 140px;"
+                    aria-label={EnvConfig.ins.i18n.specifyNotebook}
+                    on:change={specifiedNotebookIdChange}
                 >
-                    {element.text}
-                </option>
-            {/each}
-        </select>
-    </div>
-    <div
-        class="b3-form__icon search__header"
-        on:keydown={handleKeyDownSelectItem}
-    >
-        <div style="position: relative" class="fn__flex-1">
-            <span>
-                <svg data-menu="true" class="b3-form__icon-icon">
-                    <use xlink:href="#iconSearch"></use>
+                    <option value="">
+                        🌐{EnvConfig.ins.i18n.allNotebooks}
+                    </option>
+                    {#each Array.from(notebookMap.entries()) as [key, item] (key)}
+                        <option
+                            value={item.id}
+                            selected={item.id == specifiedNotebookId}
+                        >
+                            {#if item.icon}
+                                {@html item.icon}
+                            {:else}
+                                🗃
+                            {/if}
+                            {item.name}
+                        </option>
+                    {/each}
+                </select>
+            </div>
+            <div style="display:flex;padding:3px 2px">
+                <span style="display: flex;align-items: center;padding:5px;"
+                    >{EnvConfig.ins.i18n.sort}:
+                </span>
+                <select
+                    class="b3-select fn__flex-center"
+                    on:change={documentSortMethodChange}
+                >
+                    {#each SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT() as element}
+                        <option
+                            value={element.value}
+                            selected={element.value == flatDocTreeSortMethod}
+                        >
+                            {element.text}
+                        </option>
+                    {/each}
+                </select>
+            </div>
+        </div>
+        <div
+            class="b3-form__icon search__header"
+            on:keydown={handleKeyDownSelectItem}
+        >
+            <div style="position: relative" class="fn__flex-1">
+                <span>
+                    <svg data-menu="true" class="b3-form__icon-icon">
+                        <use xlink:href="#iconSearch"></use>
+                    </svg>
+                </span>
+                <input
+                    bind:this={documentSearchInputElement}
+                    class="b3-text-field b3-text-field--text"
+                    style="padding-right: 32px !important;"
+                    on:input={handleSearchInputChange}
+                    bind:value={searchInputKey}
+                />
+                <svg
+                    class="b3-form__icon-clear ariaLabel {searchInputKey == ''
+                        ? 'fn__none'
+                        : ''}"
+                    aria-label={EnvConfig.ins.i18n.clear}
+                    style="right: 8px;height:42px"
+                    on:click|stopPropagation={clearDocumentSearchInput}
+                    on:keydown={handleKeyDownDefault}
+                >
+                    <use xlink:href="#iconCloseRound"></use>
                 </svg>
-            </span>
-            <input
-                bind:this={documentSearchInputElement}
-                class="b3-text-field b3-text-field--text"
-                style="padding-right: 32px !important;"
-                on:input={handleSearchInputChange}
-                bind:value={searchInputKey}
-            />
-            <svg
-                class="b3-form__icon-clear ariaLabel {searchInputKey == ''
-                    ? 'fn__none'
-                    : ''}"
-                aria-label={EnvConfig.ins.i18n.clear}
-                style="right: 8px;height:42px"
-                on:click|stopPropagation={clearDocumentSearchInput}
-                on:keydown={handleKeyDownDefault}
-            >
-                <use xlink:href="#iconCloseRound"></use>
-            </svg>
-        </div>
-        <div class="block__icons">
-            <span
-                id="documentSearchRefresh"
-                aria-label={EnvConfig.ins.i18n.refresh}
-                class="block__icon ariaLabel"
-                data-position="9bottom"
-                on:click|stopPropagation={() => {
-                    refreshFileTree(searchInputKey, 1);
-                }}
-                on:keydown={handleKeyDownDefault}
-            >
-                <svg><use xlink:href="#iconRefresh"></use></svg>
-            </span>
+            </div>
+            <div class="block__icons">
+                <span
+                    id="documentSearchRefresh"
+                    aria-label={EnvConfig.ins.i18n.refresh}
+                    class="block__icon ariaLabel"
+                    data-position="9bottom"
+                    on:click|stopPropagation={() => {
+                        refreshFileTree(searchInputKey, 1);
+                    }}
+                    on:keydown={handleKeyDownDefault}
+                >
+                    <svg><use xlink:href="#iconRefresh"></use></svg>
+                </span>
+            </div>
         </div>
     </div>
-</div>
-<div class="fn__flex-1">
-    {#each documentItems as item}
-        <ul
-            class="b3-list b3-list--background file-tree"
-            data-url={item.block.box}
-        >
-            <li
-                data-node-id={item.block.id}
-                data-name={escapeAttr(item.block.name)}
-                data-type="navigation-file"
-                style="--file-toggle-width:40px;height:32px;"
-                class="b3-list-item {item.index === selectedItemIndex
-                    ? 'b3-list-item--focus'
-                    : ''} "
-                data-path={item.block.path}
-                data-flat-doc-tree="true"
-                on:click={(event) => itemClick(event, item)}
-                on:keydown={handleKeyDownDefault}
+    <div class="fn__flex-1">
+        {#each documentItems as item}
+            <ul
+                class="b3-list b3-list--background file-tree"
+                data-url={item.block.box}
             >
-                <span class="b3-list-item__icon">
-                    {#if item.icon}
-                        {@html item.icon}
-                    {:else}
-                        📄
-                    {/if}
-                </span>
-                <span
-                    class="b3-list-item__text ariaLabel"
-                    data-position="parentE"
-                    aria-label={item.ariaLabel}
+                <li
+                    data-node-id={item.block.id}
+                    data-name={escapeAttr(item.block.name)}
+                    data-type="navigation-file"
+                    style="--file-toggle-width:40px;height:32px;padding:2px 5px;"
+                    class="b3-list-item {item.index === selectedItemIndex
+                        ? 'b3-list-item--focus'
+                        : ''} "
+                    data-path={item.block.path}
+                    data-flat-doc-tree="true"
+                    on:click={(event) => itemClick(event, item)}
+                    on:keydown={handleKeyDownDefault}
                 >
-                    {@html item.block.content}
-                </span>
-
-                {#if item.refCount}
-                    <span
-                        class="popover__block counter b3-tooltips b3-tooltips__nw"
-                        aria-label={EnvConfig.ins.i18n.reference}
-                        style=""
-                    >
-                        {item.refCount}
+                    <span class="b3-list-item__icon">
+                        {#if item.icon}
+                            {@html item.icon}
+                        {:else}
+                            📄
+                        {/if}
                     </span>
-                {/if}
-            </li>
-        </ul>
-    {/each}
+                    <span
+                        class="b3-list-item__text ariaLabel"
+                        data-position="parentE"
+                        aria-label={item.ariaLabel}
+                    >
+                        {@html item.block.content}
+                    </span>
+
+                    {#if item.refCount}
+                        <span
+                            class="popover__block counter b3-tooltips b3-tooltips__nw"
+                            aria-label={EnvConfig.ins.i18n.reference}
+                            style=""
+                        >
+                            {item.refCount}
+                        </span>
+                    {/if}
+                </li>
+            </ul>
+        {/each}
+    </div>
 </div>
 <div
     class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}"

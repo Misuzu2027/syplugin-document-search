@@ -83,6 +83,7 @@ export async function getNotebookMap(): Promise<Map<string, Notebook>> {
     let notebookMap: Map<string, Notebook> = new Map();
     let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
     for (const notebook of notebooks) {
+        notebook.icon = convertIconInIal(notebook.icon);
         notebookMap.set(notebook.id, notebook);
     }
     return notebookMap;
@@ -149,7 +150,7 @@ export async function processSearchResults(
             }
             if (block.ial) {
                 let ial = convertIalStringToObject(block.ial);
-                blockItem.icon = convertIconInIal(ial.icon);
+                documentItem.icon = convertIconInIal(ial.icon);
             }
             // documentItem.path =
             //     notebookMap.get(block.box).name + block.hpath;
@@ -208,7 +209,10 @@ export async function processSearchResults(
 }
 
 
-export function getDocumentQueryCriteria(searchKey: string, pageNum: number) {
+export function getDocumentQueryCriteria(
+    searchKey: string,
+    includeNotebookIds: string[],
+    pageNum: number) {
     // 去除多余的空格，并将输入框的值按空格分割成数组
     let keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
 
@@ -240,6 +244,7 @@ export function getDocumentQueryCriteria(searchKey: string, pageNum: number) {
             contentBlockSortMethod,
             types,
             queryFields,
+            includeNotebookIds,
             excludeNotebookIds,
         );
 

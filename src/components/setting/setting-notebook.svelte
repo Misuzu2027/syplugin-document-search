@@ -46,7 +46,10 @@
 <div id="document-search-setting-notebook">
     {#each Array.from(notebookMap.entries()) as [key, item] (key)}
         <label class="fn__flex b3-label">
-            <span class="b3-list-item__graphic">
+            <span
+                class="b3-list-item__graphic"
+                style="margin:0px;padding:0px;line-height:20px;font-size: 16px;"
+            >
                 {#if item.icon}
                     {@html item.icon}
                 {:else}

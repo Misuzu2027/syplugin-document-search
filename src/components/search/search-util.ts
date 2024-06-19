@@ -824,7 +824,7 @@ export async function highlightElementTextByCss(
         );
     }
 
-    console.log("highlightElementTextByCss ", matchFocusRange)
+    // console.log("highlightElementTextByCss ", matchFocusRange)
     if (callback) {
         callback(matchFocusRange);
     }

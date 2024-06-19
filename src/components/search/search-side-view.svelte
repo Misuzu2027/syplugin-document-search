@@ -271,8 +271,8 @@
                 );
 
                 bgFade(targetNodeElement);
+                return;
             }
-            return;
         }
 
         let docTabPromise: Promise<ITab> = openTab({

@@ -71,9 +71,9 @@ export function generateDocumentListSql(
         columns.push(" (SELECT count(1) FROM refs WHERE def_block_root_id = blocks.id) refCount ");
         orders = [" refCount DESC ", " updated DESC "]
     } else if (documentSortMethod == 'alphabeticAsc') {
-        orders = ["concatContent ASC", " updated DESC "]
+        orders = [" concatContent ASC ", " updated DESC "]
     } else if (documentSortMethod == 'alphabeticDesc') {
-        orders = ["concatContent DESC", " updated DESC "]
+        orders = [" concatContent DESC ", " updated DESC "]
     }
 
     let columnSql = columns.join(" , ");

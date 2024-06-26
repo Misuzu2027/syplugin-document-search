@@ -833,7 +833,6 @@ export async function highlightElementTextByCss(
 export function clearCssHighlights() {
     CSS.highlights.delete("search-result-mark");
     CSS.highlights.delete("search-result-focus");
-
 }
 
 

@@ -37,7 +37,7 @@
     let selectedItemIndex: number = -1;
     let inputChangeTimeoutId;
     let isSearching: number = 0;
-    let hiddenSearchResult: boolean = true;
+    let hiddenDock: boolean = true;
     let lastKeywords: string[];
     let searchResultDocumentCount: number = null;
     let curPage: number = 0;
@@ -51,7 +51,7 @@
 
     onMount(async () => {
         if (EnvConfig.ins.isMobile) {
-            hiddenSearchResult = false;
+            hiddenDock = false;
         }
         resize();
     });
@@ -65,14 +65,18 @@
             return;
         }
         if (clientWidth != undefined && clientWidth != null) {
-            let lastHiddenSearchResult = hiddenSearchResult;
+            let lastHiddenSearchResult = hiddenDock;
             if (clientWidth == 0) {
-                hiddenSearchResult = true;
+                hiddenDock = true;
             } else {
-                hiddenSearchResult = false;
+                hiddenDock = false;
             }
-            if (!hiddenSearchResult && lastHiddenSearchResult) {
+            if (!hiddenDock && lastHiddenSearchResult) {
                 documentSearchInputFocus();
+            }
+            if (hiddenDock) {
+                // 隐藏侧边栏，清空高亮
+                clearCssHighlights();
             }
         }
 
@@ -610,7 +614,7 @@
         <span class="fn__space"></span>
     </div>
     <div class="search__layout search__layout--row">
-        {#if !hiddenSearchResult}
+        {#if !hiddenDock}
             <SearchResultItem
                 {documentItemSearchResult}
                 selectedIndex={selectedItemIndex}

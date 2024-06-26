@@ -44,6 +44,13 @@
             itemClickCount = 0; // 重置计数
         }
     }
+    function mousedownDocItem(event, documentItem: DocumentItem) {
+        if (event.button == 1) {
+            toggleItemVisibility(documentItem.block);
+            event.stopPropagation();
+            event.preventDefault();
+        }
+    }
 
     function executeDocItemAction(
         documentItem: DocumentItem,
@@ -155,6 +162,7 @@
                 ? 'b3-list-item--focus'
                 : ''} "
             on:click={() => clickDocItem(item)}
+            on:mousedown={(event) => mousedownDocItem(event, item)}
             on:contextmenu|stopPropagation|preventDefault={(event) =>
                 documentItemContextmenuEvent(event, item)}
             on:keydown={handleKeyDownDefault}

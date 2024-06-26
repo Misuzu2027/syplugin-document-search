@@ -80,7 +80,7 @@
 
     async function refreshData() {
         notebookMap.clear();
-        notebookMap = await getNotebookMap();
+        notebookMap = await getNotebookMap(false);
     }
 
     function documentSearchInputFocus() {

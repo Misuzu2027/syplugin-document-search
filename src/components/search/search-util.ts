@@ -79,10 +79,13 @@ export function bgFade(element: Element) {
 };
 
 
-export async function getNotebookMap(): Promise<Map<string, Notebook>> {
+export async function getNotebookMap(showClosed: boolean): Promise<Map<string, Notebook>> {
     let notebookMap: Map<string, Notebook> = new Map();
     let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
     for (const notebook of notebooks) {
+        if (!showClosed && notebook.closed) {
+            continue;
+        }
         notebook.icon = convertIconInIal(notebook.icon);
         notebookMap.set(notebook.id, notebook);
     }
@@ -103,7 +106,7 @@ export async function processSearchResults(
     let keywords = documentSearchCriterion.keywords;
     let documentSortMethod = documentSearchCriterion.documentSortMethod;
     let contentBlockSortMethod = documentSearchCriterion.contentBlockSortMethod;
-    let notebookMap = await getNotebookMap();
+    let notebookMap = await getNotebookMap(true);
 
     const documentBlockMap: Map<string, DocumentItem> =
         new Map();
@@ -152,9 +155,13 @@ export async function processSearchResults(
                 let ial = convertIalStringToObject(block.ial);
                 documentItem.icon = convertIconInIal(ial.icon);
             }
-            // documentItem.path =
-            //     notebookMap.get(block.box).name + block.hpath;
-            documentItem.ariaLabel = getFileArialLabel(block, notebookMap.get(block.box).name);
+            let notebookInfo = notebookMap.get(block.box);
+            let boxName = block.box;
+            if (notebookInfo) {
+                boxName = notebookInfo.name;
+            }
+
+            documentItem.ariaLabel = getFileArialLabel(block, boxName);
             searchResults.push(documentItem);
             documentBlockMap.set(rootId, documentItem);
         }

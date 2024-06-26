@@ -4,7 +4,7 @@
         generateDocumentListSql,
     } from "@/services/search-sql";
     import { onMount } from "svelte";
-    import { lsNotebooks, sql } from "@/utils/api";
+    import { sql } from "@/utils/api";
     import { DocumentTreeItemInfo } from "@/config/document-model";
     import { escapeAttr, highlightBlockContent } from "@/utils/html-util";
     import {
@@ -58,13 +58,7 @@
     }
 
     async function refreshData() {
-        let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
-        notebookMap.clear();
-        for (const notebook of notebooks) {
-            notebook.icon = convertIconInIal(notebook.icon);
-            notebookMap.set(notebook.id, notebook);
-        }
-        notebookMap = notebookMap;
+        notebookMap = await getNotebookMap(false);
     }
 
     function documentSortMethodChange(event) {
@@ -151,7 +145,7 @@
         blocks: any[],
         queryCriteria: DocumentQueryCriteria,
     ): Promise<DocumentTreeItemInfo[]> {
-        let notebookMap = await getNotebookMap();
+        let notebookMap = await getNotebookMap(false);
         let keywords = queryCriteria.keywords;
 
         let documentBlockInfos: DocumentTreeItemInfo[] = [];
@@ -169,7 +163,11 @@
                 icon = convertIconInIal(ial.icon);
             }
 
-            let boxName = notebookMap.get(block.box).name;
+            let notebookInfo = notebookMap.get(block.box);
+            let boxName = "block.box";
+            if (notebookInfo) {
+                boxName = notebookInfo.name;
+            }
             let refCount = block.refCount;
 
             let ariaLabel = getFileArialLabel(block, boxName);

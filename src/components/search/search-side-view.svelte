@@ -398,7 +398,7 @@
     }
 </script>
 
-<div class="fn__flex-column" style="height: 100%;">
+<div class="fn__flex-column document-search-plugin__area" style="height: 100%;">
     <div class="block__icons" style="overflow: auto">
         <span class="fn__space"></span>
         <span

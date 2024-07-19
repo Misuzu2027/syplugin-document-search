@@ -20,10 +20,11 @@ export default class PluginSample extends Plugin {
 
     private documentSearchTab: SearchPreviewSvelte;
 
-    onload() {
+    async onload() {
         EnvConfig.ins.init(this);
-        let settingLoadPromise: Promise<void> = SettingConfig.ins.load(this);
-        settingLoadPromise.then(this.settingLoadAfter);
+        await SettingConfig.ins.load(this);
+        initDock();
+
 
         // 图标的制作参见帮助文档
         for (const key in CUSTOM_ICON_MAP) {
@@ -64,11 +65,6 @@ export default class PluginSample extends Plugin {
         })
 
     }
-
-    settingLoadAfter(): void {
-        initDock();
-    }
-
 
     openSetting(): void {
         openSettingsDialog("settingHub");

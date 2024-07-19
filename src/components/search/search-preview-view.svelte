@@ -389,7 +389,7 @@
     }
 </script>
 
-<div class="fn__flex-column" style="height: 100%;" bind:this={element}>
+<div class="fn__flex-column document-search-plugin__area" style="height: 100%;" bind:this={element}>
     <!-- <div class="layout-tab-container fn__flex-1" bind:this={element}> -->
 
     <div class="block__icons" style="overflow: auto">

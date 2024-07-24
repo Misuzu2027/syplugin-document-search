@@ -64,6 +64,13 @@ export default class PluginSample extends Plugin {
             // utils.setCurrentBoxId(e.detail.protyle.notebookId)
         })
 
+        EnvConfig.ins.plugin.eventBus.on("loaded-protyle-static", (e: any) => {
+            // console.log("loaded-protyle-static e : ", e)
+            if (!EnvConfig.ins.lastViewedDocId) {
+                EnvConfig.ins.lastViewedDocId = e.detail.protyle.block.rootID;
+            }
+        });
+
     }
 
     openSetting(): void {

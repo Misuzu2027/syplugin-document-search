@@ -38,8 +38,9 @@ function highlightMatches(content: string, keywords: string[]): string {
     if (!keywords.length || !content) {
         return content; // 返回原始字符串，因为没有需要匹配的内容
     }
+    let escapedKeyword = keywords.join("|").replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-    const regexPattern = new RegExp(`(${keywords.join("|")})`, "gi");
+    const regexPattern = new RegExp(`(${escapedKeyword})`, "gi");
     const highlightedString = content.replace(
         regexPattern,
         "<mark>$1</mark>",

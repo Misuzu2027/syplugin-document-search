@@ -1,8 +1,8 @@
 {
-  "name": "plugin-sample-vite-svelte",
-  "version": "0.2.6",
+  "name": "syplugin-document-search",
+  "version": "0.10.3",
   "type": "module",
-  "description": "This is a sample plugin based on vite and svelte for Siyuan (https://b3log.org/siyuan)",
+  "description": "document search plugin",
   "repository": "",
   "homepage": "",
   "author": "",

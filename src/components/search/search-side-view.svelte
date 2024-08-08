@@ -625,7 +625,7 @@
 </div>
 <div
     class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}"
-    style="top:85px"
+    style="top:125px"
 >
     <!-- svelte-ignore a11y-missing-attribute -->
     <img width="120px" src="/stage/loading-pure.svg" />

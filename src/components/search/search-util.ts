@@ -75,8 +75,17 @@ export function bgFade(element: Element) {
     element.classList.add("protyle-wysiwyg--hl");
     bgFadeTimeoutId = setTimeout(function () {
         element.classList.remove("protyle-wysiwyg--hl");
-    }, 1024);
+    }, 1536);
 };
+
+export function getRangeByElement(element: Element): Range {
+    if (!element) {
+        return;
+    }
+    let elementRange = document.createRange();
+    elementRange.selectNodeContents(element);
+    return elementRange;
+}
 
 
 export async function getNotebookMap(showClosed: boolean): Promise<Map<string, Notebook>> {
@@ -728,8 +737,7 @@ export async function highlightElementTextByCss(
     keywords: string[],
     targetBlockId: string,
     nextMatchFocusIndex: number,
-    callback: HighlightCallback,
-) {
+): Promise<Range> {
     if (!contentElement || !keywords) {
         return;
     }
@@ -829,12 +837,14 @@ export async function highlightElementTextByCss(
             "search-result-focus",
             new Highlight(matchFocusRange),
         );
+        return matchFocusRange;
     }
 
     // console.log("highlightElementTextByCss ", matchFocusRange)
-    if (callback) {
-        callback(matchFocusRange);
-    }
+    // if (callback) {
+    //     callback(matchFocusRange);
+    // }
+    return;
 }
 
 export function clearCssHighlights() {

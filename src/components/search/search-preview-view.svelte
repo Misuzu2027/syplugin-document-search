@@ -27,6 +27,7 @@
         getDocumentQueryCriteria,
         bgFade,
         getNotebookMap,
+        getRangeByElement,
     } from "@/components/search/search-util";
     import { handleSearchDragMousdown } from "@/lib/SearchUtil";
     import { getBlockIsFolded } from "@/utils/api";
@@ -236,13 +237,16 @@
         if (previewProtyle.protyle.block.id == blockId) {
             previewProtyleMatchFocusIndex++;
 
-            highlightElementTextByCss(
+            let matchFocusRangePromise = highlightElementTextByCss(
                 previewProtyle.protyle.contentElement,
                 lastKeywords,
                 blockId,
                 previewProtyleMatchFocusIndex,
-                renderNextSearchMarkSmoothByRange,
             );
+            matchFocusRangePromise.then((focusRange) => {
+                renderNextSearchMarkSmoothByRange(focusRange);
+            });
+
             return;
         }
         previewProtyleMatchFocusIndex = 0;
@@ -259,13 +263,20 @@
                     `[data-node-id="${blockId}"]`,
                 );
             if (targetNodeElement) {
-                highlightElementTextByCss(
+                let matchFocusRangePromise = highlightElementTextByCss(
                     previewProtyle.protyle.contentElement,
                     lastKeywords,
                     blockId,
                     previewProtyleMatchFocusIndex,
-                    renderNextSearchMarkSmoothByRange,
                 );
+
+                matchFocusRangePromise.then((focusRange) => {
+                    if (!focusRange) {
+                        focusRange = getRangeByElement(targetNodeElement);
+                    }
+                    renderNextSearchMarkSmoothByRange(focusRange);
+                });
+
                 bgFade(targetNodeElement);
 
                 return;
@@ -296,13 +307,16 @@
     function afterCreateProtyle(protyle: Protyle, blockId: string) {
         let protyleContentElement = protyle.protyle.contentElement;
         delayedTwiceRefresh(() => {
-            highlightElementTextByCss(
+            let matchFocusRangePromise = highlightElementTextByCss(
                 protyleContentElement,
                 lastKeywords,
                 blockId,
                 previewProtyleMatchFocusIndex,
-                renderFirstSearchMarkByRange,
             );
+
+            matchFocusRangePromise.then((focusRange) => {
+                renderFirstSearchMarkByRange(focusRange);
+            });
         }, 0);
     }
 
@@ -389,7 +403,11 @@
     }
 </script>
 
-<div class="fn__flex-column document-search-plugin__area" style="height: 100%;" bind:this={element}>
+<div
+    class="fn__flex-column document-search-plugin__area"
+    style="height: 100%;"
+    bind:this={element}
+>
     <!-- <div class="layout-tab-container fn__flex-1" bind:this={element}> -->
 
     <div class="block__icons" style="overflow: auto">

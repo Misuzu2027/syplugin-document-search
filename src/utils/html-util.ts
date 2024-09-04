@@ -43,7 +43,7 @@ function highlightMatches(content: string, keywords: string[]): string {
         escapeKeywords.push(str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     }
     let escapedKeywordRegExp = escapeKeywords.join("|")
-    console.log("escapedKeywordRegExp ", escapedKeywordRegExp)
+    // console.log("escapedKeywordRegExp ", escapedKeywordRegExp)
     const regexPattern = new RegExp(`(${escapedKeywordRegExp})`, "gi");
     const highlightedString = content.replace(
         regexPattern,

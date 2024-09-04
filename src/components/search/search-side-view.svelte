@@ -26,6 +26,7 @@
         getDocumentQueryCriteria,
         bgFade,
         getNotebookMap,
+        getRangeByElement,
     } from "@/components/search/search-util";
     import { getBlockIsFolded } from "@/utils/api";
 
@@ -266,13 +267,20 @@
                     `[data-node-id="${blockId}"]`,
                 );
             if (targetNodeElement) {
-                highlightElementTextByCss(
+                let matchFocusRangePromise = highlightElementTextByCss(
                     lastDocumentContentElement,
                     lastKeywords,
                     blockId,
                     previewProtyleMatchFocusIndex,
-                    renderNextSearchMarkByRange,
                 );
+
+                matchFocusRangePromise.then((focusRange) => {
+                    if (!focusRange) {
+                        focusRange = getRangeByElement(targetNodeElement);
+                    }
+
+                    renderNextSearchMarkByRange(focusRange);
+                });
 
                 bgFade(targetNodeElement);
                 return;
@@ -304,13 +312,17 @@
             .children[1] as HTMLElement;
 
         delayedTwiceRefresh(() => {
-            highlightElementTextByCss(
+            let matchFocusRangePromise = highlightElementTextByCss(
                 lastDocumentContentElement,
                 lastKeywords,
                 blockId,
                 previewProtyleMatchFocusIndex,
-                renderFirstSearchMarkByRange,
             );
+
+            matchFocusRangePromise.then((focusRange) => {
+
+                renderFirstSearchMarkByRange(focusRange);
+            });
         }, 50);
     }
 

@@ -33,7 +33,6 @@ function addDocSearchDock() {
             size: { width: 300, height: 0 },
             icon: CUSTOM_ICON_MAP.iconDocumentSearch.id,
             title: EnvConfig.ins.i18n.documentBasedSearchDock,
-            hotkey: "⌥Q",
             show: false,
         },
         data: {},
@@ -55,6 +54,24 @@ function addDocSearchDock() {
         },
         destroy() {
         }
+    });
+
+    plugin.addCommand({
+        langKey: DOC_SEARCH_DOCK_TYPE + "_mapkey",
+        langText: EnvConfig.ins.i18n.documentBasedSearchDock,
+        hotkey: "⌥Q",
+        callback: () => {
+            console.log("addCommand callback");
+            const ele = document.querySelector(
+                `span[data-type="${plugin.name + DOC_SEARCH_DOCK_TYPE}"]`,
+            ) as HTMLElement;
+            if (ele) {
+                ele.click();
+            }
+            if (docSearchSvelet) {
+                docSearchSvelet.iconClick();
+            }
+        },
     });
 
     EnvConfig.ins.docSearchDock = dockRet;
@@ -80,7 +97,6 @@ function addFlatDocTreeDock() {
             size: { width: 250, height: 0 },
             icon: CUSTOM_ICON_MAP.iconFlatDocTree.id,
             title: EnvConfig.ins.i18n.flatDocumentTreeDock,
-            hotkey: "⌥E",
         },
         data: {
         },
@@ -91,7 +107,7 @@ function addFlatDocTreeDock() {
             }
         },
         update() {
-            console.log(FLAT_DOC_TREE_DOCK_TYPE + " update");
+            // console.log(FLAT_DOC_TREE_DOCK_TYPE + " update");
         },
         init() {
             this.element.innerHTML = "";
@@ -107,6 +123,24 @@ function addFlatDocTreeDock() {
         },
         destroy() {
         }
+    });
+
+    plugin.addCommand({
+        langKey: FLAT_DOC_TREE_DOCK_TYPE + "_mapkey",
+        langText: EnvConfig.ins.i18n.documentBasedSearchDock,
+        hotkey: "⌥E",
+        callback: () => {
+            console.log("addCommand callback");
+            const ele = document.querySelector(
+                `span[data-type="${plugin.name + FLAT_DOC_TREE_DOCK_TYPE}"]`,
+            ) as HTMLElement;
+            if (ele) {
+                ele.click();
+            }
+            if (flatDocTreeSvelte) {
+                flatDocTreeSvelte.iconClick();
+            }
+        },
     });
 
     EnvConfig.ins.flatDocTreeDock = dockRet;

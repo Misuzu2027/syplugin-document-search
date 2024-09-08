@@ -9,8 +9,8 @@ import { CUSTOM_ICON_MAP } from "@/config/icon-constant";
 import { SettingConfig } from "@/services/setting-config";
 import { EnvConfig } from "@/config/env-config";
 import "./index.scss"
-import { initDock } from "./components/dock/dock-util";
-import { openSettingsDialog } from "./components/setting/setting-util";
+import { initDock } from "@/components/dock/dock-util";
+import { openSettingsDialog } from "@/components/setting/setting-util";
 
 
 const SEARCH_TAB_TYPE = "search_home_tab";

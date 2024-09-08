@@ -63,3 +63,15 @@ function escapeHtml(input: string): string {
 
     return input.replace(/[&<>"']/g, (match) => escapeMap[match]);
 }
+
+export function isElementHidden(element: Element) {
+    if (!element) {
+        return false;
+    }
+
+    if (element.classList.contains("fn__none")) {
+        return true;
+    }
+
+    return isElementHidden(element.parentElement);
+}

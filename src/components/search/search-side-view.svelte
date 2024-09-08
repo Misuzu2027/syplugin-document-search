@@ -29,8 +29,9 @@
         getRangeByElement,
     } from "@/components/search/search-util";
     import { getBlockIsFolded } from "@/utils/api";
+    import { isElementHidden } from "@/utils/html-util";
 
-    // let element: HTMLElement;
+    let rootElement: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
 
     let searchInputKey: string = "";
@@ -38,7 +39,6 @@
     let selectedItemIndex: number = -1;
     let inputChangeTimeoutId;
     let isSearching: number = 0;
-    let hiddenDock: boolean = true;
     let lastKeywords: string[];
     let searchResultDocumentCount: number = null;
     let curPage: number = 0;
@@ -51,9 +51,6 @@
     let specifiedNotebookId: string = "";
 
     onMount(async () => {
-        if (EnvConfig.ins.isMobile) {
-            hiddenDock = false;
-        }
         resize();
     });
 
@@ -65,23 +62,19 @@
         if (!document) {
             return;
         }
-        if (clientWidth != undefined && clientWidth != null) {
-            let lastHiddenSearchResult = hiddenDock;
-            if (clientWidth == 0) {
-                hiddenDock = true;
-            } else {
-                hiddenDock = false;
-            }
-            if (!hiddenDock && lastHiddenSearchResult) {
-                documentSearchInputFocus();
-            }
-            if (hiddenDock) {
-                // 隐藏侧边栏，清空高亮
-                clearCssHighlights();
-            }
-        }
 
         refreshData();
+    }
+
+    export function restView() {
+        let hiddenDock = isElementHidden(rootElement);
+        if (!hiddenDock) {
+            documentSearchInputFocus();
+        }
+        if (hiddenDock) {
+            // 隐藏侧边栏，清空高亮
+            clearCssHighlights();
+        }
     }
 
     async function refreshData() {
@@ -320,7 +313,6 @@
             );
 
             matchFocusRangePromise.then((focusRange) => {
-
                 renderFirstSearchMarkByRange(focusRange);
             });
         }, 50);
@@ -410,7 +402,11 @@
     }
 </script>
 
-<div class="fn__flex-column document-search-plugin__area" style="height: 100%;">
+<div
+    class="fn__flex-column document-search-plugin__area"
+    style="height: 100%;"
+    bind:this={rootElement}
+>
     <div class="block__icons" style="overflow: auto">
         <span class="fn__space"></span>
         <span
@@ -626,13 +622,11 @@
         <span class="fn__space"></span>
     </div>
     <div class="search__layout search__layout--row">
-        {#if !hiddenDock}
-            <SearchResultItem
-                {documentItemSearchResult}
-                selectedIndex={selectedItemIndex}
-                clickCallback={clickItem}
-            />
-        {/if}
+        <SearchResultItem
+            {documentItemSearchResult}
+            selectedIndex={selectedItemIndex}
+            clickCallback={clickItem}
+        />
     </div>
 </div>
 <div

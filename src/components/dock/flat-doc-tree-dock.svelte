@@ -11,6 +11,13 @@
             flatDocTreeSideSvelte.resize(clientWidth);
         }
     }
+
+    export function iconClick() {
+        console.log(2)
+        if (flatDocTreeSideSvelte) {
+            flatDocTreeSideSvelte.restView();
+        }
+    }
 </script>
 
 {#if isMobile}

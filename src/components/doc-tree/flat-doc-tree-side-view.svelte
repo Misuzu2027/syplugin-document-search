@@ -22,13 +22,14 @@
     import { SettingConfig } from "@/services/setting-config";
     import { SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
     import { getFileArialLabel } from "./doc-tree-util";
+    import { isElementHidden } from "@/utils/html-util";
 
+    let rootElement: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
     let selectedItemIndex: number = -1;
     let inputChangeTimeoutId;
     let isSearching: number = 0;
     let searchInputKey: string = "";
-    let lastClientWidth;
     let documentItems: DocumentTreeItemInfo[] = [];
     let flatDocTreeSortMethod: DocumentSortMethod = "modifiedDesc";
     let notebookMap: Map<string, Notebook> = new Map();
@@ -36,7 +37,7 @@
 
     onMount(async () => {
         resize();
-
+        restView();
         // EnvConfig.ins.plugin.eventBus.on(
         //     "open-menu-doctree",
         //     handleOpenMenuDoctreeEvent,
@@ -47,14 +48,16 @@
         if (!document) {
             return;
         }
-        documentSearchInputElement.focus();
-
-        if (!lastClientWidth && clientWidth > 0) {
-            refreshFileTree(searchInputKey, 1);
-        }
-        lastClientWidth = clientWidth;
 
         refreshData();
+    }
+
+    export function restView() {
+        let hiddenDock = isElementHidden(rootElement);
+        if (!hiddenDock) {
+            documentSearchInputElement.focus();
+            refreshFileTree(searchInputKey, 1);
+        }
     }
 
     async function refreshData() {
@@ -307,7 +310,7 @@
     function handleKeyDownDefault() {}
 </script>
 
-<div class="fn__flex-column" style="height: 100%;">
+<div class="fn__flex-column" style="height: 100%;" bind:this={rootElement}>
     <div class="flat_doc_tree--top">
         <div
             class="block__icons"

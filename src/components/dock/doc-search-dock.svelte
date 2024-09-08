@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { EnvConfig } from "@/config/env-config";
+    import { EnvConfig } from "../../config/env-config";
     import SearchSideView from "../search/search-side-view.svelte";
+    import { onMount } from "svelte";
 
     let isMobile = EnvConfig.ins.isMobile;
     let searchSideViewSvelte: SearchSideView;
@@ -8,6 +9,12 @@
     export function resize(clientWidth?: number) {
         if (searchSideViewSvelte) {
             searchSideViewSvelte.resize(clientWidth);
+        }
+    }
+
+    export function iconClick() {
+        if (searchSideViewSvelte) {
+            searchSideViewSvelte.restView();
         }
     }
 </script>

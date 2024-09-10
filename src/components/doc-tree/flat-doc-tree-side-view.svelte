@@ -46,7 +46,7 @@
 
     export function resize(clientWidth?: number) {
         if (!document) {
-            return;
+            return clientWidth;
         }
 
         refreshData();
@@ -310,6 +310,8 @@
     function handleKeyDownDefault() {}
 </script>
 
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div class="fn__flex-column" style="height: 100%;" bind:this={rootElement}>
     <div class="flat_doc_tree--top">
         <div

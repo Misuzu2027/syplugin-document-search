@@ -39,6 +39,7 @@
     let selectedItemIndex: number = -1;
     let inputChangeTimeoutId;
     let isSearching: number = 0;
+    let hiddenDock: boolean = true;
     let lastKeywords: string[];
     let searchResultDocumentCount: number = null;
     let curPage: number = 0;
@@ -52,6 +53,7 @@
 
     onMount(async () => {
         resize();
+        restView();
     });
 
     onDestroy(() => {
@@ -60,14 +62,14 @@
 
     export function resize(clientWidth?: number) {
         if (!document) {
-            return;
+            return clientWidth;
         }
 
         refreshData();
     }
 
     export function restView() {
-        let hiddenDock = isElementHidden(rootElement);
+        hiddenDock = isElementHidden(rootElement);
         if (!hiddenDock) {
             documentSearchInputFocus();
         }
@@ -402,6 +404,7 @@
     }
 </script>
 
+<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
     class="fn__flex-column document-search-plugin__area"
     style="height: 100%;"
@@ -621,13 +624,15 @@
 
         <span class="fn__space"></span>
     </div>
-    <div class="search__layout search__layout--row">
-        <SearchResultItem
-            {documentItemSearchResult}
-            selectedIndex={selectedItemIndex}
-            clickCallback={clickItem}
-        />
-    </div>
+    {#if !hiddenDock}
+        <div class="search__layout search__layout--row">
+            <SearchResultItem
+                {documentItemSearchResult}
+                selectedIndex={selectedItemIndex}
+                clickCallback={clickItem}
+            />
+        </div>
+    {/if}
 </div>
 <div
     class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}"

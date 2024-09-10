@@ -9,8 +9,8 @@ import fg from 'fast-glob';
 
 const args = minimist(process.argv.slice(2))
 const isWatch = args.watch || args.w || false
-const devDistDir = "./dev"
-const distDir = isWatch ? devDistDir : "./dist"
+const devDistDir = "dev"
+const distDir = isWatch ? devDistDir : "dist"
 
 console.log("isWatch=>", isWatch)
 console.log("distDir=>", distDir)
@@ -32,7 +32,7 @@ export default defineConfig({
                     dest: "./",
                 },
                 {
-                    src: "./icon.png",
+                    src: "./plugin.json",
                     dest: "./",
                 },
                 {
@@ -40,13 +40,9 @@ export default defineConfig({
                     dest: "./",
                 },
                 {
-                    src: "./plugin.json",
+                    src: "./icon.png",
                     dest: "./",
-                },
-                {
-                    src: "./src/i18n/**",
-                    dest: "./i18n/",
-                },
+                }
             ],
         }),
     ],
@@ -66,7 +62,7 @@ export default defineConfig({
         emptyOutDir: false,
 
         // 构建后是否生成 source map 文件
-        sourcemap: false,
+        sourcemap: isWatch ? 'inline' : false,
 
         // 设置为 false 可以禁用最小化混淆
         // 或是用来指定是应用哪种混淆器
@@ -91,7 +87,7 @@ export default defineConfig({
                             name: 'watch-external',
                             async buildStart() {
                                 const files = await fg([
-                                    'src/i18n/*.json',
+                                    'public/i18n/**',
                                     './README*.md',
                                     './plugin.json'
                                 ]);

@@ -1,7 +1,6 @@
 <script lang="ts">
-    import { EnvConfig } from "../../config/env-config";
-    import SearchSideView from "../search/search-side-view.svelte";
-    import { onMount } from "svelte";
+    import { EnvConfig } from "@/config/env-config";
+    import SearchSideView from "@/components/search/search-side-view.svelte";
 
     let isMobile = EnvConfig.ins.isMobile;
     let searchSideViewSvelte: SearchSideView;
@@ -12,11 +11,7 @@
         }
     }
 
-    export function iconClick() {
-        if (searchSideViewSvelte) {
-            searchSideViewSvelte.restView();
-        }
-    }
+
 </script>
 
 {#if isMobile}

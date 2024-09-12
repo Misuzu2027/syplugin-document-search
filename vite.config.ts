@@ -42,7 +42,11 @@ export default defineConfig({
                 {
                     src: "./icon.png",
                     dest: "./",
-                }
+                },
+                {
+                    src: "./src/i18n/**",
+                    dest: "./i18n/",
+                },
             ],
         }),
     ],
@@ -87,7 +91,7 @@ export default defineConfig({
                             name: 'watch-external',
                             async buildStart() {
                                 const files = await fg([
-                                    'public/i18n/**',
+                                    'src/i18n/*.json',
                                     './README*.md',
                                     './plugin.json'
                                 ]);

@@ -2,7 +2,7 @@
     import { SettingConfig } from "@/services/setting-config";
     import { lsNotebooks } from "@/utils/api";
     import { onMount } from "svelte";
-    import { convertIconInIal } from "../../utils/icon-util";
+    import { convertIconInIal } from "@/utils/icon-util";
     let excludeNotebookIds: string[] = SettingConfig.ins.excludeNotebookIds;
     let notebookMap: Map<string, Notebook> = new Map();
 

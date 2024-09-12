@@ -7,7 +7,7 @@
  */
 
 import { fetchPost, fetchSyncPost, IWebSocketData } from "siyuan";
-import { isBoolean } from "./object-util";
+import { isBoolean } from "@/utils/object-util";
 
 
 

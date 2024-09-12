@@ -12,11 +12,7 @@
         }
     }
 
-    export function iconClick() {
-        if (flatDocTreeSideSvelte) {
-            flatDocTreeSideSvelte.restView();
-        }
-    }
+ 
 </script>
 
 {#if isMobile}

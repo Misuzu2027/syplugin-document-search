@@ -1,9 +1,9 @@
 <script lang="ts">
-    import SettingDock from "./setting-dock.svelte";
-    import SettingOther from "./setting-other.svelte";
-    import SettingAttr from "./setting-attr.svelte";
-    import SettingType from "./setting-type.svelte";
-    import SettingNotebook from "./setting-notebook.svelte";
+    import SettingDock from "@/components/setting/setting-dock.svelte";
+    import SettingOther from "@/components/setting/setting-other.svelte";
+    import SettingAttr from "@/components/setting/setting-attr.svelte";
+    import SettingType from "@/components/setting/setting-type.svelte";
+    import SettingNotebook from "@/components/setting/setting-notebook.svelte";
     import { EnvConfig } from "@/config/env-config";
 
     let groups = [

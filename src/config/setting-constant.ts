@@ -1,4 +1,4 @@
-import { EnvConfig } from "./env-config";
+import { EnvConfig } from "@/config/env-config";
 
 export function SETTING_BLOCK_TYPE_ELEMENT() {
     return [

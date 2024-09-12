@@ -53,7 +53,6 @@
 
     onMount(async () => {
         resize();
-        restView();
     });
 
     onDestroy(() => {
@@ -66,9 +65,10 @@
         }
 
         refreshData();
+        restView();
     }
 
-    export function restView() {
+    function restView() {
         hiddenDock = isElementHidden(rootElement);
         if (!hiddenDock) {
             documentSearchInputFocus();

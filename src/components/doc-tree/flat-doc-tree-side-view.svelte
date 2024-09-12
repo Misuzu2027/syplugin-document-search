@@ -14,14 +14,14 @@
         Constants,
     } from "siyuan";
     import { EnvConfig } from "@/config/env-config";
-    import { getNotebookMap } from "../search/search-util";
+    import { getNotebookMap } from "@/components/search/search-util";
     import {
         convertIalStringToObject,
         convertIconInIal,
     } from "@/utils/icon-util";
     import { SettingConfig } from "@/services/setting-config";
     import { SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
-    import { getFileArialLabel } from "./doc-tree-util";
+    import { getFileArialLabel } from "@/components/doc-tree/doc-tree-util";
     import { isElementHidden } from "@/utils/html-util";
 
     let rootElement: HTMLElement;
@@ -37,7 +37,6 @@
 
     onMount(async () => {
         resize();
-        restView();
         // EnvConfig.ins.plugin.eventBus.on(
         //     "open-menu-doctree",
         //     handleOpenMenuDoctreeEvent,
@@ -50,9 +49,10 @@
         }
 
         refreshData();
+        restView();
     }
 
-    export function restView() {
+    function restView() {
         let hiddenDock = isElementHidden(rootElement);
         if (!hiddenDock) {
             documentSearchInputElement.focus();

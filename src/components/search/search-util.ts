@@ -8,7 +8,7 @@ import { highlightBlockContent } from "@/utils/html-util";
 import { convertIalStringToObject, convertIconInIal } from "@/utils/icon-util";
 import { getObjectSizeInKB } from "@/utils/object-util";
 import { Constants, TProtyleAction } from "siyuan";
-import { getFileArialLabel } from "../doc-tree/doc-tree-util";
+import { getFileArialLabel } from "@/components/doc-tree/doc-tree-util";
 
 
 

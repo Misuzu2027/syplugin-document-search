@@ -1,9 +1,9 @@
 import { Dialog } from "siyuan";
-import SettingOther from "./setting-other.svelte";
-import SettingAttr from "./setting-attr.svelte";
-import SettingType from "./setting-type.svelte";
-import SettingNotebook from "./setting-notebook.svelte";
-import SettingHub from "./setting-hub.svelte";
+import SettingOther from "@/components/setting/setting-other.svelte";
+import SettingAttr from "@/components/setting/setting-attr.svelte";
+import SettingType from "@/components/setting/setting-type.svelte";
+import SettingNotebook from "@/components/setting/setting-notebook.svelte";
+import SettingHub from "@/components/setting/setting-hub.svelte";
 import { EnvConfig } from "@/config/env-config";
 
 export function openSettingsDialog(dialogType: SettingDialogType) {

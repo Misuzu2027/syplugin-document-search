@@ -252,7 +252,7 @@
         // 如果被查找节点不是聚焦状态，节点文档是当前查看文档，节点的文档element 存在，文档element 保护查找的节点
         if (
             !zoomIn &&
-            rootId != blockId &&
+            // rootId != blockId &&
             rootId == EnvConfig.ins.lastViewedDocId &&
             lastDocumentContentElement &&
             document.contains(lastDocumentContentElement)
@@ -262,10 +262,11 @@
                     `[data-node-id="${blockId}"]`,
                 );
             if (targetNodeElement) {
+                let matchBlockId = rootId == blockId ? null : blockId;
                 let matchFocusRangePromise = highlightElementTextByCss(
                     lastDocumentContentElement,
                     lastKeywords,
-                    blockId,
+                    matchBlockId,
                     previewProtyleMatchFocusIndex,
                 );
 
@@ -277,7 +278,9 @@
                     renderNextSearchMarkByRange(focusRange);
                 });
 
-                bgFade(targetNodeElement);
+                if (matchBlockId) {
+                    bgFade(targetNodeElement);
+                }
                 return;
             }
         }

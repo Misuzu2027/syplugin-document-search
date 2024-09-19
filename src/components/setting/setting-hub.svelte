@@ -5,6 +5,7 @@
     import SettingType from "@/components/setting/setting-type.svelte";
     import SettingNotebook from "@/components/setting/setting-notebook.svelte";
     import { EnvConfig } from "@/config/env-config";
+    import SettingFlatDocTree from "./setting-flat-doc-tree.svelte";
 
     let groups = [
         {
@@ -27,6 +28,10 @@
             title: EnvConfig.ins.i18n.settingOther,
             type: "settingOther",
         },
+        {
+            title: "扁平化文档树设置",
+            type: "settingFlatDocTree",
+        },
     ];
     let focusGroup = groups[0];
 
@@ -44,6 +49,7 @@
     // };
 </script>
 
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div class="fn__flex-1 fn__flex config__panel">
     <ul class="b3-tab-bar b3-list b3-list--background">
         {#each groups as group}
@@ -79,6 +85,9 @@
 
             {#if focusGroup.type == "settingOther"}
                 <SettingOther />
+            {/if}
+            {#if focusGroup.type == "settingFlatDocTree"}
+                <SettingFlatDocTree />
             {/if}
         </div>
     </div>

@@ -1,5 +1,6 @@
 export class DocumentQueryCriteria {
     keywords: string[];
+    docFullTextSearch: boolean;
     pages: number[];
     documentSortMethod: DocumentSortMethod;
     contentBlockSortMethod: ContentBlockSortMethod;
@@ -11,6 +12,7 @@ export class DocumentQueryCriteria {
 
     constructor(
         keywords: string[],
+        docFullTextSearch: boolean,
         pages: number[],
         documentSortMethod: DocumentSortMethod,
         contentBlockSortMethod: ContentBlockSortMethod,
@@ -20,6 +22,7 @@ export class DocumentQueryCriteria {
         excludeNotebookIds: string[],
     ) {
         this.keywords = keywords;
+        this.docFullTextSearch = docFullTextSearch;
         this.pages = pages;
         this.documentSortMethod = documentSortMethod;
         this.contentBlockSortMethod = contentBlockSortMethod;
@@ -37,6 +40,7 @@ export function generateDocumentListSql(
 ): string {
 
     let keywords = queryCriteria.keywords;
+    let docFullTextSearch = queryCriteria.docFullTextSearch;
     let pages = queryCriteria.pages;
     let includeNotebookIds = queryCriteria.includeNotebookIds;
     let documentSortMethod = queryCriteria.documentSortMethod;
@@ -46,8 +50,13 @@ export function generateDocumentListSql(
     let contentParamSql = "";
     if (keywords && keywords.length > 0) {
         let concatConcatFieldSql = getConcatFieldSql("concatContent", includeConcatFields);
-        contentParamSql = " AND " + generateAndLikeConditions("concatContent", keywords);
         columns.push(` ${concatConcatFieldSql} `);
+        if (docFullTextSearch) {
+            let documentIdSql = generateDocumentIdTableSql(queryCriteria);
+            contentParamSql = ` AND id in (${documentIdSql}) `;
+        } else {
+            contentParamSql = " AND " + generateAndLikeConditions("concatContent", keywords);
+        }
     }
 
     let boxInSql = " "
@@ -56,24 +65,30 @@ export function generateDocumentListSql(
     }
 
     let orders = [];
+
+    if (keywords && keywords.length > 0) {
+        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", keywords, false);
+        orders = [orderCaseCombinationSql];
+    }
+
     if (documentSortMethod == 'modifiedAsc') {
-        orders = [" updated ASC "]
+        orders.push([" updated ASC "]);
     } else if (documentSortMethod == 'modifiedDesc') {
-        orders = [" updated DESC "]
+        orders.push([" updated DESC "]);
     } else if (documentSortMethod == 'createdAsc') {
-        orders = [" created ASC "]
+        orders.push([" created ASC "]);
     } else if (documentSortMethod == 'createdDesc') {
-        orders = [" created DESC "]
+        orders.push([" created DESC "]);
     } else if (documentSortMethod == 'refCountAsc') {
         columns.push(" (SELECT count(1) FROM refs WHERE def_block_root_id = blocks.id) refCount ");
-        orders = [" refCount ASC ", " updated DESC "]
+        orders.push([" refCount ASC ", " updated DESC "]);
     } else if (documentSortMethod == 'refCountDesc') {
         columns.push(" (SELECT count(1) FROM refs WHERE def_block_root_id = blocks.id) refCount ");
-        orders = [" refCount DESC ", " updated DESC "]
+        orders.push([" refCount DESC ", " updated DESC "]);
     } else if (documentSortMethod == 'alphabeticAsc') {
-        orders = [" concatContent ASC ", " updated DESC "]
+        orders.push([" concatContent ASC ", " updated DESC "]);
     } else if (documentSortMethod == 'alphabeticDesc') {
-        orders = [" concatContent DESC ", " updated DESC "]
+        orders.push([" concatContent DESC ", " updated DESC "]);
     }
 
     let columnSql = columns.join(" , ");
@@ -240,6 +255,29 @@ function generateDocumentIdContentTableSql(
 
     return documentIdContentTableSql;
 }
+
+function generateDocumentIdTableSql(
+    queryCriteria: DocumentQueryCriteria
+): string {
+    let keywords = queryCriteria.keywords;
+    let includeTypes = queryCriteria.includeTypes;
+    let includeConcatFields = queryCriteria.includeConcatFields;
+    let includeRootIds = queryCriteria.includeRootIds;
+    let includeNotebookIds = queryCriteria.includeNotebookIds;
+    let excludeNotebookIds = queryCriteria.excludeNotebookIds;
+
+    let concatDocumentConcatFieldSql = getConcatFieldSql(null, includeConcatFields);
+    let columns = ["root_id"]
+    let contentLikeField = `GROUP_CONCAT( ${concatDocumentConcatFieldSql} )`;
+
+    let orders = [];
+
+    let documentIdContentTableSql = generateDocumentContentLikeSql(
+        columns, keywords, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, orders, null);
+
+    return documentIdContentTableSql;
+}
+
 
 function generateDocumentContentLikeSql(
     columns: string[],

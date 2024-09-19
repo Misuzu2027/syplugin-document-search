@@ -1,4 +1,3 @@
-import { EnvConfig } from "@/config/env-config";
 import { DocumentItem, BlockItem, DocumentSqlQueryModel } from "@/config/search-model";
 import { SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
 import { DocumentQueryCriteria, generateDocumentSearchSql } from "@/services/search-sql";
@@ -244,6 +243,7 @@ export function getDocumentQueryCriteria(
         return null;
     }
 
+    let flatDocFullTextSearch = SettingConfig.ins.flatDocFullTextSearch;
     let pageSize = SettingConfig.ins.pageSize;
     let types = SettingConfig.ins.includeTypes;
     let queryFields = SettingConfig.ins.includeQueryFields;
@@ -255,6 +255,7 @@ export function getDocumentQueryCriteria(
     let documentSearchCriterion: DocumentQueryCriteria =
         new DocumentQueryCriteria(
             keywords,
+            flatDocFullTextSearch,
             pages,
             documentSortMethod,
             contentBlockSortMethod,
@@ -802,7 +803,11 @@ export async function highlightElementTextByCss(
                     range.setStart(el, index);
                     range.setEnd(el, index + length);
                     allMatchRanges.push(range);
-                    if (getNodeId(el) == targetBlockId) {
+                    if (targetBlockId) {
+                        if (getNodeId(el) == targetBlockId) {
+                            targetElementMatchRanges.push(range);
+                        }
+                    } else {
                         targetElementMatchRanges.push(range);
                     }
                 });

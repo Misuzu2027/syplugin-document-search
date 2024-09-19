@@ -26,6 +26,9 @@ export class SettingConfig {
 
         docSearchDockPoisition: "LeftTop" as DockPosition,
         flatDocTreeDockPoisition: "LeftTop" as DockPosition,
+        // 扁平化文档列表设置
+        flatDocFullTextSearch: false as boolean, // 全文搜索
+        flatDocAllShowLimit: 30,  // 显示全部文档时的大小限制
     };
 
 
@@ -151,6 +154,17 @@ export class SettingConfig {
         return this.settings.flatDocTreeDockPoisition;
     }
 
+
+    get flatDocFullTextSearch(): boolean {
+        return this.settings.flatDocFullTextSearch;
+    }
+
+
+    get flatDocAllShowLimit(): number {
+        return this.settings.flatDocAllShowLimit;
+    }
+
+
     updatePageSize(pageSize: number) {
         this.settings.pageSize = pageSize;
         this.save();
@@ -219,6 +233,16 @@ export class SettingConfig {
 
     updateFlatDocTreeDockPoisition(flatDocTreeDockPoisition: DockPosition) {
         this.settings.flatDocTreeDockPoisition = flatDocTreeDockPoisition;
+        this.save();
+    }
+
+    updateflatDocFullTextSearch(flatDocFullTextSearch: boolean) {
+        this.settings.flatDocFullTextSearch = flatDocFullTextSearch;
+        this.save();
+    }
+
+    updateflatDocAllShowLimit(flatDocAllShowLimit: number) {
+        this.settings.flatDocAllShowLimit = flatDocAllShowLimit;
         this.save();
     }
 }

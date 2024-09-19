@@ -1,3 +1,4 @@
+import { findScrollingElement } from "@/components/search/search-util";
 
 export const escapeAttr = (html: string) => {
     return html.replace(/"/g, "&quot;").replace(/'/g, "&apos;");
@@ -74,4 +75,43 @@ export function isElementHidden(element: Element) {
     }
 
     return isElementHidden(element.parentElement);
+}
+
+
+export function scrollByRange(matchRange: Range, position: ScrollLogicalPosition) {
+    if (!matchRange) {
+        return;
+    }
+    position = position ? position : "center";
+
+    const matchElement =
+        matchRange.commonAncestorContainer.parentElement;
+    if (!matchElement) {
+        return;
+    }
+
+    if (
+        matchElement.clientHeight >
+        document.documentElement.clientHeight
+    ) {
+        // 特殊情况：如果一个段落中软换行非常多，此时如果定位到匹配节点的首行，
+        // 是看不到查询的文本的，需要通过 Range 的精确位置进行定位。
+        const scrollingElement = findScrollingElement(matchElement);
+        const contentRect = scrollingElement.getBoundingClientRect();
+        let scrollTop =
+            scrollingElement.scrollTop +
+            matchRange.getBoundingClientRect().top -
+            contentRect.top -
+            contentRect.height / 2;
+        scrollingElement.scrollTo({
+            top: scrollTop,
+            behavior: "smooth",
+        });
+    } else {
+        matchElement.scrollIntoView({
+            behavior: "smooth",
+            block: position,
+            inline: position,
+        });
+    }
 }

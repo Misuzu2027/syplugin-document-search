@@ -102,13 +102,11 @@ function addFlatDocTreeDock() {
         },
         type: FLAT_DOC_TREE_DOCK_TYPE,
         resize() {
-            console.log(FLAT_DOC_TREE_DOCK_TYPE + " resize");
             if (flatDocTreeSvelte) {
                 flatDocTreeSvelte.resize(this.element.clientWidth);
             }
         },
         update() {
-            console.log(FLAT_DOC_TREE_DOCK_TYPE + " update");
         },
         init() {
             this.element.innerHTML = "";

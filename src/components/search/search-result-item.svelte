@@ -151,12 +151,13 @@
     }
 </script>
 
+<!-- on:click={() => itemClick(item.block)} -->
+<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
     id="documentSearchList"
     class="fn__flex-1 search__list b3-list b3-list--background"
 >
     {#each documentItemSearchResult as item}
-        <!-- on:click={() => itemClick(item.block)} -->
         <div
             class="b3-list-item {item.index === selectedIndex
                 ? 'b3-list-item--focus'
@@ -169,6 +170,7 @@
             data-node-id={item.block.id}
             data-root-id={item.block.root_id}
         >
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
             <span
                 class="b3-list-item__toggle b3-list-item__toggle--hl
                 {item.subItems && item.subItems.length > 0 ? '' : 'disabled'}

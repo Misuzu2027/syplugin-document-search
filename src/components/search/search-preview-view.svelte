@@ -43,6 +43,7 @@
     let selectedItemIndex: number = -1;
     let itemClickCount = 0;
     let inputChangeTimeoutId;
+    let keyHandleTimeoutId;
     let isSearching: number = 0;
     let lastKeywords: string[];
     let searchResultDocumentCount: number = null;
@@ -94,19 +95,93 @@
     function handleKeyDownDefault() {}
 
     function handleKeyDownSelectItem(event: KeyboardEvent) {
-        let selectedBlockItem = selectItemByArrowKeys(
+        let selectedItem = selectItemByArrowKeys(
             event,
             selectedItemIndex,
             documentItemSearchResult,
         );
 
         documentSearchInputFocus();
-        if (selectedBlockItem) {
-            selectedItemIndex = selectedBlockItem.index;
+        if (selectedItem) {
+            selectedItemIndex = selectedItem.index;
+            expandSelectedItemDocument(selectedItem);
+            scrollToSelectedBlock(selectedItem);
+
+            // 清除之前的定时器
+            clearTimeout(keyHandleTimeoutId);
+            // 用来处理防止长按箭头，会一直刷新预览区域，节省性能开销。
+            keyHandleTimeoutId = setTimeout(() => {
+                refreshBlockPreviewBox(
+                    selectedItem.block.id,
+                    selectedItem.block.root_id,
+                );
+            }, 50);
 
             if (event.key === "Enter") {
-                openBlockTab(selectedBlockItem.block.id);
+                openBlockTab(selectedItem.block.id);
             }
+        }
+    }
+
+    function expandSelectedItemDocument(
+        selectedItem: DocumentItem | BlockItem,
+    ) {
+        if (!selectedItem || !documentItemSearchResult) {
+            return;
+        }
+        // 响应式有延迟，需要自己修改一下类样式。。。
+        let itemElements = element.querySelectorAll(
+            `div[data-type="search-item"][data-root-id="${selectedItem.block.root_id}"]`,
+        );
+        itemElements.forEach((element) => {
+            element.classList.remove("fn__none");
+        });
+        for (const item of documentItemSearchResult) {
+            if (!item.isCollapsed) {
+                continue;
+            }
+            if (item == selectedItem) {
+                item.isCollapsed = false;
+                return;
+            }
+            for (const subItem of item.subItems) {
+                if (subItem == selectedItem) {
+                    item.isCollapsed = false;
+                    return;
+                }
+            }
+        }
+    }
+
+    function scrollToSelectedBlock(selectedItem: DocumentItem | BlockItem) {
+        if (!selectedItem) {
+            return;
+        }
+        let searchResultListElement = element.querySelector(
+            "#documentSearchList",
+        ) as HTMLElement;
+
+        let focusItem = element.querySelector(
+            `div[data-type="search-item"][data-node-id="${selectedItem.block.id}"]`,
+        ) as HTMLElement;
+
+        if (!focusItem) {
+            focusItem = element.querySelector(
+                `div.b3-list-item[data-node-id="${selectedItem.block.id}"]`,
+            ) as HTMLElement;
+        }
+
+        if (!searchResultListElement || !focusItem) {
+            return;
+        }
+
+        console.log("focusItem.offsetTop", focusItem.offsetTop);
+        let scrollTop =
+            focusItem.offsetTop - searchResultListElement.clientHeight / 2;
+        if (focusItem.offsetTop > scrollTop) {
+            searchResultListElement.scrollTop = scrollTop;
+        } else {
+            searchResultListElement.scrollTop = 0;
         }
     }
 
@@ -403,13 +478,13 @@
     }
 </script>
 
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- <div class="layout-tab-container fn__flex-1" bind:this={element}> -->
 <div
     class="fn__flex-column document-search-plugin__area"
     style="height: 100%;"
     bind:this={element}
 >
-    <!-- <div class="layout-tab-container fn__flex-1" bind:this={element}> -->
-
     <div class="block__icons" style="overflow: auto">
         <span
             data-position="9bottom"

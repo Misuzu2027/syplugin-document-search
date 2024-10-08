@@ -23,3 +23,17 @@ export function determineOpenTabPosition(
     }
     return null;
 }
+
+
+export function clearSyFileTreeItemFocus() {
+    document
+        .querySelector("div.file-tree.sy__file")
+        .querySelectorAll("li.b3-list-item--focus")
+        .forEach((liItem) => {
+            liItem.classList.remove("b3-list-item--focus");
+        });
+}
+
+export const isTouchDevice = () => {
+    return ("ontouchstart" in window) && navigator.maxTouchPoints > 1;
+};

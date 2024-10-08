@@ -98,6 +98,7 @@ interface Window {
         user: any;
         ws: any;
         languages: any;
+        dragElement: any;
     };
 }
 

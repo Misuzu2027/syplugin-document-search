@@ -680,8 +680,8 @@ export function toggleAllCollpsedItem(documentItems: DocumentItem[], isCollapsed
 }
 
 export function selectItemByArrowKeys(
-    event: KeyboardEvent, selectedItemIndex: number, documentItems: DocumentItem[]): BlockItem {
-    let selectedItem: BlockItem = null;
+    event: KeyboardEvent, selectedItemIndex: number, documentItems: DocumentItem[]): DocumentItem | BlockItem {
+    let selectedItem: DocumentItem | BlockItem = null;
 
     if (!event || !event.key) {
         return selectedItem;

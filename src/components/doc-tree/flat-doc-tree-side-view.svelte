@@ -34,9 +34,12 @@
     import { isElementHidden } from "@/utils/html-util";
     import { splitKeywordStringToArray } from "@/utils/string-util";
     import {
+        clearSyFileTreeItemFocus,
         determineOpenTabPosition,
         getActiveTab,
+        isTouchDevice,
     } from "@/utils/siyuan-util";
+    import { hasClosestByTag } from "@/lib/siyuan/hasClosest";
 
     let rootElement: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
@@ -49,7 +52,7 @@
     let notebookMap: Map<string, Notebook> = new Map();
     let specifiedNotebookId: string = "";
 
-    let lastResizeHideDock: boolean = false;
+    let lastResizeHideDock: boolean = true;
     let waitRefreshByDatabase: boolean = false;
 
     let lastOpenBlockId: string;
@@ -119,7 +122,7 @@
             case "databaseIndexCommit":
                 if (waitRefreshByDatabase) {
                     waitRefreshByDatabase = false;
-                    refreshFileTree(searchInputKey, 1);
+                    refreshFileTree(searchInputKey, 1, false);
                 }
                 break;
         }
@@ -166,10 +169,39 @@
         }
         event.stopPropagation();
         event.preventDefault();
+
+        const target = event.currentTarget as HTMLElement;
         let blockId = item.block.id;
+
+        // const blockId = target.getAttribute("data-node-id");
+
+        // updateLastSelectedItemIndex(blockId);
+
+        if (isToggleFocusEvent(event)) {
+            toggleItemFocus(target);
+            return;
+        }
+        clearItemFocus();
         selectedItemIndex = item.index;
+
+        // target.classList.add("b3-list-item--focus");
+
         const tabPosition = determineOpenTabPosition(event);
         openBlockTab(blockId, tabPosition);
+    }
+    function isToggleFocusEvent(event: MouseEvent): boolean {
+        return event.ctrlKey && !event.altKey && !event.shiftKey;
+    }
+    function toggleItemFocus(target: HTMLElement) {
+        target.classList.toggle("b3-list-item--focus");
+    }
+
+    function clearItemFocus() {
+        rootElement
+            .querySelectorAll("li.b3-list-item--focus")
+            .forEach((liItem) => {
+                liItem.classList.remove("b3-list-item--focus");
+            });
     }
 
     async function openBlockTab(
@@ -268,9 +300,22 @@
         scrollByRange(matchRange, "center");
     }
 
-    async function refreshFileTree(searchKey: string, pageNum: number) {
+    async function refreshFileTree(
+        searchKey: string,
+        pageNum: number,
+        showLoadding: boolean = true,
+    ) {
         // 每次查询改为1，防止因为异常，加载图案不会消失。
-        isSearching = 1;
+        if (showLoadding) {
+            isSearching = 1;
+        } else {
+            isSearching = 0;
+        }
+        clearItemFocus();
+        
+        if (!notebookMap.has(specifiedNotebookId)) {
+            specifiedNotebookId = "";
+        }
 
         // 去除多余的空格，并将输入框的值按空格分割成数组
         let keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
@@ -358,44 +403,6 @@
         return documentBlockInfos;
     }
 
-    // function getFileArialLabel(block: any, boxName: string): string {
-    //     let ariaLabelRow: string[] = [];
-    //     // ariaLabelRow.push(block.content);
-    //     if (block.name) {
-    //         ariaLabelRow.push(
-    //             `<br>${window.siyuan.languages.name} ${block.name}`,
-    //         );
-    //     }
-    //     if (block.alias) {
-    //         ariaLabelRow.push(
-    //             `<br>${window.siyuan.languages.alias} ${block.alias}`,
-    //         );
-    //     }
-    //     if (block.memo) {
-    //         ariaLabelRow.push(
-    //             `<br>${window.siyuan.languages.memo} ${block.memo}`,
-    //         );
-    //     }
-
-    //     ariaLabelRow.push(`<br>${EnvConfig.ins.i18n.notebook} ${boxName}`);
-    //     ariaLabelRow.push(`<br>${EnvConfig.ins.i18n.path} ${block.hpath}`);
-
-    //     let updated = formatRelativeTimeInBlock(block.updated);
-    //     let created = convertDateTimeInBlock(block.created);
-
-    //     ariaLabelRow.push(
-    //         `<br>${window.siyuan.languages.modifiedAt} ${updated}`,
-    //     );
-    //     ariaLabelRow.push(
-    //         `<br>${window.siyuan.languages.createdAt} ${created}`,
-    //     );
-
-    //     let ariaLabel = ariaLabelRow.join("");
-    //     ariaLabel = removePrefixAndSuffix(ariaLabel, "<br>", "<br>");
-
-    //     return ariaLabel;
-    // }
-
     function handleKeyDownSelectItem(event: KeyboardEvent) {
         let selectedItem = selectItemByArrowKeys(
             event,
@@ -476,6 +483,97 @@
         searchInputKey = "";
         refreshFileTree(searchInputKey, 1);
     }
+
+    /**拖拽*/
+    function docListItemDragstartEvent(event: any) {
+        let syFileTreeElement = document.querySelector(
+            "div.file-tree.sy__file > div.fn__flex-1 ",
+        );
+        if (!syFileTreeElement) {
+            return;
+        }
+        // 清除可能存在的拖拽遗留数据
+        window.siyuan.dragElement = undefined;
+        document
+            .querySelectorAll(".misuzu-drag-hide-doc-list")
+            .forEach((item) => {
+                item.remove();
+            });
+        clearSyFileTreeItemFocus();
+
+        // 下面全抄官方的，把 this.element 换成了 rootElement
+        // https://github.com/siyuan-note/siyuan/blob/f3b0ee51d5fb505c852c7378ba85776d15e22b86/app/src/layout/dock/Files.ts#L371
+        event as DragEvent & { target: HTMLElement };
+        if (isTouchDevice()) {
+            event.stopPropagation();
+            event.preventDefault();
+            return;
+        }
+        window.getSelection().removeAllRanges();
+        const liElement = hasClosestByTag(event.target, "LI");
+        if (liElement) {
+            let selectElements: Element[] = Array.from(
+                rootElement.querySelectorAll(".b3-list-item--focus"),
+            );
+            if (!liElement.classList.contains("b3-list-item--focus")) {
+                selectElements.forEach((item) => {
+                    item.classList.remove("b3-list-item--focus");
+                });
+                liElement.classList.add("b3-list-item--focus");
+                selectElements = [liElement];
+            }
+            let ids = "";
+            const ghostElement = document.createElement("ul");
+            selectElements.forEach((item: HTMLElement, index) => {
+                ghostElement.append(item.cloneNode(true));
+                item.style.opacity = "0.1";
+                const itemNodeId = item.dataset.nodeId || item.dataset.path; // 拖拽笔记本时值不能为空，否则 drop 就不会继续排序
+                if (itemNodeId) {
+                    ids += itemNodeId;
+                    if (index < selectElements.length - 1) {
+                        ids += ",";
+                    }
+                }
+                // 关键代码：克隆节点，添加到文档树节点内；这样就可以在拖拽结束后被官方代码查询到并实现业务。
+                let hideListElement = item.cloneNode(true) as HTMLElement;
+                hideListElement.style.display = "none";
+                hideListElement.classList.add("misuzu-drag-hide-doc-list");
+                syFileTreeElement.append(hideListElement);
+            });
+            ghostElement.setAttribute(
+                "style",
+                `width: 219px;position: fixed;top:-${selectElements.length * 30}px`,
+            );
+            ghostElement.setAttribute("class", "b3-list b3-list--background");
+            document.body.append(ghostElement);
+            event.dataTransfer.setDragImage(ghostElement, 16, 16);
+            event.dataTransfer.setData(Constants.SIYUAN_DROP_FILE, ids);
+            event.dataTransfer.dropEffect = "move";
+            window.siyuan.dragElement = document.createElement("div");
+            window.siyuan.dragElement.innerText = ids;
+            setTimeout(() => {
+                ghostElement.remove();
+            });
+        }
+    }
+
+    function docListItemDragendEvent() {
+        // 官方代码
+        // https://github.com/siyuan-note/siyuan/blob/f3b0ee51d5fb505c852c7378ba85776d15e22b86/app/src/layout/dock/Files.ts#L415
+        rootElement
+            .querySelectorAll(".b3-list-item")
+            .forEach((item: HTMLElement) => {
+                item.style.opacity = "";
+            });
+        window.siyuan.dragElement = undefined;
+        // 清除临时节点数据。
+        document
+            .querySelectorAll(".misuzu-drag-hide-doc-list")
+            .forEach((item) => {
+                item.remove();
+            });
+    }
+
     function handleKeyDownDefault() {}
 </script>
 
@@ -586,7 +684,7 @@
             >
                 <li
                     data-node-id={item.block.id}
-                    data-name={escapeAttr(item.block.name)}
+                    data-name={escapeAttr(item.block.content) + ".sy"}
                     data-type="navigation-file"
                     style="--file-toggle-width:40px;height:32px;padding:2px 5px;"
                     class="b3-list-item {item.index === selectedItemIndex
@@ -594,8 +692,11 @@
                         : ''} "
                     data-path={item.block.path}
                     data-flat-doc-tree="true"
+                    draggable="true"
                     on:click={(event) => itemClick(event, item)}
                     on:keydown={handleKeyDownDefault}
+                    on:dragstart={docListItemDragstartEvent}
+                    on:dragend={docListItemDragendEvent}
                 >
                     <span class="b3-list-item__icon">
                         {#if item.icon}

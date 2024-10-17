@@ -8,6 +8,7 @@ import { convertIalStringToObject, convertIconInIal } from "@/utils/icon-util";
 import { getObjectSizeInKB } from "@/utils/object-util";
 import { Constants, TProtyleAction } from "siyuan";
 import { getFileArialLabel } from "@/components/doc-tree/doc-tree-util";
+import { isNumberValid } from "@/utils/number-util";
 
 
 
@@ -819,8 +820,11 @@ export async function highlightElementTextByCss(
         return;
     }
     let matchFocusRange: Range;
-    let nextMatchIndexRemainder =
-        nextMatchFocusIndex % targetElementMatchRanges.length;
+
+    let nextMatchIndexRemainder = null;
+    if (isNumberValid(nextMatchFocusIndex) && targetElementMatchRanges.length > 0) {
+        nextMatchIndexRemainder = nextMatchFocusIndex % targetElementMatchRanges.length;
+    }
     for (let i = 0; i < targetElementMatchRanges.length; i++) {
         if (i == nextMatchIndexRemainder) {
             matchFocusRange = targetElementMatchRanges[i];

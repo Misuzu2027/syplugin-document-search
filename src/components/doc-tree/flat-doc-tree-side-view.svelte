@@ -40,6 +40,7 @@
         isTouchDevice,
     } from "@/utils/siyuan-util";
     import { hasClosestByTag } from "@/lib/siyuan/hasClosest";
+    import { isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
 
     let rootElement: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
@@ -49,6 +50,7 @@
     let searchInputKey: string = "";
     let documentItems: DocumentTreeItemInfo[] = [];
     let flatDocTreeSortMethod: DocumentSortMethod = "modifiedDesc";
+    let flatDocFullTextSearch: boolean = false;
     let notebookMap: Map<string, Notebook> = new Map();
     let specifiedNotebookId: string = "";
 
@@ -60,6 +62,7 @@
 
     onMount(async () => {
         resize();
+        initData();
         initSiyuanEventBus();
         // EnvConfig.ins.plugin.eventBus.on(
         //     "open-menu-doctree",
@@ -70,6 +73,10 @@
     onDestroy(() => {
         destorySiyuanEventBus();
     });
+
+    function initData() {
+        flatDocFullTextSearch = SettingConfig.ins.flatDocFullTextSearch;
+    }
 
     function initSiyuanEventBus() {
         // console.log("initSiyuanEventBus");
@@ -158,6 +165,11 @@
         refreshFileTree(searchInputKey, 1);
     }
 
+    function documentFullTextSearchChange(event) {
+        flatDocFullTextSearch = !flatDocFullTextSearch;
+        refreshFileTree(searchInputKey, 1);
+    }
+
     function specifiedNotebookIdChange(event) {
         specifiedNotebookId = event.target.value;
         refreshFileTree(searchInputKey, 1);
@@ -173,18 +185,14 @@
         const target = event.currentTarget as HTMLElement;
         let blockId = item.block.id;
 
-        // const blockId = target.getAttribute("data-node-id");
-
-        // updateLastSelectedItemIndex(blockId);
-
         if (isToggleFocusEvent(event)) {
             toggleItemFocus(target);
             return;
         }
-        clearItemFocus();
-        selectedItemIndex = item.index;
-
-        // target.classList.add("b3-list-item--focus");
+        if (selectedItemIndex != item.index) {
+            clearItemFocus();
+            selectedItemIndex = item.index;
+        }
 
         const tabPosition = determineOpenTabPosition(event);
         openBlockTab(blockId, tabPosition);
@@ -225,15 +233,17 @@
         blockId: string,
         tabPosition: "right" | "bottom",
     ) {
-        if (lastOpenBlockId == blockId) {
+        if (lastOpenBlockId == blockId && flatDocFullTextSearch) {
             previewProtyleMatchFocusIndex++;
         } else {
-            previewProtyleMatchFocusIndex = 0;
+            previewProtyleMatchFocusIndex = -1;
         }
         lastOpenBlockId = blockId;
+        // 优化定位，搜索出来打开，第一次打开不定位，这样默认会是上一次的界面，防止一点开就定位到开头。;
         // 如果被查找节点不是聚焦状态，节点文档是当前查看文档，节点的文档element 存在，文档element 包含查找的节点
         let activeDocTab = getActiveTab();
-        if (activeDocTab) {
+        let lastKeywords = splitKeywordStringToArray(searchInputKey);
+        if (isArrayNotEmpty(lastKeywords) && activeDocTab) {
             let activeDocContentElement = activeDocTab.querySelector(
                 "div.protyle-content",
             ) as HTMLElement;
@@ -241,17 +251,17 @@
                 .querySelector("div.protyle-title.protyle-wysiwyg--attr")
                 ?.getAttribute("data-node-id");
             if (activeNodeId == blockId) {
-                let lastKeywords = splitKeywordStringToArray(searchInputKey);
                 let matchFocusRangePromise = highlightElementTextByCss(
                     activeDocContentElement,
                     lastKeywords,
                     null,
                     previewProtyleMatchFocusIndex,
                 );
-
-                matchFocusRangePromise.then((focusRange) => {
-                    renderNextSearchMarkByRange(focusRange);
-                });
+                if (previewProtyleMatchFocusIndex >= 0) {
+                    matchFocusRangePromise.then((focusRange) => {
+                        renderNextSearchMarkByRange(focusRange);
+                    });
+                }
 
                 return;
             }
@@ -272,29 +282,27 @@
 
     async function afterOpenDocTab(docTabPromise: Promise<ITab>) {
         let lastKeywords = splitKeywordStringToArray(searchInputKey);
-
+        if (isArrayEmpty(lastKeywords)) {
+            return;
+        }
+        previewProtyleMatchFocusIndex = -1;
         let docTab = await docTabPromise;
-        // console.log("afterOpenDocTab");
         let lastDocumentContentElement = docTab.panelElement
             .children[1] as HTMLElement;
 
         delayedTwiceRefresh(() => {
-            let matchFocusRangePromise = highlightElementTextByCss(
+            highlightElementTextByCss(
                 lastDocumentContentElement,
                 lastKeywords,
                 null,
-                0,
+                null,
             );
-
-            matchFocusRangePromise.then((focusRange) => {
-                renderFirstSearchMarkByRange(focusRange);
-            });
         }, 50);
     }
 
-    function renderFirstSearchMarkByRange(matchRange: Range) {
-        scrollByRange(matchRange, "nearest");
-    }
+    // function renderFirstSearchMarkByRange(matchRange: Range) {
+    //     scrollByRange(matchRange, "nearest");
+    // }
 
     function renderNextSearchMarkByRange(matchRange: Range) {
         scrollByRange(matchRange, "center");
@@ -312,7 +320,7 @@
             isSearching = 0;
         }
         clearItemFocus();
-        
+
         if (!notebookMap.has(specifiedNotebookId)) {
             specifiedNotebookId = "";
         }
@@ -331,7 +339,7 @@
             includeNotebookIds.push(specifiedNotebookId);
         }
 
-        let flatDocFullTextSearch = SettingConfig.ins.flatDocFullTextSearch;
+        // let flatDocFullTextSearch = SettingConfig.ins.flatDocFullTextSearch;
         let flatDocAllShowLimit = SettingConfig.ins.flatDocAllShowLimit;
         let pages = [pageNum, flatDocAllShowLimit];
 
@@ -579,6 +587,7 @@
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<!-- svelte-ignore a11y-label-has-associated-control -->
 <div class="fn__flex-column" style="height: 100%;" bind:this={rootElement}>
     <div class="flat_doc_tree--top">
         <div
@@ -588,7 +597,7 @@
             <div style="display:flex;padding:3px 0px; ">
                 <select
                     class="b3-select fn__flex-center ariaLabel"
-                    style="max-width: 125px;"
+                    style="max-width: 120px;"
                     aria-label={EnvConfig.ins.i18n.specifyNotebook}
                     on:change={specifiedNotebookIdChange}
                 >
@@ -617,7 +626,7 @@
                 </span> -->
                 <select
                     class="b3-select fn__flex-center"
-                    style="max-width: 118px;"
+                    style="max-width: 110px;"
                     on:change={documentSortMethodChange}
                 >
                     {#each SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT() as element}
@@ -629,6 +638,22 @@
                         </option>
                     {/each}
                 </select>
+            </div>
+            <span class="fn__space"></span>
+            <div style="padding: 3px 1px;">
+                <label
+                    class="block__icon ariaLabel {flatDocFullTextSearch
+                        ? 'label-selected'
+                        : ''}"
+                    aria-label="使用全文搜索"
+                    style="opacity: 1;"
+                    on:click={documentFullTextSearchChange}
+                    on:keydown={handleKeyDownDefault}
+                >
+                    <svg class="ft__on-surface svg fn__flex-center"
+                        ><use xlink:href="#iconFullTextSearch"></use></svg
+                    >
+                </label>
             </div>
         </div>
         <div
@@ -740,5 +765,15 @@
     .flat_doc_tree--top .block__icons {
         min-height: 42px;
         padding: 0 8px;
+    }
+    .flat_doc_tree--top .label-selected {
+        // border: 1px solid #66ccff; rgba(102, 204, 255, 0.5)
+        // box-shadow: inset 0 0 5px 2px var(--b3-theme-primary-light);
+        background-color: var(--b3-theme-primary-light);
+        transition: box-shadow 0.5s ease-in-out;
+    }
+    .flat_doc_tree--top .block__icon svg {
+        height: 16px; 
+        width: 16px;
     }
 </style>

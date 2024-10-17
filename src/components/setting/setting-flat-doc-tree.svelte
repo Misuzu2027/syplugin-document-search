@@ -49,7 +49,7 @@
         >
         <span class="fn__space"></span>
         <div class="fn__flex-1 fn__flex-center ariaLabel">
-            扁平化文档列表使用全文搜索
+            扁平化文档列表默认使用全文搜索
         </div>
         <div class="b3-label__text"></div>
         <span class="fn__space"></span>

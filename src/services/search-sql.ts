@@ -1,5 +1,9 @@
+import { isArrayNotEmpty } from "@/utils/array-util";
+import { isStrNotEmpty } from "@/utils/string-util";
+
 export class DocumentQueryCriteria {
-    keywords: string[];
+    includeKeywords: string[];
+    excludeKeywords: string[];
     docFullTextSearch: boolean;
     pages: number[];
     documentSortMethod: DocumentSortMethod;
@@ -12,6 +16,7 @@ export class DocumentQueryCriteria {
 
     constructor(
         keywords: string[],
+        excludeKeywords: string[],
         docFullTextSearch: boolean,
         pages: number[],
         documentSortMethod: DocumentSortMethod,
@@ -21,7 +26,8 @@ export class DocumentQueryCriteria {
         includeNotebookIds: string[],
         excludeNotebookIds: string[],
     ) {
-        this.keywords = keywords;
+        this.includeKeywords = keywords;
+        this.excludeKeywords = excludeKeywords;
         this.docFullTextSearch = docFullTextSearch;
         this.pages = pages;
         this.documentSortMethod = documentSortMethod;
@@ -39,7 +45,8 @@ export function generateDocumentListSql(
     queryCriteria: DocumentQueryCriteria,
 ): string {
 
-    let keywords = queryCriteria.keywords;
+    let includeKeywords = queryCriteria.includeKeywords;
+    let excludeKeywords = queryCriteria.excludeKeywords;
     let docFullTextSearch = queryCriteria.docFullTextSearch;
     let pages = queryCriteria.pages;
     let includeNotebookIds = queryCriteria.includeNotebookIds;
@@ -48,14 +55,21 @@ export function generateDocumentListSql(
     let columns: string[] = [" * "];
 
     let contentParamSql = "";
-    if (keywords && keywords.length > 0) {
+    if (isArrayNotEmpty(includeKeywords) || isArrayNotEmpty(excludeKeywords)) {
         let concatConcatFieldSql = getConcatFieldSql("concatContent", includeConcatFields);
         columns.push(` ${concatConcatFieldSql} `);
         if (docFullTextSearch) {
             let documentIdSql = generateDocumentIdTableSql(queryCriteria);
             contentParamSql = ` AND id in (${documentIdSql}) `;
         } else {
-            contentParamSql = " AND " + generateAndLikeConditions("concatContent", keywords);
+            contentParamSql = " AND " + generateAndLikeConditions("concatContent", includeKeywords);
+            if (isArrayNotEmpty(excludeKeywords)) {
+                let contentNotLikeSql = generateAndNotLikeConditions("concatContent", excludeKeywords);
+                if (isStrNotEmpty(contentNotLikeSql)) {
+                    contentParamSql += " AND " + contentNotLikeSql;
+                }
+            }
+
         }
     }
 
@@ -66,8 +80,8 @@ export function generateDocumentListSql(
 
     let orders = [];
 
-    if (keywords && keywords.length > 0) {
-        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", keywords, false);
+    if (includeKeywords && includeKeywords.length > 0) {
+        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", includeKeywords, false);
         orders = [orderCaseCombinationSql];
     }
 
@@ -123,7 +137,7 @@ export function generateDocumentSearchSql(
     queryCriteria: DocumentQueryCriteria,
 ): string {
 
-    let keywords = queryCriteria.keywords;
+    let keywords = queryCriteria.includeKeywords;
     let pages = queryCriteria.pages;
     let contentBlockSortMethod = queryCriteria.contentBlockSortMethod;
     let includeTypes = queryCriteria.includeTypes;
@@ -190,7 +204,8 @@ export function generateDocumentSearchSql(
 
 
 export function generateDocumentCountSql(queryCriteria: DocumentQueryCriteria) {
-    let keywords = queryCriteria.keywords;
+    let includeKeywords = queryCriteria.includeKeywords;
+    let excludeKeywords = queryCriteria.excludeKeywords;
     let includeTypes = queryCriteria.includeTypes;
     let includeRootIds = queryCriteria.includeRootIds;
     let includeNotebookIds = queryCriteria.includeNotebookIds;
@@ -205,7 +220,7 @@ export function generateDocumentCountSql(queryCriteria: DocumentQueryCriteria) {
     let contentLikeField = "GROUP_CONCAT( documentContent )";
     let pages = [1, 99999999];
     let documentContentLikeCountSql = generateDocumentContentLikeSql(
-        columns, keywords, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, null, pages);
+        columns, includeKeywords, excludeKeywords, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, null, pages);
 
     let documentCountSql = `SELECT count(1) AS documentCount FROM (${documentContentLikeCountSql})`;
 
@@ -215,7 +230,8 @@ export function generateDocumentCountSql(queryCriteria: DocumentQueryCriteria) {
 function generateDocumentIdContentTableSql(
     queryCriteria: DocumentQueryCriteria
 ): string {
-    let keywords = queryCriteria.keywords;
+    let includeKeywords = queryCriteria.includeKeywords;
+    let excludeKeywords = queryCriteria.excludeKeywords;
     let pages = queryCriteria.pages;
     let documentSortMethod = queryCriteria.documentSortMethod;
     let includeTypes = queryCriteria.includeTypes;
@@ -239,10 +255,10 @@ function generateDocumentIdContentTableSql(
     } else if (documentSortMethod == 'createdDesc') {
         orders = [" MIN(created) DESC "]
     } else if (documentSortMethod == 'rankAsc') {
-        let tempTableOrderCaseCombinationSql = generateRelevanceOrderSql("documentContent", keywords, true);
+        let tempTableOrderCaseCombinationSql = generateRelevanceOrderSql("documentContent", includeKeywords, true);
         orders = [tempTableOrderCaseCombinationSql, " MAX(updated) DESC "]
     } else if (documentSortMethod == 'rankDesc') { // rankDesc 相关度降序
-        let tempTableOrderCaseCombinationSql = generateRelevanceOrderSql("documentContent", keywords, false);
+        let tempTableOrderCaseCombinationSql = generateRelevanceOrderSql("documentContent", includeKeywords, false);
         orders = [tempTableOrderCaseCombinationSql, " MAX(updated) DESC "]
     } else if (documentSortMethod == 'alphabeticAsc') {
         orders = ["documentContent ASC", " updated DESC "]
@@ -251,7 +267,7 @@ function generateDocumentIdContentTableSql(
     }
 
     let documentIdContentTableSql = generateDocumentContentLikeSql(
-        columns, keywords, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, orders, null);
+        columns, includeKeywords, excludeKeywords, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, orders, null);
 
     return documentIdContentTableSql;
 }
@@ -259,7 +275,8 @@ function generateDocumentIdContentTableSql(
 function generateDocumentIdTableSql(
     queryCriteria: DocumentQueryCriteria
 ): string {
-    let keywords = queryCriteria.keywords;
+    let includeKeywords = queryCriteria.includeKeywords;
+    let excludeKeywords = queryCriteria.excludeKeywords;
     let includeTypes = queryCriteria.includeTypes;
     let includeConcatFields = queryCriteria.includeConcatFields;
     let includeRootIds = queryCriteria.includeRootIds;
@@ -273,7 +290,7 @@ function generateDocumentIdTableSql(
     let orders = [];
 
     let documentIdContentTableSql = generateDocumentContentLikeSql(
-        columns, keywords, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, orders, null);
+        columns, includeKeywords, excludeKeywords, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, orders, null);
 
     return documentIdContentTableSql;
 }
@@ -281,7 +298,8 @@ function generateDocumentIdTableSql(
 
 function generateDocumentContentLikeSql(
     columns: string[],
-    keywords: string[],
+    includeKeywords: string[],
+    excludeKeywords: string[],
     contentLikeField: string,
     includeTypes: string[],
     includeRootIds: string[],
@@ -310,10 +328,18 @@ function generateDocumentContentLikeSql(
     // }
     let aggregatedContentAndLikeSql = generateAndLikeConditions(
         ` ${contentLikeField} `,
-        keywords,
+        includeKeywords,
     );
-    if (aggregatedContentAndLikeSql) {
+    if (isStrNotEmpty(aggregatedContentAndLikeSql)) {
         aggregatedContentAndLikeSql = ` AND ( ${aggregatedContentAndLikeSql} ) `;
+    }
+
+    let aggregatedContentAndNotLikeSql = generateAndNotLikeConditions(
+        ` ${contentLikeField} `,
+        excludeKeywords,
+    );
+    if (isStrNotEmpty(aggregatedContentAndNotLikeSql)) {
+        aggregatedContentAndNotLikeSql = ` AND ( ${aggregatedContentAndNotLikeSql} ) `;
     }
 
     let orderSql = generateOrderSql(orders);
@@ -336,6 +362,7 @@ function generateDocumentContentLikeSql(
         HAVING
             1 = 1 
             ${aggregatedContentAndLikeSql}
+            ${aggregatedContentAndNotLikeSql}
         ${orderSql}
         ${limitSql}
     `;
@@ -392,13 +419,38 @@ function generateAndLikeConditions(
         return " ";
     }
 
-    const conditions = params.map(
-        (param) => `${fieldName}  LIKE '%${param}%'`,
-    );
+    const conditions = [];
+    for (const param of params) {
+        if (isStrNotEmpty(param)) {
+            conditions.push(`${fieldName}  LIKE '%${param}%'`)
+        }
+    }
     const result = conditions.join(" AND ");
 
     return result;
 }
+
+
+function generateAndNotLikeConditions(
+    fieldName: string,
+    params: string[],
+): string {
+    if (params.length === 0) {
+        return " ";
+    }
+    const conditions = [];
+    for (const param of params) {
+        if (isStrNotEmpty(param)) {
+            conditions.push(`${fieldName} NOT LIKE '%${param}%'`);
+        }
+    }
+
+
+    const result = conditions.join(" AND ");
+
+    return result;
+}
+
 
 function generateAndInConditions(
     fieldName: string,

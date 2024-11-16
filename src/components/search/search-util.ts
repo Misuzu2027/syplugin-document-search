@@ -9,6 +9,7 @@ import { getObjectSizeInKB } from "@/utils/object-util";
 import { Constants, TProtyleAction } from "siyuan";
 import { getFileArialLabel } from "@/components/doc-tree/doc-tree-util";
 import { isNumberValid } from "@/utils/number-util";
+import { splitKeywordStringToArray } from "@/utils/string-util";
 
 
 
@@ -112,7 +113,7 @@ export async function processSearchResults(
         blocks = [];
         return searchResults;
     }
-    let keywords = documentSearchCriterion.keywords;
+    let keywords = documentSearchCriterion.includeKeywords;
     let documentSortMethod = documentSearchCriterion.documentSortMethod;
     let contentBlockSortMethod = documentSearchCriterion.contentBlockSortMethod;
     let notebookMap = await getNotebookMap(true);
@@ -230,17 +231,10 @@ export function getDocumentQueryCriteria(
     includeNotebookIds: string[],
     pageNum: number) {
     // 去除多余的空格，并将输入框的值按空格分割成数组
-    let keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
+    // let keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
+    let keywordsObj = parseSearchSyntax(searchKey);
 
-    // 过滤掉空的搜索条件并使用 Set 存储唯一的关键词
-    const uniqueKeywordsSet = new Set(
-        keywords.filter((keyword) => keyword.length > 0),
-    );
-
-    // 将 Set 转换为数组
-    keywords = Array.from(uniqueKeywordsSet);
-
-    if (!keywords || keywords.length <= 0) {
+    if (!keywordsObj.includeKeywords || keywordsObj.includeKeywords.length <= 0) {
         return null;
     }
 
@@ -255,7 +249,8 @@ export function getDocumentQueryCriteria(
 
     let documentSearchCriterion: DocumentQueryCriteria =
         new DocumentQueryCriteria(
-            keywords,
+            keywordsObj.includeKeywords,
+            keywordsObj.excludeKeywords,
             flatDocFullTextSearch,
             pages,
             documentSortMethod,
@@ -1043,3 +1038,28 @@ export const blockSortSubMenu = (documentItem: DocumentItem, sortCallback: Funct
     //     }
     // }];
 };
+
+
+
+export function parseSearchSyntax(query: string): {
+    includeKeywords: string[],
+    excludeKeywords: string[],
+} {
+    const includeKeywords: string[] = [];
+    const excludeKeywords: string[] = [];
+
+    // 按空格拆分查询字符串
+    const terms = splitKeywordStringToArray(query);
+
+    for (const term of terms) {
+        if (term.startsWith("-")) {
+            // 以 `-` 开头的排除普通文本
+            excludeKeywords.push(term.slice(1));
+        } else {
+            // 普通文本包含项
+            includeKeywords.push(term);
+        }
+    }
+
+    return { includeKeywords, excludeKeywords };
+}

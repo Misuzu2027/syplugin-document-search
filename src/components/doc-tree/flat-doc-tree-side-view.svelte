@@ -23,6 +23,7 @@
         delayedTwiceRefresh,
         getNotebookMap,
         highlightElementTextByCss,
+        parseSearchSyntax,
     } from "@/components/search/search-util";
     import {
         convertIalStringToObject,
@@ -166,6 +167,9 @@
     }
 
     function documentFullTextSearchChange(event) {
+        if (event){
+            
+        }
         flatDocFullTextSearch = !flatDocFullTextSearch;
         refreshFileTree(searchInputKey, 1);
     }
@@ -325,13 +329,7 @@
             specifiedNotebookId = "";
         }
 
-        // 去除多余的空格，并将输入框的值按空格分割成数组
-        let keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
-        // 过滤掉空的搜索条件并使用 Set 存储唯一的关键词
-        const uniqueKeywordsSet = new Set(
-            keywords.filter((keyword) => keyword.length > 0),
-        );
-
+        let keywordsObj = parseSearchSyntax(searchKey);
         let includeConcatFields = SettingConfig.ins.includeQueryFields;
 
         let includeNotebookIds = [];
@@ -343,10 +341,9 @@
         let flatDocAllShowLimit = SettingConfig.ins.flatDocAllShowLimit;
         let pages = [pageNum, flatDocAllShowLimit];
 
-        // 将 Set 转换为数组
-        keywords = Array.from(uniqueKeywordsSet);
         let queryCriteria: DocumentQueryCriteria = new DocumentQueryCriteria(
-            keywords,
+            keywordsObj.includeKeywords,
+            keywordsObj.excludeKeywords,
             flatDocFullTextSearch,
             pages,
             flatDocTreeSortMethod,
@@ -371,7 +368,7 @@
         queryCriteria: DocumentQueryCriteria,
     ): Promise<DocumentTreeItemInfo[]> {
         let notebookMap = await getNotebookMap(false);
-        let keywords = queryCriteria.keywords;
+        let keywords = queryCriteria.includeKeywords;
 
         let documentBlockInfos: DocumentTreeItemInfo[] = [];
 
@@ -773,7 +770,7 @@
         transition: box-shadow 0.5s ease-in-out;
     }
     .flat_doc_tree--top .block__icon svg {
-        height: 16px; 
+        height: 16px;
         width: 16px;
     }
 </style>

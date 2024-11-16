@@ -234,7 +234,7 @@
         selectedItemIndex = -1;
 
         documentItemSearchResult = result.documentItems;
-        lastKeywords = result.searchCriterion.keywords;
+        lastKeywords = result.searchCriterion.includeKeywords;
 
         initSearchDocumentCount();
         let documentCount: number = result.documentCount;

@@ -42,6 +42,18 @@ export function isStrBlank(s: any): boolean {
     return !isStrNotBlank(s);
 }
 
+export function isStrNotEmpty(s:any):boolean{
+    if (s == undefined || s == null  || s.trim() === ''){
+        return false;
+    }
+
+    return true;
+}
+
+export function isStrEmpty(s:any):boolean{
+    return !isStrNotEmpty(s);
+}
+
 
 export function splitKeywordStringToArray(keywordStr: string): string[] {
     let keywordArray = [];

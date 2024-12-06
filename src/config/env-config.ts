@@ -1,7 +1,7 @@
 import { lsNotebooks } from "@/utils/api";
 import { convertIconInIal } from "@/utils/icon-util";
 import Instance from "@/utils/Instance";
-import { App, I18N, IDockModel, IPluginDockTab, Plugin, getFrontend } from "siyuan";
+import { App, Dock, IObject, IPluginDockTab, Plugin, Tab, getFrontend } from "siyuan";
 
 export class EnvConfig {
 
@@ -24,17 +24,19 @@ export class EnvConfig {
         return this._plugin.app;
     }
 
-    get i18n(): I18N {
+    get i18n(): IObject {
         if (this._plugin) {
             return this._plugin.i18n;
         }
-        const i18nObject: I18N = {
+        const i18nObject: IObject = {
             // 添加你需要的属性和方法
         };
         return i18nObject;
     }
 
     public lastViewedDocId: string;
+
+    public searchOpenTabPromise: Promise<Tab>;
 
 
     public init(plugin: Plugin) {
@@ -44,8 +46,8 @@ export class EnvConfig {
     }
 
 
-    docSearchDock: { config: IPluginDockTab, model: IDockModel };
-    flatDocTreeDock: { config: IPluginDockTab, model: IDockModel };
+    docSearchDock: { config: IPluginDockTab, model: Dock };
+    flatDocTreeDock: { config: IPluginDockTab, model: Dock };
 
     private _notebookMap: Map<string, Notebook> = new Map();
     public async notebookMap(cache: boolean): Promise<Map<string, Notebook>> {

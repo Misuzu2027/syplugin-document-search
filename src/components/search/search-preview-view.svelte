@@ -5,6 +5,7 @@
         openTab,
         openMobileFileById,
         TProtyleAction,
+        Custom,
     } from "siyuan";
     import SearchResultItem from "@/components/search/search-result-item.svelte";
 
@@ -31,6 +32,8 @@
     } from "@/components/search/search-util";
     import { handleSearchDragMousdown } from "@/lib/SearchUtil";
     import { getBlockIsFolded } from "@/utils/api";
+
+    export let currentTab: Custom;
 
     let element: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
@@ -60,6 +63,9 @@
                 breadcrumbDocName: true,
             },
         });
+        if (currentTab) {
+            currentTab.editors.push(previewProtyle);
+        }
         resize();
     });
 
@@ -525,7 +531,7 @@
             <span class="ft__on-surface">
                 {EnvConfig.ins.i18n.findInDoc.replace(
                     "${x}",
-                    searchResultDocumentCount,
+                    String(searchResultDocumentCount),
                 )}
                 <!-- 中匹配 {searchResultTotalCount}块 -->
             </span>

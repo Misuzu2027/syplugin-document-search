@@ -64,11 +64,15 @@ export function getNodeId(node: Node | null): string | null {
 }
 
 let bgFadeTimeoutId: NodeJS.Timeout;
+let lastBgFadeElement: Element;
 
 export function bgFade(element: Element) {
     if (bgFadeTimeoutId) {
         clearTimeout(bgFadeTimeoutId);
         bgFadeTimeoutId = null;
+    }
+    if (lastBgFadeElement) {
+        lastBgFadeElement.classList.remove("protyle-wysiwyg--hl");
     }
     element.parentElement.querySelectorAll(".protyle-wysiwyg--hl").forEach((hlItem) => {
         hlItem.classList.remove("protyle-wysiwyg--hl");
@@ -77,6 +81,7 @@ export function bgFade(element: Element) {
     bgFadeTimeoutId = setTimeout(function () {
         element.classList.remove("protyle-wysiwyg--hl");
     }, 1536);
+    lastBgFadeElement = element;
 };
 
 export function getRangeByElement(element: Element): Range {

@@ -84,6 +84,7 @@ export default class PluginSample extends Plugin {
             init() {
                 _this.documentSearchTab = new SearchPreviewSvelte({
                     target: this.element,
+                    props: { currentTab: this }
                 });
             },
             beforeDestroy() {

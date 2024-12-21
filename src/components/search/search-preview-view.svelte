@@ -181,7 +181,7 @@
             return;
         }
 
-        console.log("focusItem.offsetTop", focusItem.offsetTop);
+        // console.log("focusItem.offsetTop", focusItem.offsetTop);
         let scrollTop =
             focusItem.offsetTop - searchResultListElement.clientHeight / 2;
         if (focusItem.offsetTop > scrollTop) {

@@ -37,7 +37,7 @@
         } else {
             tempExcludeNotebookIds = [...excludeNotebookIds, value];
         }
-        console.log(`tempExcludeNotebookIds ${tempExcludeNotebookIds}`);
+        // console.log(`tempExcludeNotebookIds ${tempExcludeNotebookIds}`);
         SettingConfig.ins.updateExcludeNotebookIds(tempExcludeNotebookIds);
         excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
     }

@@ -12,7 +12,6 @@ export function getNotebookIcon(iconStr: string): string {
         let fileIcon = window.siyuan.storage[LOCAL_IMAGES].note;
         icon = convertIconInIal(fileIcon);
     }
-    console.log("getNotebookIcon ", icon)
     return icon;
 }
 

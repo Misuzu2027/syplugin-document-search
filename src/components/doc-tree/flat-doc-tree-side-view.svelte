@@ -25,10 +25,7 @@
         highlightElementTextByCss,
         parseSearchSyntax,
     } from "@/components/search/search-util";
-    import {
-        convertIalStringToObject,
-        convertIconInIal,
-    } from "@/utils/icon-util";
+    import { getDocIconHtmlByIal } from "@/utils/icon-util";
     import { SettingConfig } from "@/services/setting-config";
     import { SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
     import { getFileArialLabel } from "@/components/doc-tree/doc-tree-util";
@@ -167,8 +164,7 @@
     }
 
     function documentFullTextSearchChange(event) {
-        if (event){
-            
+        if (event) {
         }
         flatDocFullTextSearch = !flatDocFullTextSearch;
         refreshFileTree(searchInputKey, 1);
@@ -379,11 +375,7 @@
             }
 
             highlightBlockContent(block, keywords);
-            let icon = null;
-            if (block.ial) {
-                let ial = convertIalStringToObject(block.ial);
-                icon = convertIconInIal(ial.icon);
-            }
+            let icon = getDocIconHtmlByIal(block.ial);
 
             let notebookInfo = notebookMap.get(block.box);
             let boxName = "block.box";
@@ -721,11 +713,7 @@
                     on:dragend={docListItemDragendEvent}
                 >
                     <span class="b3-list-item__icon">
-                        {#if item.icon}
-                            {@html item.icon}
-                        {:else}
-                            📄
-                        {/if}
+                        {@html item.icon}
                     </span>
                     <span
                         class="b3-list-item__text ariaLabel"

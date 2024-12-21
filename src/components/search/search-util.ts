@@ -4,7 +4,7 @@ import { DocumentQueryCriteria, generateDocumentSearchSql } from "@/services/sea
 import { SettingConfig } from "@/services/setting-config";
 import { getBlockIsFolded, getBlockIndex, getBlocksIndexes, lsNotebooks, sql } from "@/utils/api";
 import { highlightBlockContent } from "@/utils/html-util";
-import { convertIalStringToObject, convertIconInIal } from "@/utils/icon-util";
+import { getDocIconHtmlByIal, getNotebookIcon } from "@/utils/icon-util";
 import { getObjectSizeInKB } from "@/utils/object-util";
 import { Constants, TProtyleAction } from "siyuan";
 import { getFileArialLabel } from "@/components/doc-tree/doc-tree-util";
@@ -101,7 +101,7 @@ export async function getNotebookMap(showClosed: boolean): Promise<Map<string, N
         if (!showClosed && notebook.closed) {
             continue;
         }
-        notebook.icon = convertIconInIal(notebook.icon);
+        notebook.icon = getNotebookIcon(notebook.icon);
         notebookMap.set(notebook.id, notebook);
     }
     return notebookMap;
@@ -166,10 +166,17 @@ export async function processSearchResults(
             } else {
                 documentItem.isCollapsed = false;
             }
-            if (block.ial) {
-                let ial = convertIalStringToObject(block.ial);
-                documentItem.icon = convertIconInIal(ial.icon);
-            }
+            documentItem.icon = getDocIconHtmlByIal(block.ial);
+            // if (block.ial) {
+            //     let ial = convertIalStringToObject(block.ial);
+            //     documentItem.icon = convertIconInIal(ial.icon);
+            // }
+            // if (isStrBlank(documentItem.icon)) {
+            //     const LOCAL_IMAGES = "local-images";
+            //     let fileIcon = window.siyuan.storage[LOCAL_IMAGES].file;
+            //     documentItem.icon = convertIconInIal(fileIcon);
+            // }
+
             let notebookInfo = notebookMap.get(block.box);
             let boxName = block.box;
             if (notebookInfo) {

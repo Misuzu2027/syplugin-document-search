@@ -190,13 +190,9 @@
                     <use xlink:href="#iconRight"></use>
                 </svg>
             </span>
-            <span class="b3-list-item__graphic">
-                {#if item.icon}
-                    {@html item.icon}
-                {:else}
-                    📄
-                {/if}
-            </span>
+            <!-- <span class="b3-list-item__graphic"> -->
+                {@html item.icon}
+            <!-- </span> -->
             <span
                 class="b3-list-item__text ariaLabel"
                 style="color: var(--b3-theme-on-surface)"

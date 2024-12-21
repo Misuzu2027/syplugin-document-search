@@ -1,5 +1,5 @@
 import { lsNotebooks } from "@/utils/api";
-import { convertIconInIal } from "@/utils/icon-util";
+import { getNotebookIcon } from "@/utils/icon-util";
 import Instance from "@/utils/Instance";
 import { App, Dock, IObject, IPluginDockTab, Plugin, Tab, getFrontend } from "siyuan";
 
@@ -57,7 +57,7 @@ export class EnvConfig {
             let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
             this._notebookMap.clear();
             for (const notebook of notebooks) {
-                notebook.icon = convertIconInIal(notebook.icon);
+                notebook.icon = getNotebookIcon(notebook.icon);
                 this._notebookMap.set(notebook.id, notebook);
             }
         }

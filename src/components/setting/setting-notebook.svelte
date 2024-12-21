@@ -2,7 +2,7 @@
     import { SettingConfig } from "@/services/setting-config";
     import { lsNotebooks } from "@/utils/api";
     import { onMount } from "svelte";
-    import { convertIconInIal } from "@/utils/icon-util";
+    import { getNotebookIcon } from "@/utils/icon-util";
     let excludeNotebookIds: string[] = SettingConfig.ins.excludeNotebookIds;
     let notebookMap: Map<string, Notebook> = new Map();
 
@@ -13,7 +13,7 @@
     async function updateNotebookMap() {
         let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
         for (const notebook of notebooks) {
-            notebook.icon = convertIconInIal(notebook.icon);
+            notebook.icon = getNotebookIcon(notebook.icon);
             notebookMap.set(notebook.id, notebook);
         }
         notebookMap = notebookMap;

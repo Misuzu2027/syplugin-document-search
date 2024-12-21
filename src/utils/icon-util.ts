@@ -1,46 +1,86 @@
+import { isStrBlank } from "./string-util";
 
-export function convertIconInIal(icon: string): string {
-    if (icon) {
-        if (icon.includes(".")) {
-            // 如果包含 "."，则认为是图片，生成<img>标签
-            return `<img class="" src="/emojis/${icon}">`;
-        } else {
-            // 如果是Emoji，转换为表情符号
-            let emoji = "";
-            try {
-                icon.split("-").forEach(item => {
-                    if (item.length < 5) {
-                        emoji += String.fromCodePoint(parseInt("0" + item, 16));
-                    } else {
-                        emoji += String.fromCodePoint(parseInt(item, 16));
-                    }
-                });
-            } catch (e) {
-                // 自定义表情搜索报错 https://github.com/siyuan-note/siyuan/issues/5883
-                // 这里忽略错误不做处理
-            }
-            return emoji;
-        }
+
+
+export function getNotebookIcon(iconStr: string): string {
+    let icon: string = null;
+    icon = convertIconInIal(iconStr);
+
+    // 目前用的系统自带多选框，无法渲染 html。。笔记本图标转换成默认。
+    if (isStrBlank(icon) || icon.startsWith("<img")) {
+        const LOCAL_IMAGES = "local-images";
+        let fileIcon = window.siyuan.storage[LOCAL_IMAGES].note;
+        icon = convertIconInIal(fileIcon);
     }
-    // 既不是Emoji也不是图片，返回null
-    return null;
+    console.log("getNotebookIcon ", icon)
+    return icon;
 }
 
-export function convertIalStringToObject(ial: string): { [key: string]: string } {
-    const keyValuePairs = ial.match(/\w+="[^"]*"/g);
 
-    if (!keyValuePairs) {
-        return {};
+export function getDocIconHtmlByIal(ialStr: string): string {
+    let icon: string = null;
+    if (ialStr) {
+        let ial = convertIalStringToObject(ialStr);
+        icon = convertIconInIal(ial.icon);
+    }
+    if (isStrBlank(icon)) {
+        const LOCAL_IMAGES = "local-images";
+        let fileIcon = window.siyuan.storage[LOCAL_IMAGES].file;
+        icon = convertIconInIal(fileIcon);
+    }
+    if (!icon.startsWith("<")) {
+        icon = `<span class="b3-list-item__graphic">${icon}</span>`;
+    }
+    return icon;
+}
+
+export function convertIconInIal(icon: string): string {
+    if (isStrBlank(icon)) {
+        return null;
     }
 
-    const resultObject: { [key: string]: string } = {};
+    if (icon.includes(".")) {
+        // 如果包含 "."，则认为是图片，生成<img>标签
+        return `<img class="b3-list-item__graphic" src="/emojis/${icon}">`;
+    } else if (icon.startsWith("api/icon/")) {
+        return `<img class="b3-list-item__graphic" src="${icon}">`;
+    } else {
+        // 如果是Emoji，转换为表情符号
+        let emoji = "";
+        try {
+            icon.split("-").forEach(item => {
+                if (item.length < 5) {
+                    emoji += String.fromCodePoint(parseInt("0" + item, 16));
+                } else {
+                    emoji += String.fromCodePoint(parseInt(item, 16));
+                }
+            });
 
-    keyValuePairs.forEach((pair) => {
-        const [key, value] = pair.split('=');
-        resultObject[key] = value.replace(/"/g, ''); // 去除值中的双引号
-    });
+        } catch (e) {
+            // 自定义表情搜索报错 https://github.com/siyuan-note/siyuan/issues/5883
+            // 这里忽略错误不做处理
+        }
+        return emoji;
+    }
+}
 
-    return resultObject;
+export function convertIalStringToObject(ialStr: string): { [key: string]: string } {
+    const obj: { [key: string]: string } = {};
+
+    // 去掉开头和结尾的大括号
+    const trimmedInput = ialStr.slice(2, -1);
+
+    // 使用正则表达式解析键值对
+    const regex = /(\w+)="([^"]*)"/g;
+    let match;
+
+    while ((match = regex.exec(trimmedInput)) !== null) {
+        const key = match[1];
+        const value = match[2];
+        obj[key] = value;
+    }
+
+    return obj;
 }
 
 

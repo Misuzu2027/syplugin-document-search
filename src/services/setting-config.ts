@@ -70,7 +70,7 @@ export class SettingConfig {
             } catch (error_msg) {
                 console.log(`Setting load error: ${error_msg}`);
             }
-            this.save();
+            // this.save();
         }
     }
 

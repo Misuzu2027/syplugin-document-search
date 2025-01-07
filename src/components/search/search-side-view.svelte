@@ -69,8 +69,9 @@
     }
 
     function restView() {
+        let hiddenDockTemp = hiddenDock;
         hiddenDock = isElementHidden(rootElement);
-        if (!hiddenDock) {
+        if (hiddenDockTemp && !hiddenDock) {
             documentSearchInputFocus();
         }
         if (hiddenDock) {

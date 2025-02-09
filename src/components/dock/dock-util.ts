@@ -61,7 +61,6 @@ function addDocSearchDock() {
         langText: EnvConfig.ins.i18n.documentBasedSearchDock,
         hotkey: "⌥Q",
         callback: () => {
-            console.log("addCommand callback");
             const ele = document.querySelector(
                 `span[data-type="${plugin.name + DOC_SEARCH_DOCK_TYPE}"]`,
             ) as HTMLElement;
@@ -94,7 +93,7 @@ function addFlatDocTreeDock() {
     let dockRet = plugin.addDock({
         config: {
             position: position,
-            size: { width: 250, height: 0 },
+            size: { width: 270, height: 0 },
             icon: CUSTOM_ICON_MAP.iconFlatDocTree.id,
             title: EnvConfig.ins.i18n.flatDocumentTreeDock,
         },
@@ -129,7 +128,6 @@ function addFlatDocTreeDock() {
         langText: EnvConfig.ins.i18n.documentBasedSearchDock,
         hotkey: "⌥E",
         callback: () => {
-            console.log("addCommand callback");
             const ele = document.querySelector(
                 `span[data-type="${plugin.name + FLAT_DOC_TREE_DOCK_TYPE}"]`,
             ) as HTMLElement;

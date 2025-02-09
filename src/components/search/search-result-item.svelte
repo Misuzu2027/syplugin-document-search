@@ -28,8 +28,14 @@
         console.log(event.key);
     }
 
-    function clickDocItem(documentItem: DocumentItem) {
+    function clickDocItem(event: MouseEvent, documentItem: DocumentItem) {
         let doubleClickTimeout = SettingConfig.ins.doubleClickTimeout;
+
+        // Ctrl+单击 = 执行双击逻辑
+        if (event.ctrlKey) {
+            executeDocItemAction(documentItem, false);
+            return;
+        }
 
         itemClickCount++;
         if (itemClickCount === 1) {
@@ -162,7 +168,7 @@
             class="b3-list-item {item.index === selectedIndex
                 ? 'b3-list-item--focus'
                 : ''} "
-            on:click={() => clickDocItem(item)}
+            on:click={(event) => clickDocItem(event, item)}
             on:mousedown={(event) => mousedownDocItem(event, item)}
             on:contextmenu|stopPropagation|preventDefault={(event) =>
                 documentItemContextmenuEvent(event, item)}
@@ -191,7 +197,7 @@
                 </svg>
             </span>
             <!-- <span class="b3-list-item__graphic"> -->
-                {@html item.icon}
+            {@html item.icon}
             <!-- </span> -->
             <span
                 class="b3-list-item__text ariaLabel"

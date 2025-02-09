@@ -12,7 +12,11 @@
 
     import { SettingConfig } from "@/services/setting-config";
     import { openSettingsDialog } from "@/components/setting/setting-util";
-    import { DocumentItem, DocumentSqlQueryModel } from "@/config/search-model";
+    import {
+        BlockItem,
+        DocumentItem,
+        DocumentSqlQueryModel,
+    } from "@/config/search-model";
     import { EnvConfig } from "@/config/env-config";
     import {
         getDocumentSearchResult,
@@ -103,12 +107,78 @@
         );
 
         if (selectedBlockItem) {
+            documentSearchInputElement.focus();
+
             selectedItemIndex = selectedBlockItem.index;
+            expandSelectedItemDocument(selectedBlockItem);
+            scrollToSelectedBlock(selectedBlockItem);
 
             if (event.key === "Enter") {
                 let block = selectedBlockItem.block;
                 openBlockTab(block.id, block.root_id);
             }
+        }
+    }
+
+    function expandSelectedItemDocument(
+        selectedItem: DocumentItem | BlockItem,
+    ) {
+        if (!selectedItem || !documentItemSearchResult) {
+            return;
+        }
+        // 响应式有延迟，需要自己修改一下类样式。。。
+        let itemElements = rootElement.querySelectorAll(
+            `div[data-type="search-item"][data-root-id="${selectedItem.block.root_id}"]`,
+        );
+        itemElements.forEach((element) => {
+            element.classList.remove("fn__none");
+        });
+        for (const item of documentItemSearchResult) {
+            if (!item.isCollapsed) {
+                continue;
+            }
+            if (item == selectedItem) {
+                item.isCollapsed = false;
+                return;
+            }
+            for (const subItem of item.subItems) {
+                if (subItem == selectedItem) {
+                    item.isCollapsed = false;
+                    return;
+                }
+            }
+        }
+    }
+
+    function scrollToSelectedBlock(selectedItem: DocumentItem | BlockItem) {
+        if (!selectedItem) {
+            return;
+        }
+        let searchResultListElement = rootElement.querySelector(
+            "#documentSearchList",
+        ) as HTMLElement;
+
+        let focusItem = rootElement.querySelector(
+            `div[data-type="search-item"][data-node-id="${selectedItem.block.id}"]`,
+        ) as HTMLElement;
+
+        if (!focusItem) {
+            focusItem = rootElement.querySelector(
+                `div.b3-list-item[data-node-id="${selectedItem.block.id}"]`,
+            ) as HTMLElement;
+        }
+
+        if (!searchResultListElement || !focusItem) {
+            return;
+        }
+
+        // console.log("focusItem.offsetTop", focusItem.offsetTop);
+        let scrollTop =
+            focusItem.offsetTop - searchResultListElement.clientHeight / 2;
+        if (focusItem.offsetTop > scrollTop) {
+            searchResultListElement.scrollTop = scrollTop;
+        } else {
+            searchResultListElement.scrollTop = 0;
         }
     }
 
@@ -582,7 +652,7 @@
             <span class="ft__on-surface">
                 {EnvConfig.ins.i18n.findInDoc.replace(
                     "${x}",
-                    searchResultDocumentCount,
+                    String(searchResultDocumentCount),
                 )}
                 <!-- 中匹配 {searchResultTotalCount}块 -->
             </span>

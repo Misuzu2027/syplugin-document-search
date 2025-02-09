@@ -414,6 +414,13 @@
                 openBlockTab(selectedItem.block.id, null);
             }
         }
+
+        if (event.altKey && event.key === "r") {
+            event.preventDefault();
+            event.stopPropagation();
+
+            documentFullTextSearchChange(event);
+        }
     }
 
     function selectItemByArrowKeys(

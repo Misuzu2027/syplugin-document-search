@@ -54,6 +54,7 @@
     let totalPage: number = 0;
     let notebookMap: Map<string, Notebook> = new Map();
     let specifiedNotebookId: string = "";
+    let docFullTextSearch: boolean = true;
 
     onMount(async () => {
         previewProtyle = new Protyle(EnvConfig.ins.app, previewDivElement, {
@@ -126,6 +127,13 @@
             if (event.key === "Enter") {
                 openBlockTab(selectedItem.block.id);
             }
+        }
+
+        if (event.altKey && event.key === "r") {
+            event.preventDefault();
+            event.stopPropagation();
+
+            docFullTextSearchChange();
         }
     }
 
@@ -222,6 +230,7 @@
         }
         let documentQueryCriteria = getDocumentQueryCriteria(
             searchKey,
+            docFullTextSearch,
             includeNotebookIds,
             pageNum,
         );
@@ -477,6 +486,10 @@
     function clickSearchSettingOther() {
         openSettingsDialog("settingOther");
     }
+    function docFullTextSearchChange() {
+        docFullTextSearch = !docFullTextSearch;
+        refreshSearch(searchInputKey, 1);
+    }
 
     function specifiedNotebookIdChange(event) {
         specifiedNotebookId = event.target.value;
@@ -541,7 +554,7 @@
         <span class="fn__space"></span>
         <select
             class="b3-select fn__flex-center ariaLabel"
-            style="max-width: 200px;"
+            style="max-width: 180px;"
             aria-label={EnvConfig.ins.i18n.specifyNotebook}
             on:change={specifiedNotebookIdChange}
         >
@@ -606,6 +619,20 @@
             on:keydown={handleKeyDownDefault}
         >
             <svg><use xlink:href="#iconSearchSettingOther"></use></svg>
+        </span>
+        <span class="fn__space"></span>
+        <span
+            class="block__icon ariaLabel {docFullTextSearch
+                ? 'label-selected'
+                : ''}"
+            aria-label="全文搜索"
+            style="opacity: 1;"
+            on:click={docFullTextSearchChange}
+            on:keydown={handleKeyDownDefault}
+        >
+            <svg class="ft__on-surface svg fn__flex-center"
+                ><use xlink:href="#iconFullTextSearch"></use></svg
+            >
         </span>
     </div>
     <div
@@ -706,3 +733,12 @@
     <!-- svelte-ignore a11y-missing-attribute -->
     <img width="120px" src="/stage/loading-pure.svg" />
 </div>
+
+<style lang="scss">
+    .label-selected {
+        // border: 1px solid #66ccff; rgba(102, 204, 255, 0.5)
+        // box-shadow: inset 0 0 5px 2px var(--b3-theme-primary-light);
+        background-color: var(--b3-theme-primary-light);
+        transition: box-shadow 0.5s ease-in-out;
+    }
+</style>

@@ -240,6 +240,7 @@ export async function processSearchResults(
 
 export function getDocumentQueryCriteria(
     searchKey: string,
+    docFullTextSearch: boolean,
     includeNotebookIds: string[],
     pageNum: number) {
     // 去除多余的空格，并将输入框的值按空格分割成数组
@@ -250,7 +251,7 @@ export function getDocumentQueryCriteria(
         return null;
     }
 
-    let flatDocFullTextSearch = SettingConfig.ins.flatDocFullTextSearch;
+    // let docFullTextSearch = SettingConfig.ins.flatDocFullTextSearch;
     let pageSize = SettingConfig.ins.pageSize;
     let types = SettingConfig.ins.includeTypes;
     let queryFields = SettingConfig.ins.includeQueryFields;
@@ -263,7 +264,7 @@ export function getDocumentQueryCriteria(
         new DocumentQueryCriteria(
             keywordsObj.includeKeywords,
             keywordsObj.excludeKeywords,
-            flatDocFullTextSearch,
+            docFullTextSearch,
             pages,
             documentSortMethod,
             contentBlockSortMethod,

@@ -54,6 +54,7 @@
     let isSearchInCurrentDoc: boolean = false;
     let notebookMap: Map<string, Notebook> = new Map();
     let specifiedNotebookId: string = "";
+    let docFullTextSearch: boolean = true;
 
     onMount(async () => {
         resize();
@@ -117,6 +118,13 @@
                 let block = selectedBlockItem.block;
                 openBlockTab(block.id, block.root_id);
             }
+        }
+
+        if (event.altKey && event.key === "r") {
+            event.preventDefault();
+            event.stopPropagation();
+
+            docFullTextSearchChange();
         }
     }
 
@@ -220,6 +228,7 @@
         }
         let documentQueryCriteria = getDocumentQueryCriteria(
             searchKey,
+            docFullTextSearch,
             includeNotebookIds,
             pageNum,
         );
@@ -476,9 +485,17 @@
         specifiedNotebookId = event.target.value;
         refreshSearch(searchInputKey, 1);
     }
+
+    function docFullTextSearchChange() {
+        docFullTextSearch = !docFullTextSearch;
+        refreshSearch(searchInputKey, 1);
+    }
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<!-- svelte-ignore missing-declaration -->
+<!-- svelte-ignore a11y-label-has-associated-control -->
 <div
     class="fn__flex-column document-search-plugin__area"
     style="height: 100%;"
@@ -531,7 +548,20 @@
         >
             <svg><use xlink:href="#iconSearchSettingOther"></use></svg>
         </span>
-
+        <span class="fn__space"></span>
+        <span
+            class="block__icon ariaLabel {docFullTextSearch
+                ? 'label-selected'
+                : ''}"
+            aria-label="全文搜索"
+            style="opacity: 1;"
+            on:click={docFullTextSearchChange}
+            on:keydown={handleKeyDownDefault}
+        >
+            <svg class="ft__on-surface svg fn__flex-center"
+                ><use xlink:href="#iconFullTextSearch"></use></svg
+            >
+        </span>
         <span class="fn__flex-1" style="min-height: 100%"></span>
         <span class="fn__space"></span>
 
@@ -716,5 +746,11 @@
     <img width="120px" src="/stage/loading-pure.svg" />
 </div>
 
-<style>
+<style lang="scss">
+    .label-selected {
+        // border: 1px solid #66ccff; rgba(102, 204, 255, 0.5)
+        // box-shadow: inset 0 0 5px 2px var(--b3-theme-primary-light);
+        background-color: var(--b3-theme-primary-light);
+        transition: box-shadow 0.5s ease-in-out;
+    }
 </style>

@@ -56,3 +56,13 @@ export function intersectionSet<T>(set1: Set<T>, set2: Set<T>): T[] {
     }
     return result;
 }
+
+export function arraysEqual(arr1: any[], arr2: any[]): boolean {
+    if (arr1.length !== arr2.length) return false;
+    return arr1.every((value, index) => value === arr2[index]);
+}
+
+
+export function arrayRemoveValue<T>(arr: T[], value: T): T[] {
+    return arr.filter(item => item !== value);
+}

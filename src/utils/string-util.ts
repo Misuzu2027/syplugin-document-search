@@ -31,10 +31,30 @@ export function removePrefixAndSuffix(input: string, prefix: string, suffix: str
 }
 
 
-export function isStrNotBlank(s: any): boolean {
+export function isStrNotNull(s: any): boolean {
+    if (s == undefined || s == null) {
+        return false;
+    }
+    return true;
+}
+
+
+export function isStrNotEmpty(s: any): boolean {
     if (s == undefined || s == null || s === '') {
         return false;
     }
+    return true;
+}
+
+export function isStrEmpty(s: any): boolean {
+    return !isStrNotEmpty(s);
+}
+
+export function isStrNotBlank(s: any): boolean {
+    if (s == undefined || s == null || s.trim() === '') {
+        return false;
+    }
+
     return true;
 }
 
@@ -42,22 +62,10 @@ export function isStrBlank(s: any): boolean {
     return !isStrNotBlank(s);
 }
 
-export function isStrNotEmpty(s:any):boolean{
-    if (s == undefined || s == null  || s.trim() === ''){
-        return false;
-    }
-
-    return true;
-}
-
-export function isStrEmpty(s:any):boolean{
-    return !isStrNotEmpty(s);
-}
-
 
 export function splitKeywordStringToArray(keywordStr: string): string[] {
     let keywordArray = [];
-    if (!isStrNotBlank(keywordStr)) {
+    if (!isStrNotEmpty(keywordStr)) {
         return keywordArray;
     }
     // 分离空格

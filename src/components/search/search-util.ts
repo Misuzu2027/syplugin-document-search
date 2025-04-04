@@ -1,15 +1,17 @@
-import { DocumentItem, BlockItem, DocumentSqlQueryModel } from "@/config/search-model";
+import { DocumentItem, BlockItem, DocumentSqlQueryModel, BlockCriteria as CustomBlockCriteria, CompareCondition } from "@/config/search-model";
 import { SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
 import { DocumentQueryCriteria, generateDocumentSearchSql } from "@/services/search-sql";
 import { SettingConfig } from "@/services/setting-config";
-import { getBlockIsFolded, getBlockIndex, getBlocksIndexes, lsNotebooks, sql } from "@/utils/api";
+import { getBlockIsFolded, getBlockIndex, getBlocksIndexes, sql, getNotebookMapByApi } from "@/utils/api";
 import { highlightBlockContent } from "@/utils/html-util";
-import { getDocIconHtmlByIal, getNotebookIcon } from "@/utils/icon-util";
+import { getDocIconHtmlByIal } from "@/utils/icon-util";
 import { getObjectSizeInKB } from "@/utils/object-util";
 import { Constants, TProtyleAction } from "siyuan";
 import { getFileArialLabel } from "@/components/doc-tree/doc-tree-util";
 import { isNumberValid } from "@/utils/number-util";
-import { splitKeywordStringToArray } from "@/utils/string-util";
+import { isStrBlank, isStrEmpty, isStrNotBlank, isStrNotEmpty, splitKeywordStringToArray } from "@/utils/string-util";
+import { isArrayNotEmpty, arrayRemoveValue } from "@/utils/array-util";
+import { EnvConfig } from "@/config/env-config";
 
 
 
@@ -94,18 +96,18 @@ export function getRangeByElement(element: Element): Range {
 }
 
 
-export async function getNotebookMap(showClosed: boolean): Promise<Map<string, Notebook>> {
-    let notebookMap: Map<string, Notebook> = new Map();
-    let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
-    for (const notebook of notebooks) {
-        if (!showClosed && notebook.closed) {
-            continue;
-        }
-        notebook.icon = getNotebookIcon(notebook.icon);
-        notebookMap.set(notebook.id, notebook);
-    }
-    return notebookMap;
-}
+// export async function getNotebookMapByApi(showClosed: boolean): Promise<Map<string, Notebook>> {
+//     let notebookMap: Map<string, Notebook> = new Map();
+//     let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
+//     for (const notebook of notebooks) {
+//         if (!showClosed && notebook.closed) {
+//             continue;
+//         }
+//         notebook.icon = getNotebookIcon(notebook.icon);
+//         notebookMap.set(notebook.id, notebook);
+//     }
+//     return notebookMap;
+// }
 
 
 export async function processSearchResults(
@@ -121,7 +123,7 @@ export async function processSearchResults(
     let keywords = documentSearchCriterion.includeKeywords;
     let documentSortMethod = documentSearchCriterion.documentSortMethod;
     let contentBlockSortMethod = documentSearchCriterion.contentBlockSortMethod;
-    let notebookMap = await getNotebookMap(true);
+    let notebookMap = await getNotebookMapByApi(true);
 
     const documentBlockMap: Map<string, DocumentItem> =
         new Map();
@@ -241,13 +243,14 @@ export async function processSearchResults(
 export function getDocumentQueryCriteria(
     searchKey: string,
     docFullTextSearch: boolean,
-    includeNotebookIds: string[],
-    pageNum: number) {
-    // 去除多余的空格，并将输入框的值按空格分割成数组
-    // let keywords = searchKey.trim().replace(/\s+/g, " ").split(" ");
-    let keywordsObj = parseSearchSyntax(searchKey);
+    // includeNotebookIds: string[],
+    pageNum: number): DocumentQueryCriteria {
+    if (isStrBlank(searchKey)) {
+        return null;
+    }
 
-    if (!keywordsObj.includeKeywords || keywordsObj.includeKeywords.length <= 0) {
+    let blockCriteria = parseSearchCustomKeyword(searchKey);
+    if (!blockCriteria) {
         return null;
     }
 
@@ -255,15 +258,55 @@ export function getDocumentQueryCriteria(
     let pageSize = SettingConfig.ins.pageSize;
     let types = SettingConfig.ins.includeTypes;
     let queryFields = SettingConfig.ins.includeQueryFields;
-    let excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
     let pages = [pageNum, pageSize];
     let documentSortMethod = SettingConfig.ins.documentSortMethod;
     let contentBlockSortMethod = SettingConfig.ins.contentBlockSortMethod;
 
+    let blockKeyWordConditionArray = blockCriteria.blockKeyWordConditionArray;
+
+    let includeKeywords = [];
+    let excludeKeywords = [];
+
+
+    for (const condition of blockKeyWordConditionArray) {
+        includeKeywords.push(...condition.include);
+        excludeKeywords.push(...condition.exclude);
+        if (isStrNotBlank(condition.type) && !types.includes(condition.type)) {
+            types.push(condition.type);
+        }
+    }
+
+    // for (const pathKeyword of blockCriteria?.path?.include) {
+    //     includeKeywords.push(pathKeyword);
+    // }
+
+
+    const notebookIncludeKeywordArray = blockCriteria?.notebook?.include || [];
+    const notebookExcludeKeywordArray = blockCriteria?.notebook?.exclude || [];
+    let includeNotebookIds: string[] = [];
+    let excludeNotebookIds = SettingConfig.ins.excludeNotebookIds;
+
+    if (isArrayNotEmpty(notebookIncludeKeywordArray)) {
+        includeNotebookIds = filterNotebookIds(notebookIncludeKeywordArray);
+    }
+    if (isArrayNotEmpty(includeNotebookIds)) {
+        excludeNotebookIds = excludeNotebookIds.filter(id => !includeNotebookIds.includes(id));
+    }
+
+    if (isArrayNotEmpty(notebookExcludeKeywordArray)) {
+        excludeNotebookIds = filterNotebookIds(notebookExcludeKeywordArray);
+    }
+
+
     let documentSearchCriterion: DocumentQueryCriteria =
         new DocumentQueryCriteria(
-            keywordsObj.includeKeywords,
-            keywordsObj.excludeKeywords,
+            includeKeywords,
+            excludeKeywords,
+            blockCriteria?.blockKeyWordConditionArray,
+            blockCriteria?.path?.include,
+            blockCriteria?.path?.exclude,
+            blockCriteria?.createdTimeArray,
+            blockCriteria?.updatedTimeArray,
             docFullTextSearch,
             pages,
             documentSortMethod,
@@ -740,7 +783,6 @@ export function selectItemByArrowKeys(
     return selectedItem;
 }
 
-type HighlightCallback = (matchFocusRange: Range) => void;
 
 export async function highlightElementTextByCss(
     contentElement: HTMLElement,
@@ -995,7 +1037,6 @@ export function findScrollingElement(element: HTMLElement): HTMLElement | null {
 
 
 
-
 export const blockSortSubMenu = (documentItem: DocumentItem, sortCallback: Function) => {
 
     let menus = [];
@@ -1053,26 +1094,178 @@ export const blockSortSubMenu = (documentItem: DocumentItem, sortCallback: Funct
 };
 
 
+export function parseSearchCustomKeyword(input: string): CustomBlockCriteria {
+    if (isStrEmpty(input)) {
+        return null;
+    }
+    const condition: CustomBlockCriteria = {
+        blockKeyWordConditionArray: [],
+        notebook: { include: [], exclude: [] },
+        path: { include: [], exclude: [] },
+        createdTimeArray: [],
+        updatedTimeArray: [],
+    };
 
-export function parseSearchSyntax(query: string): {
-    includeKeywords: string[],
-    excludeKeywords: string[],
-} {
-    const includeKeywords: string[] = [];
-    const excludeKeywords: string[] = [];
+    // 处理关键字分组
+    const updateKeywordGroup = (type: any, value: string, exclude: boolean) => {
+        let group = condition.blockKeyWordConditionArray.find(g => g.type === type);
+        if (!group) {
+            group = { type, include: [], exclude: [] };
+            condition.blockKeyWordConditionArray.push(group);
+        }
 
-    // 按空格拆分查询字符串
-    const terms = splitKeywordStringToArray(query);
+        exclude ? group.exclude.push(value) : group.include.push(value);
+    };
 
-    for (const term of terms) {
-        if (term.startsWith("-")) {
-            // 以 `-` 开头的排除普通文本
-            excludeKeywords.push(term.slice(1));
+    // 解析时间条件
+    const parseTime = (value: string, isExclude: boolean): CompareCondition => {
+
+        const operators = new Map([
+            ['>=', '>='], ['<=', '<='], ['>', '>'], ['<', '<'], ['=', '='], ['!=', '!='],
+            ['eq', '='], ['ne', '!='], ['lt', '<'], ['le', '<='], ['ge', '>='], ['gt', '>'],
+
+        ]);
+
+        const match = value.match(/^(>=|<=|>|<|eq|lt|le|ge|gt|ne|=)?(\d+)$/);
+
+        if (!match) {
+            return null;
+        }
+
+        // 确保 operator 的值是合法的联合类型
+        const matchedOperator = match[1];
+        let operator: any = matchedOperator ? operators.get(matchedOperator) : '=';
+        let timeValue = match[2];
+        console.log(`value ${value} , timeValue ${timeValue} `)
+
+        if (isExclude) return { operator: ' NOT LIKE ', value: `${timeValue}%` };
+
+
+        if (operator == "=") {
+            operator = " LIKE ";
+            timeValue = `${timeValue}%`
+        } else if (operator == "!=") {
+            operator = " NOT LIKE ";
+            timeValue = `${timeValue}%`
         } else {
-            // 普通文本包含项
-            includeKeywords.push(term);
+            timeValue = padZeroTo14(timeValue, "end");
+        }
+
+        return {
+            operator,
+            value: timeValue
+        };
+    };
+
+    // 分割token（简单实现，需要改进引号处理）
+    const tokens = splitKeywordStringToArray(input);
+
+    for (let token of tokens) {
+        let isExclude = false;
+        if (isStrBlank(token)) {
+            continue;
+        }
+        token = token.toLowerCase();
+
+        // 处理排除逻辑
+        if (token.startsWith('-')) {
+            isExclude = true;
+            token = token.slice(1);
+        }
+
+        // 解析不同语法 @b 笔记本，@p 路径， @t 块类型，@c 创建时间，@u 更新时间
+        if (token.startsWith('@b')) {
+            const value = token.slice(2);
+            if (isStrEmpty(value)) {
+                continue;
+            }
+            isExclude ? condition.notebook.exclude.push(value) : condition.notebook.include.push(value);
+        } else if (token.startsWith('@p')) {
+            const value = token.slice(2);
+            if (isStrEmpty(value)) {
+                continue;
+            }
+            isExclude ? condition.path.exclude.push(value) : condition.path.include.push(value);
+        } else if (token.startsWith('@t')) {
+            let value = token.slice(3);
+            let type = token.charAt(2);
+            const patterns = ['query_embed', 'iframe', 'widget', 'audio', 'video', 'html', 'av', 'tb'];
+            const matched = patterns.find((pattern) => token.slice(2).startsWith(pattern));
+            if (matched) {
+                type = matched;
+                value = token.slice(2 + matched.length);
+            }
+            updateKeywordGroup(type, value, isExclude);
+        } else if (token.startsWith('@c')) {
+            const value = token.slice(2);
+            let compareCondition = parseTime(value, isExclude);
+            if (compareCondition) {
+                condition.createdTimeArray.push(compareCondition);
+            }
+        } else if (token.startsWith('@u')) {
+            const value = token.slice(2);
+            let compareCondition = parseTime(value, isExclude);
+            if (compareCondition) {
+                condition.updatedTimeArray.push(compareCondition);
+            }
+        } else {
+            // 默认普通关键字
+            updateKeywordGroup(undefined, token, isExclude);
         }
     }
 
-    return { includeKeywords, excludeKeywords };
+    return condition;
 }
+
+// export function parseSearchSyntax(query: string): {
+//     includeKeywords: string[],
+//     excludeKeywords: string[],
+// } {
+//     const includeKeywords: string[] = [];
+//     const excludeKeywords: string[] = [];
+
+//     // 按空格拆分查询字符串
+//     const terms = splitKeywordStringToArray(query);
+
+//     for (const term of terms) {
+//         if (term.startsWith("-")) {
+//             // 以 `-` 开头的排除普通文本
+//             excludeKeywords.push(term.slice(1));
+//         } else {
+//             // 普通文本包含项
+//             includeKeywords.push(term);
+//         }
+//     }
+
+//     return { includeKeywords, excludeKeywords };
+// }
+
+/**
+ * 将字符串补零至长度14（默认左侧补零）
+ * @param value 原始字符串
+ * @param direction 补零方向，可选 "start"（左侧）或 "end"（右侧），默认为左侧
+ * @returns 长度至少为14的补零后字符串
+ */
+const padZeroTo14 = (value: string, direction: "start" | "end" = "end"): string => {
+    // 根据方向选择补零方法
+    return direction === "start"
+        ? value.padStart(14, '0')
+        : value.padEnd(14, '0');
+};
+
+
+
+export const filterNotebookIds = (keywords: string[]) => {
+    let notebookMap = EnvConfig.ins.notebookMap;
+
+    if (!isArrayNotEmpty(keywords)) return [];
+
+    const ids = [...new Set(
+        Array.from(notebookMap.values()).flatMap(notebook =>
+            keywords.some(keyword => notebook.name.toLowerCase().includes(keyword.toLowerCase())) ? [notebook.id] : []
+        )
+    )];
+
+
+    return isArrayNotEmpty(ids) ? ids : [];
+};

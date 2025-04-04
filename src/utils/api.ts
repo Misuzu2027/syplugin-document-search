@@ -8,6 +8,7 @@
 
 import { fetchPost, fetchSyncPost, IWebSocketData } from "siyuan";
 import { isBoolean } from "@/utils/object-util";
+import { getNotebookIcon } from "./icon-util";
 
 
 
@@ -21,13 +22,38 @@ async function request(url: string, data: any) {
 }
 
 
-// **************************************** Noteboook ****************************************
+// **************************************** Notebook ****************************************
 
 
 export async function lsNotebooks(): Promise<IReslsNotebooks> {
     let url = '/api/notebook/lsNotebooks';
     return request(url, '');
 }
+
+export async function getNotebookMapByApi(showClosed: boolean): Promise<Map<string, Notebook>> {
+    let notebookMap: Map<string, Notebook> = new Map();
+    let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
+    for (const notebook of notebooks) {
+        if (!showClosed && notebook.closed) {
+            continue;
+        }
+        notebook.icon = getNotebookIcon(notebook.icon);
+        notebookMap.set(notebook.id, notebook);
+    }
+    return notebookMap;
+}
+
+export function getNotebookMap(notebooks: Notebook[]): Map<string, Notebook> {
+    let notebookMap: Map<string, Notebook> = new Map();
+    if (!notebooks) {
+        return notebookMap;
+    }
+    for (const notebook of notebooks) {
+        notebookMap.set(notebook.id, notebook);
+    }
+    return notebookMap;
+}
+
 
 
 export async function openNotebook(notebook: NotebookId) {

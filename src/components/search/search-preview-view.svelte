@@ -27,11 +27,10 @@
         getProtyleActionByZoomIn,
         getDocumentQueryCriteria,
         bgFade,
-        getNotebookMap,
         getRangeByElement,
     } from "@/components/search/search-util";
     import { handleSearchDragMousdown } from "@/lib/SearchUtil";
-    import { getBlockIsFolded } from "@/utils/api";
+    import { getBlockIsFolded, getNotebookMapByApi } from "@/utils/api";
 
     export let currentTab: Custom;
 
@@ -53,7 +52,7 @@
     let curPage: number = 0;
     let totalPage: number = 0;
     let notebookMap: Map<string, Notebook> = new Map();
-    let specifiedNotebookId: string = "";
+    // let specifiedNotebookId: string = "";
     let docFullTextSearch: boolean = true;
 
     onMount(async () => {
@@ -89,7 +88,7 @@
 
     async function refreshData() {
         notebookMap.clear();
-        notebookMap = await getNotebookMap(false);
+        notebookMap = await getNotebookMapByApi(false);
     }
 
     function documentSearchInputFocus() {
@@ -224,14 +223,14 @@
 
     async function refreshSearch(searchKey: string, pageNum: number) {
         isSearching++;
-        let includeNotebookIds = [];
-        if (specifiedNotebookId) {
-            includeNotebookIds.push(specifiedNotebookId);
-        }
+        // let includeNotebookIds = [];
+        // if (specifiedNotebookId) {
+        //     includeNotebookIds.push(specifiedNotebookId);
+        // }
         let documentQueryCriteria = getDocumentQueryCriteria(
             searchKey,
             docFullTextSearch,
-            includeNotebookIds,
+            // includeNotebookIds,
             pageNum,
         );
         let result: DocumentSqlQueryModel = await getDocumentSearchResult(
@@ -244,6 +243,17 @@
             totalPage = 0;
             lastKeywords = [];
             documentItemSearchResult = [];
+
+            // let protyleTemp = previewProtyle;
+            // protyleTemp.destroy();
+
+            previewProtyle = new Protyle(EnvConfig.ins.app, previewDivElement, {
+                blockId: "",
+                render: {
+                    gutter: true,
+                    breadcrumbDocName: true,
+                },
+            });
             return;
         }
         selectedItemIndex = -1;
@@ -486,15 +496,19 @@
     function clickSearchSettingOther() {
         openSettingsDialog("settingOther");
     }
+
+    function clickSearchSettingHub() {
+        openSettingsDialog("settingHub");
+    }
     function docFullTextSearchChange() {
         docFullTextSearch = !docFullTextSearch;
         refreshSearch(searchInputKey, 1);
     }
 
-    function specifiedNotebookIdChange(event) {
-        specifiedNotebookId = event.target.value;
-        refreshSearch(searchInputKey, 1);
-    }
+    // function specifiedNotebookIdChange(event) {
+    //     specifiedNotebookId = event.target.value;
+    //     refreshSearch(searchInputKey, 1);
+    // }
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -552,7 +566,7 @@
         <span class="fn__space"></span>
         <span class="fn__flex-1" style="min-height: 100%"></span>
         <span class="fn__space"></span>
-        <select
+        <!-- <select
             class="b3-select fn__flex-center ariaLabel"
             style="max-width: 180px;"
             aria-label={EnvConfig.ins.i18n.specifyNotebook}
@@ -572,7 +586,7 @@
                     {item.name}
                 </option>
             {/each}
-        </select>
+        </select> -->
 
         <span class="fn__space"></span>
         <span
@@ -619,6 +633,16 @@
             on:keydown={handleKeyDownDefault}
         >
             <svg><use xlink:href="#iconSearchSettingOther"></use></svg>
+        </span>
+        <span class="fn__space"></span>
+        <span
+            aria-label={EnvConfig.ins.i18n.config}
+            class="block__icon block__icon--show ariaLabel"
+            data-position="9bottom"
+            on:click={clickSearchSettingHub}
+            on:keydown={handleKeyDownDefault}
+        >
+            <svg><use xlink:href="#iconSettings"></use></svg>
         </span>
         <span class="fn__space"></span>
         <span

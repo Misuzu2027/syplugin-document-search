@@ -4,7 +4,7 @@
         generateDocumentListSql,
     } from "@/services/search-sql";
     import { onDestroy, onMount } from "svelte";
-    import { sql } from "@/utils/api";
+    import { getNotebookMapByApi, sql } from "@/utils/api";
     import { DocumentTreeItemInfo } from "@/config/document-model";
     import {
         escapeAttr,
@@ -21,9 +21,9 @@
     import { EnvConfig } from "@/config/env-config";
     import {
         delayedTwiceRefresh,
-        getNotebookMap,
+        filterNotebookIds,
         highlightElementTextByCss,
-        parseSearchSyntax,
+        parseSearchCustomKeyword,
     } from "@/components/search/search-util";
     import { getDocIconHtmlByIal } from "@/utils/icon-util";
     import { SettingConfig } from "@/services/setting-config";
@@ -49,8 +49,6 @@
     let documentItems: DocumentTreeItemInfo[] = [];
     let flatDocTreeSortMethod: DocumentSortMethod = "modifiedDesc";
     let flatDocFullTextSearch: boolean = false;
-    let notebookMap: Map<string, Notebook> = new Map();
-    let specifiedNotebookId: string = "";
 
     let lastResizeHideDock: boolean = true;
     let waitRefreshByDatabase: boolean = false;
@@ -155,7 +153,7 @@
     }
 
     async function refreshData() {
-        notebookMap = await getNotebookMap(false);
+        // notebookMap = await getNotebookMapByApi(false);
     }
 
     function documentSortMethodChange(event) {
@@ -170,10 +168,10 @@
         refreshFileTree(searchInputKey, 1);
     }
 
-    function specifiedNotebookIdChange(event) {
-        specifiedNotebookId = event.target.value;
-        refreshFileTree(searchInputKey, 1);
-    }
+    // function specifiedNotebookIdChange(event) {
+    //     specifiedNotebookId = event.target.value;
+    //     refreshFileTree(searchInputKey, 1);
+    // }
 
     async function itemClick(event, item: DocumentTreeItemInfo) {
         if (!item || !item.block) {
@@ -320,17 +318,55 @@
             isSearching = 0;
         }
         clearItemFocus();
+        let includeTypes = SettingConfig.ins.includeTypes;
 
-        if (!notebookMap.has(specifiedNotebookId)) {
-            specifiedNotebookId = "";
+        let includeKeywords = [];
+        let excludeKeywords = [];
+
+        let blockCriteria = parseSearchCustomKeyword(searchKey);
+        let blockKeyWordConditionArray = [];
+        let includePathKeyword = [];
+        let excludePathKeyword = [];
+        let createdTimeArray = [];
+        let updatedTimeArray = [];
+
+        if (blockCriteria) {
+            if (isArrayNotEmpty(blockCriteria.blockKeyWordConditionArray)) {
+                blockKeyWordConditionArray =
+                    blockCriteria.blockKeyWordConditionArray;
+            }
+
+            includePathKeyword = blockCriteria?.path?.include;
+            excludePathKeyword = blockCriteria?.path?.exclude;
+            createdTimeArray = blockCriteria?.createdTimeArray;
+            updatedTimeArray = blockCriteria?.updatedTimeArray;
         }
 
-        let keywordsObj = parseSearchSyntax(searchKey);
+        for (const condition of blockKeyWordConditionArray) {
+            includeKeywords.push(...condition.include);
+            excludeKeywords.push(...condition.exclude);
+        }
+
+        // for (const pathKeyword of includePathKeyword) {
+        //     includeKeywords.push(pathKeyword);
+        // }
+
         let includeConcatFields = SettingConfig.ins.includeQueryFields;
 
-        let includeNotebookIds = [];
-        if (specifiedNotebookId) {
-            includeNotebookIds.push(specifiedNotebookId);
+        let includeNotebookIds: string[] = [];
+        let excludeNotebookIds: string[] = [];
+
+        const notebookIncludeKeywordArray =
+            blockCriteria?.notebook?.include || [];
+        const notebookExcludeKeywordArray =
+            blockCriteria?.notebook?.exclude || [];
+
+        if (isArrayNotEmpty(notebookIncludeKeywordArray)) {
+            includeNotebookIds = filterNotebookIds(notebookIncludeKeywordArray);
+        }
+
+        if (isArrayNotEmpty(notebookExcludeKeywordArray)) {
+            excludeNotebookIds = filterNotebookIds(notebookExcludeKeywordArray);
         }
 
         // let flatDocFullTextSearch = SettingConfig.ins.flatDocFullTextSearch;
@@ -338,16 +374,21 @@
         let pages = [pageNum, flatDocAllShowLimit];
 
         let queryCriteria: DocumentQueryCriteria = new DocumentQueryCriteria(
-            keywordsObj.includeKeywords,
-            keywordsObj.excludeKeywords,
+            includeKeywords,
+            excludeKeywords,
+            blockKeyWordConditionArray,
+            includePathKeyword,
+            excludePathKeyword,
+            createdTimeArray,
+            updatedTimeArray,
             flatDocFullTextSearch,
             pages,
             flatDocTreeSortMethod,
             null,
-            null,
+            includeTypes,
             includeConcatFields,
             includeNotebookIds,
-            null,
+            excludeNotebookIds,
         );
 
         let documentListSql = generateDocumentListSql(queryCriteria);
@@ -363,8 +404,12 @@
         blocks: any[],
         queryCriteria: DocumentQueryCriteria,
     ): Promise<DocumentTreeItemInfo[]> {
-        let notebookMap = await getNotebookMap(false);
-        let keywords = queryCriteria.includeKeywords;
+        let notebookMap = await getNotebookMapByApi(false);
+        let includeKeywords = queryCriteria.includeKeywords;
+
+        // for (const pathKeyword of queryCriteria.includePathKeywords) {
+        //     includeKeywords.push(pathKeyword);
+        // }
 
         let documentBlockInfos: DocumentTreeItemInfo[] = [];
 
@@ -374,7 +419,7 @@
                 continue;
             }
 
-            highlightBlockContent(block, keywords);
+            highlightBlockContent(block, includeKeywords);
             let icon = getDocIconHtmlByIal(block.ial);
 
             let notebookInfo = notebookMap.get(block.box);
@@ -590,32 +635,6 @@
             class="block__icons"
             style="overflow: auto;flex-wrap: wrap;height:auto;padding-left:2px;padding-right:2px;"
         >
-            <div style="display:flex;padding:3px 0px; ">
-                <select
-                    class="b3-select fn__flex-center ariaLabel"
-                    style="max-width: 120px;"
-                    aria-label={EnvConfig.ins.i18n.specifyNotebook}
-                    on:change={specifiedNotebookIdChange}
-                >
-                    <option value="">
-                        🌐{EnvConfig.ins.i18n.allNotebooks}
-                    </option>
-                    {#each Array.from(notebookMap.entries()) as [key, item] (key)}
-                        <option
-                            value={item.id}
-                            selected={item.id == specifiedNotebookId}
-                        >
-                            {#if item.icon}
-                                {@html item.icon}
-                            {:else}
-                                🗃
-                            {/if}
-                            {item.name}
-                        </option>
-                    {/each}
-                </select>
-            </div>
-            <span class="fn__space"></span>
             <div style="display:flex;padding:3px 0px;">
                 <!-- <span style="display: flex;align-items: center;padding:5px;"
                     >{EnvConfig.ins.i18n.sort}:

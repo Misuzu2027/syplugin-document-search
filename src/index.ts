@@ -33,7 +33,6 @@ export default class PluginSample extends Plugin {
                 this.addIcons(item.source);
             }
         }
-        // this.addIcons(CUSTOM_ICON_MAP.iconDocumentSearch.source);
 
         if (!EnvConfig.ins.isMobile) {
             this.addTopBar({
@@ -58,6 +57,9 @@ export default class PluginSample extends Plugin {
             },
         });
 
+        // this.addIcons(CUSTOM_ICON_MAP.iconDocumentSearch.source);
+        this.addDocumentSearchTab();
+
         this.eventBus.on('switch-protyle', (e: any) => {
             // console.log("switch-protyle " + JSON.stringify(e.detail.protyle.block));
             EnvConfig.ins.lastViewedDocId = e.detail.protyle.block.rootID;
@@ -78,6 +80,14 @@ export default class PluginSample extends Plugin {
     }
 
     onLayoutReady() {
+
+    }
+
+    async onunload() {
+
+    }
+
+    private addDocumentSearchTab() {
         let _this = this;
         this.addTab({
             type: SEARCH_TAB_TYPE,
@@ -97,10 +107,6 @@ export default class PluginSample extends Plugin {
                 }
             },
         });
-    }
-
-    async onunload() {
-
     }
 
     private openDocumentSearchTab() {

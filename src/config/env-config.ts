@@ -1,5 +1,4 @@
-import { lsNotebooks } from "@/utils/api";
-import { getNotebookIcon } from "@/utils/icon-util";
+import { getNotebookMap, getNotebookMapByApi, } from "@/utils/api";
 import Instance from "@/utils/Instance";
 import { App, Dock, IObject, IPluginDockTab, Plugin, Tab, getFrontend } from "siyuan";
 
@@ -50,19 +49,17 @@ export class EnvConfig {
     flatDocTreeDock: { config: IPluginDockTab, model: Dock };
 
     private _notebookMap: Map<string, Notebook> = new Map();
-    public async notebookMap(cache: boolean): Promise<Map<string, Notebook>> {
-        if (cache && this._notebookMap && this._notebookMap.size > 0) {
-            return this._notebookMap
-        } else {
-            let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
-            this._notebookMap.clear();
-            for (const notebook of notebooks) {
-                notebook.icon = getNotebookIcon(notebook.icon);
-                this._notebookMap.set(notebook.id, notebook);
-            }
+    public get notebookMap(): Map<string, Notebook> {
+        if (!this._notebookMap || this._notebookMap.size == 0) {
+            this.refreshNotebookMap();
+            return getNotebookMap(window.siyuan.notebooks);
         }
         return this._notebookMap;
     }
 
+    public async refreshNotebookMap(): Promise<Map<string, Notebook>> {
+        this._notebookMap = await getNotebookMapByApi();
+        return this._notebookMap;
+    }
 
 }

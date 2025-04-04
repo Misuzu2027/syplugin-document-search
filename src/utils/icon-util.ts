@@ -1,4 +1,4 @@
-import { isStrBlank } from "./string-util";
+import { isStrEmpty } from "./string-util";
 
 
 
@@ -7,7 +7,7 @@ export function getNotebookIcon(iconStr: string): string {
     icon = convertIconInIal(iconStr);
 
     // 目前用的系统自带多选框，无法渲染 html。。笔记本图标转换成默认。
-    if (isStrBlank(icon) || icon.startsWith("<img")) {
+    if (isStrEmpty(icon) || icon.startsWith("<img")) {
         const LOCAL_IMAGES = "local-images";
         let fileIcon = window.siyuan.storage[LOCAL_IMAGES].note;
         icon = convertIconInIal(fileIcon);
@@ -22,7 +22,7 @@ export function getDocIconHtmlByIal(ialStr: string): string {
         let ial = convertIalStringToObject(ialStr);
         icon = convertIconInIal(ial.icon);
     }
-    if (isStrBlank(icon)) {
+    if (isStrEmpty(icon)) {
         const LOCAL_IMAGES = "local-images";
         let fileIcon = window.siyuan.storage[LOCAL_IMAGES].file;
         icon = convertIconInIal(fileIcon);
@@ -34,7 +34,7 @@ export function getDocIconHtmlByIal(ialStr: string): string {
 }
 
 export function convertIconInIal(icon: string): string {
-    if (isStrBlank(icon)) {
+    if (isStrEmpty(icon)) {
         return null;
     }
 

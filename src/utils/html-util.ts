@@ -1,4 +1,6 @@
 import { findScrollingElement } from "@/components/search/search-util";
+import { isStrEmpty, isStrNotEmpty, isStrNotBlank } from "./string-util";
+import { isArrayEmpty } from "./array-util";
 
 export const escapeAttr = (html: string) => {
     return html.replace(/"/g, "&quot;").replace(/'/g, "&apos;");
@@ -36,8 +38,12 @@ function getHighlightedContent(
 }
 
 function highlightMatches(content: string, keywords: string[]): string {
-    if (!keywords.length || !content) {
+    if (isArrayEmpty(keywords) || isStrEmpty(content)) {
         return content; // 返回原始字符串，因为没有需要匹配的内容
+    }
+    keywords = keywords.filter(isStrNotBlank);
+    if (isArrayEmpty(keywords)) {
+        return content;
     }
     let escapeKeywords = [];
     for (const str of keywords) {

@@ -29,10 +29,9 @@
         getOpenTabActionByZoomIn,
         getDocumentQueryCriteria,
         bgFade,
-        getNotebookMap,
         getRangeByElement,
     } from "@/components/search/search-util";
-    import { getBlockIsFolded } from "@/utils/api";
+    import { getBlockIsFolded, getNotebookMapByApi } from "@/utils/api";
     import { isElementHidden } from "@/utils/html-util";
 
     let rootElement: HTMLElement;
@@ -44,7 +43,7 @@
     let inputChangeTimeoutId;
     let isSearching: number = 0;
     let hiddenDock: boolean = true;
-    let lastKeywords: string[];
+    let includeKeywords: string[];
     let searchResultDocumentCount: number = null;
     let curPage: number = 0;
     let totalPage: number = 0;
@@ -53,7 +52,7 @@
     let lastDocumentContentElement: HTMLElement;
     let isSearchInCurrentDoc: boolean = false;
     let notebookMap: Map<string, Notebook> = new Map();
-    let specifiedNotebookId: string = "";
+    // let specifiedNotebookId: string = "";
     let docFullTextSearch: boolean = true;
 
     onMount(async () => {
@@ -87,7 +86,7 @@
 
     async function refreshData() {
         notebookMap.clear();
-        notebookMap = await getNotebookMap(false);
+        notebookMap = await getNotebookMapByApi(false);
     }
 
     function documentSearchInputFocus() {
@@ -222,16 +221,18 @@
     async function refreshSearch(searchKey: string, pageNum: number) {
         // 每次查询改为2，防止因为异常，加载图案不会消失。目前获取到查询-1，处理完搜索结果-1。
         isSearching = 2;
-        let includeNotebookIds = [];
-        if (specifiedNotebookId) {
-            includeNotebookIds.push(specifiedNotebookId);
-        }
+        // let includeNotebookIds = [];
+        // if (specifiedNotebookId) {
+        // includeNotebookIds.push(specifiedNotebookId);
+        // }
         let documentQueryCriteria = getDocumentQueryCriteria(
             searchKey,
             docFullTextSearch,
-            includeNotebookIds,
+            // includeNotebookIds,
             pageNum,
         );
+
+        console.log("refreshSearch ", documentQueryCriteria);
         if (documentQueryCriteria) {
             if (isSearchInCurrentDoc && EnvConfig.ins.lastViewedDocId) {
                 // 使用在当前文档搜索的时候，强制修改排序方式为原文排序
@@ -250,7 +251,7 @@
             searchResultDocumentCount = 0;
             curPage = 0;
             totalPage = 0;
-            lastKeywords = [];
+            includeKeywords = [];
             documentItemSearchResult = [];
             isSearching = 0;
             return;
@@ -258,7 +259,7 @@
         selectedItemIndex = -1;
 
         documentItemSearchResult = result.documentItems;
-        lastKeywords = result.searchCriterion.includeKeywords;
+        includeKeywords = result.searchCriterion.includeKeywords;
 
         initSearchDocumentCount();
         let documentCount: number = result.documentCount;
@@ -345,7 +346,7 @@
                 let matchBlockId = rootId == blockId ? null : blockId;
                 let matchFocusRangePromise = highlightElementTextByCss(
                     lastDocumentContentElement,
-                    lastKeywords,
+                    includeKeywords,
                     matchBlockId,
                     previewProtyleMatchFocusIndex,
                 );
@@ -392,7 +393,7 @@
         delayedTwiceRefresh(() => {
             let matchFocusRangePromise = highlightElementTextByCss(
                 lastDocumentContentElement,
-                lastKeywords,
+                includeKeywords,
                 blockId,
                 previewProtyleMatchFocusIndex,
             );
@@ -460,16 +461,16 @@
         openSettingsDialog("settingType");
     }
 
-    function clickSearchAttrFilter() {
-        openSettingsDialog("settingAttr");
-    }
+    // function clickSearchAttrFilter() {
+    //     openSettingsDialog("settingAttr");
+    // }
 
     function clickSearchSettingOther() {
         openSettingsDialog("settingOther");
     }
 
     function changeCheckboxSearchInCurrentDoc(event) {
-        if (event.target.checked && !EnvConfig.ins.lastViewedDocId) {
+        if (!isSearchInCurrentDoc && !EnvConfig.ins.lastViewedDocId) {
             showMessage(
                 EnvConfig.ins.i18n.switchCurrentDocumentSearchFailureMessage,
                 4000,
@@ -477,14 +478,14 @@
             );
             event.target.checked = false;
         }
-        isSearchInCurrentDoc = event.target.checked;
+        isSearchInCurrentDoc = !isSearchInCurrentDoc;
         refreshSearch(searchInputKey, 1);
     }
 
-    function specifiedNotebookIdChange(event) {
-        specifiedNotebookId = event.target.value;
-        refreshSearch(searchInputKey, 1);
-    }
+    // function specifiedNotebookIdChange(event) {
+    // specifiedNotebookId = event.target.value;
+    // refreshSearch(searchInputKey, 1);
+    // }
 
     function docFullTextSearchChange() {
         docFullTextSearch = !docFullTextSearch;
@@ -525,17 +526,6 @@
         >
             <svg><use xlink:href="#iconFilter"></use></svg>
         </span>
-        <span class="fn__space"></span>
-        <span
-            id="documentSearchAttrFilter"
-            aria-label={EnvConfig.ins.i18n.attr}
-            class="block__icon block__icon--show ariaLabel"
-            data-position="9bottom"
-            on:click={clickSearchAttrFilter}
-            on:keydown={handleKeyDownDefault}
-        >
-            <svg><use xlink:href="#iconA"></use></svg>
-        </span>
 
         <span class="fn__space"></span>
         <span
@@ -547,6 +537,19 @@
             on:keydown={handleKeyDownDefault}
         >
             <svg><use xlink:href="#iconSearchSettingOther"></use></svg>
+        </span>
+        <span class="fn__space"></span>
+        <span
+            id="documentSearchCurDoc"
+            aria-label={EnvConfig.ins.i18n.searchInTheCurrentDocument}
+            class="block__icon ariaLabel {isSearchInCurrentDoc
+                ? 'label-selected'
+                : ''}"
+            style="opacity: 1;"
+            on:click={changeCheckboxSearchInCurrentDoc}
+            on:keydown={handleKeyDownDefault}
+        >
+            <svg><use xlink:href="#iconCurDocSearch"></use></svg>
         </span>
         <span class="fn__space"></span>
         <span
@@ -585,40 +588,6 @@
             on:keydown={handleKeyDownDefault}
         >
             <svg><use xlink:href="#iconContract"></use></svg>
-        </span>
-    </div>
-    <div class="block__icons" style="overflow: auto">
-        <span class="fn__space"></span>
-        <select
-            class="b3-select fn__flex-center ariaLabel"
-            style="max-width: 160px;"
-            aria-label={EnvConfig.ins.i18n.specifyNotebook}
-            on:change={specifiedNotebookIdChange}
-            disabled={isSearchInCurrentDoc}
-        >
-            <option value=""> 🌐 {EnvConfig.ins.i18n.allNotebooks} </option>
-            {#each Array.from(notebookMap.entries()) as [key, item] (key)}
-                <option
-                    value={item.id}
-                    selected={item.id == specifiedNotebookId}
-                >
-                    {#if item.icon}
-                        {@html item.icon}
-                    {:else}
-                        🗃
-                    {/if}
-                    {item.name}
-                </option>
-            {/each}
-        </select>
-        <span class="fn__space"></span>
-        <span>
-            <input
-                class="b3-switch fn__flex-center ariaLabel"
-                type="checkbox"
-                aria-label={EnvConfig.ins.i18n.searchInTheCurrentDocument}
-                on:change={changeCheckboxSearchInCurrentDoc}
-            />
         </span>
     </div>
     <div

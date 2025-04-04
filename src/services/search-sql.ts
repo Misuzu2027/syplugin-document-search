@@ -1,9 +1,16 @@
-import { isArrayNotEmpty } from "@/utils/array-util";
-import { isStrNotEmpty } from "@/utils/string-util";
+import { BlockKeywordCondition, CompareCondition } from "@/config/search-model";
+import { arrayRemoveValue, arraysEqual, isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
+import { isStrEmpty, isStrNotBlank, isStrNotEmpty, isStrNotNull } from "@/utils/string-util";
 
 export class DocumentQueryCriteria {
     includeKeywords: string[];
     excludeKeywords: string[];
+    // blockCriteria: BlockCriteria;
+    blockKeywordCondition: BlockKeywordCondition[];
+    includePathKeywords: string[];
+    excludePathKeywords: string[];
+    createdTimeArray: CompareCondition[];
+    updatedTimeArray: CompareCondition[];
     docFullTextSearch: boolean;
     pages: number[];
     documentSortMethod: DocumentSortMethod;
@@ -15,8 +22,13 @@ export class DocumentQueryCriteria {
     excludeNotebookIds: string[];
 
     constructor(
-        keywords: string[],
+        includeKeywords: string[],
         excludeKeywords: string[],
+        blockKeywordCondition: BlockKeywordCondition[],
+        includePathKeywords: string[],
+        excludePathKeywords: string[],
+        createdTimeArray: CompareCondition[],
+        updatedTimeArray: CompareCondition[],
         docFullTextSearch: boolean,
         pages: number[],
         documentSortMethod: DocumentSortMethod,
@@ -26,8 +38,13 @@ export class DocumentQueryCriteria {
         includeNotebookIds: string[],
         excludeNotebookIds: string[],
     ) {
-        this.includeKeywords = keywords;
+        this.includeKeywords = includeKeywords;
         this.excludeKeywords = excludeKeywords;
+        this.blockKeywordCondition = blockKeywordCondition;
+        this.includePathKeywords = includePathKeywords;
+        this.excludePathKeywords = excludePathKeywords;
+        this.createdTimeArray = createdTimeArray;
+        this.updatedTimeArray = updatedTimeArray;
         this.docFullTextSearch = docFullTextSearch;
         this.pages = pages;
         this.documentSortMethod = documentSortMethod;
@@ -49,7 +66,12 @@ export function generateDocumentListSql(
     let excludeKeywords = queryCriteria.excludeKeywords;
     let docFullTextSearch = queryCriteria.docFullTextSearch;
     let pages = queryCriteria.pages;
+    let includePathKeyword = queryCriteria.includePathKeywords;
+    let excludePathKeyword = queryCriteria.excludePathKeywords;
+    let createdTimeArray = queryCriteria.createdTimeArray;
+    let updatedTimeArray = queryCriteria.updatedTimeArray;
     let includeNotebookIds = queryCriteria.includeNotebookIds;
+    let excludeNotebookIds = queryCriteria.excludeNotebookIds;
     let documentSortMethod = queryCriteria.documentSortMethod;
     let includeConcatFields = queryCriteria.includeConcatFields;
     let columns: string[] = [" * "];
@@ -62,20 +84,45 @@ export function generateDocumentListSql(
             let documentIdSql = generateDocumentIdTableSql(queryCriteria);
             contentParamSql = ` AND id in (${documentIdSql}) `;
         } else {
-            contentParamSql = " AND " + generateAndLikeConditions("concatContent", includeKeywords);
-            if (isArrayNotEmpty(excludeKeywords)) {
-                let contentNotLikeSql = generateAndNotLikeConditions("concatContent", excludeKeywords);
-                if (isStrNotEmpty(contentNotLikeSql)) {
-                    contentParamSql += " AND " + contentNotLikeSql;
-                }
+            contentParamSql = generateAndLikeConditions("concatContent", includeKeywords);
+            if (isStrNotBlank(contentParamSql)) {
+                contentParamSql = " AND " + contentParamSql;
             }
-
+            let contentNotLikeSql = generateAndNotLikeConditions("concatContent", excludeKeywords);
+            if (isStrNotBlank(contentNotLikeSql)) {
+                contentParamSql += " AND " + contentNotLikeSql;
+            }
         }
     }
 
+
+    let pathLikeSql = " ";
+    let pathNotLikeSql = " ";
+    let createdTimeWhereSql = " ";
+    let updatedTimeWhereSql = " ";
     let boxInSql = " "
-    if (includeNotebookIds && includeNotebookIds.length > 0) {
+    let boxNotInSql = " ";
+
+
+    if (isArrayNotEmpty(includePathKeyword)) {
+        pathLikeSql = ` AND ( ${generateAndLikeConditions("hpath", includePathKeyword)} )`;
+    }
+    if (isArrayNotEmpty(excludePathKeyword)) {
+        pathNotLikeSql = ` AND ( ${generateAndNotLikeConditions("hpath", excludePathKeyword)} )`;
+    }
+
+    if (isArrayNotEmpty(createdTimeArray)) {
+        createdTimeWhereSql = ` AND ${generateAndNumberConditions("created", createdTimeArray)} `;
+    }
+    if (isArrayNotEmpty(updatedTimeArray)) {
+        updatedTimeWhereSql = ` AND ${generateAndNumberConditions("updated", updatedTimeArray)} `;
+    }
+
+    if (isArrayNotEmpty(includeNotebookIds)) {
         boxInSql = generateAndInConditions("box", includeNotebookIds);
+    }
+    if (isArrayNotEmpty(excludeNotebookIds)) {
+        boxNotInSql = generateAndNotInConditions("box", excludeNotebookIds);
     }
 
     let orders = [];
@@ -124,6 +171,11 @@ export function generateDocumentListSql(
         type = 'd' 
         ${contentParamSql}
         ${boxInSql}
+        ${boxNotInSql}
+        ${pathLikeSql}
+        ${pathNotLikeSql}
+        ${createdTimeWhereSql}
+        ${updatedTimeWhereSql}
 
     ${orderSql}
     ${limitSql}
@@ -139,6 +191,7 @@ export function generateDocumentSearchSql(
 
     let includeKeywords = queryCriteria.includeKeywords;
     let excludeKeywords = queryCriteria.excludeKeywords;
+    let blockKeywordCondition = queryCriteria.blockKeywordCondition;
     let pages = queryCriteria.pages;
     let contentBlockSortMethod = queryCriteria.contentBlockSortMethod;
     let includeTypes = queryCriteria.includeTypes;
@@ -151,15 +204,55 @@ export function generateDocumentSearchSql(
     let concatConcatFieldSql = getConcatFieldSql("concatContent", includeConcatFields);
     // 在查询块的时候，无论如何都需要包含文档块类型，否则不知道文档信息
     let includeTypesD: string[] = [...includeTypes, 'd'];
+
+    let blockKeywordSqlArray = [];
+    let orIncludeTypes = [...includeTypes];
+    let existExlucde = false;
+    let existInclude = false;
+    // console.log("blockKeywordCondition ", blockKeywordCondition)
+    for (const condition of blockKeywordCondition) {
+        let likeSql = generateAndLikeConditions(
+            ` concatContent `,
+            condition.include,
+        );
+        let notLikeSql = generateAndNotLikeConditions(
+            ` concatContent `,
+            condition.exclude,
+        );
+
+        let typeSql = ``;
+        if (isStrNotBlank(condition.type)) {
+            typeSql = ` type = '${condition.type}' `;
+            orIncludeTypes = arrayRemoveValue(orIncludeTypes, condition.type);
+            if (!includeTypesD.includes(condition.type)) {
+                includeTypesD.push(condition.type);
+            }
+
+        }
+        if (isStrNotBlank(likeSql)) {
+            existInclude = true;
+        }
+        if (isStrNotBlank(notLikeSql)) {
+            existExlucde = true;
+        }
+        const conditions = [typeSql, likeSql, notLikeSql].filter(isStrNotBlank);
+        if (isArrayNotEmpty(conditions)) {
+            const result = conditions.join(" AND ");
+            blockKeywordSqlArray.push(`( ${result} )`)
+        }
+    }
+    let contentOrLikeSql = "";
+    if (isArrayNotEmpty(blockKeywordSqlArray)) {
+        let extraTypeSql = "";
+        // 只存在排除，不存在包含，就加上或则排除之外的类型。
+        if (existExlucde && !existInclude && !arraysEqual(orIncludeTypes, includeTypes)) {
+            extraTypeSql = ` OR (  ${generateInConditions("type", orIncludeTypes)} )`;
+        }
+        contentOrLikeSql = `AND ( ${blockKeywordSqlArray.join(" OR ")}  ${extraTypeSql})`;
+    }
+
     let typeInSql = generateAndInConditions("type", includeTypesD);
-    let keywordkOrLikeSql = generateOrLikeConditions("concatContent", includeKeywords);
-    if (isStrNotEmpty(keywordkOrLikeSql)) {
-        keywordkOrLikeSql = ` AND ( ${keywordkOrLikeSql} ) `;
-    }
-    let keywordAndNotLikeSql = generateAndNotLikeConditions("concatContent", excludeKeywords)
-    if (isStrNotEmpty(keywordAndNotLikeSql)) {
-        keywordAndNotLikeSql = ` AND ( ${keywordAndNotLikeSql} ) `;
-    }
+
 
     let orders = [];
     if (contentBlockSortMethod == 'type') { // type 类型
@@ -200,8 +293,7 @@ export function generateDocumentSearchSql(
                 id IN (${documentTableIdPageSql})
                 OR (
                     root_id IN (${documentTableIdPageSql})
-                    ${keywordkOrLikeSql} 
-                    ${keywordAndNotLikeSql} 
+                    ${contentOrLikeSql} 
                 )
             )
         ${orderSql}
@@ -215,6 +307,11 @@ export function generateDocumentSearchSql(
 export function generateDocumentCountSql(queryCriteria: DocumentQueryCriteria) {
     let includeKeywords = queryCriteria.includeKeywords;
     let excludeKeywords = queryCriteria.excludeKeywords;
+    let blockKeywordCondition = queryCriteria.blockKeywordCondition;
+    let includePathKeyword = queryCriteria.includePathKeywords;
+    let excludePathKeyword = queryCriteria.excludePathKeywords;
+    let createdTimeArray = queryCriteria.createdTimeArray;
+    let updatedTimeArray = queryCriteria.updatedTimeArray;
     let docFullTextSearch = queryCriteria.docFullTextSearch;
     let includeTypes = queryCriteria.includeTypes;
     let includeRootIds = queryCriteria.includeRootIds;
@@ -233,7 +330,12 @@ export function generateDocumentCountSql(queryCriteria: DocumentQueryCriteria) {
     }
     let pages = [1, 99999999];
     let documentContentLikeCountSql = generateDocumentContentLikeSql(
-        columns, includeKeywords, excludeKeywords, docFullTextSearch, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, null, pages);
+        columns, includeKeywords, excludeKeywords,
+        blockKeywordCondition,
+        docFullTextSearch, contentLikeField, includeTypes, includeRootIds,
+        includePathKeyword, excludePathKeyword,
+        createdTimeArray, updatedTimeArray,
+        includeNotebookIds, excludeNotebookIds, null, pages);
 
     let documentCountSql = `SELECT count(1) AS documentCount FROM (${documentContentLikeCountSql})`;
 
@@ -245,6 +347,11 @@ function generateDocumentIdContentTableSql(
 ): string {
     let includeKeywords = queryCriteria.includeKeywords;
     let excludeKeywords = queryCriteria.excludeKeywords;
+    let blockKeywordCondition = queryCriteria.blockKeywordCondition;
+    let includePathKeyword = queryCriteria.includePathKeywords;
+    let excludePathKeyword = queryCriteria.excludePathKeywords;
+    let createdTimeArray = queryCriteria.createdTimeArray;
+    let updatedTimeArray = queryCriteria.updatedTimeArray;
     let docFullTextSearch = queryCriteria.docFullTextSearch;
     let pages = queryCriteria.pages;
     let documentSortMethod = queryCriteria.documentSortMethod;
@@ -284,7 +391,12 @@ function generateDocumentIdContentTableSql(
     }
 
     let documentIdContentTableSql = generateDocumentContentLikeSql(
-        columns, includeKeywords, excludeKeywords, docFullTextSearch, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, orders, null);
+        columns, includeKeywords, excludeKeywords,
+        blockKeywordCondition,
+        docFullTextSearch, contentLikeField, includeTypes, includeRootIds,
+        includePathKeyword, excludePathKeyword,
+        createdTimeArray, updatedTimeArray,
+        includeNotebookIds, excludeNotebookIds, orders, null);
 
     return documentIdContentTableSql;
 }
@@ -294,6 +406,11 @@ function generateDocumentIdTableSql(
 ): string {
     let includeKeywords = queryCriteria.includeKeywords;
     let excludeKeywords = queryCriteria.excludeKeywords;
+    let blockKeywordCondition = queryCriteria.blockKeywordCondition;
+    let includePathKeyword = queryCriteria.includePathKeywords;
+    let excludePathKeyword = queryCriteria.excludePathKeywords;
+    let createdTimeArray = queryCriteria.createdTimeArray;
+    let updatedTimeArray = queryCriteria.updatedTimeArray;
     let docFullTextSearch = queryCriteria.docFullTextSearch;
     let includeTypes = queryCriteria.includeTypes;
     let includeConcatFields = queryCriteria.includeConcatFields;
@@ -312,7 +429,12 @@ function generateDocumentIdTableSql(
     let orders = [];
 
     let documentIdContentTableSql = generateDocumentContentLikeSql(
-        columns, includeKeywords, excludeKeywords, docFullTextSearch, contentLikeField, includeTypes, includeRootIds, includeNotebookIds, excludeNotebookIds, orders, null);
+        columns, includeKeywords, excludeKeywords,
+        blockKeywordCondition,
+        docFullTextSearch, contentLikeField, includeTypes, includeRootIds,
+        includePathKeyword, excludePathKeyword,
+        createdTimeArray, updatedTimeArray,
+        includeNotebookIds, excludeNotebookIds, orders, null);
 
     return documentIdContentTableSql;
 }
@@ -322,10 +444,15 @@ function generateDocumentContentLikeSql(
     columns: string[],
     includeKeywords: string[],
     excludeKeywords: string[],
+    blockKeyWordConditionArray: BlockKeywordCondition[],
     docFullTextSearch: boolean,
     contentLikeField: string,
     includeTypes: string[],
     includeRootIds: string[],
+    includePath: string[],
+    excludePath: string[],
+    createdTimeArray: CompareCondition[],
+    updatedTimeArray: CompareCondition[],
     includeNotebookIds: string[],
     excludeNotebookIds: string[],
     orders: string[],
@@ -334,34 +461,105 @@ function generateDocumentContentLikeSql(
     let columnSql = columns.join(",");
     let typeInSql = generateAndInConditions("type", includeTypes);
     let rootIdInSql = " ";
+    let pathLikeSql = " ";
+    let pathNotLikeSql = " ";
+    let createdTimeWhereSql = " ";
+    let updatedTimeWhereSql = " ";
     let boxInSql = " ";
     let boxNotInSql = " ";
+
     // 如果文档id不为空，则忽略过滤的笔记本id。
-    if (includeRootIds && includeRootIds.length > 0) {
+    if (isArrayNotEmpty(includeRootIds)) {
         rootIdInSql = generateAndInConditions("root_id", includeRootIds);
-    } else if (includeNotebookIds && includeNotebookIds.length > 0) {
-        boxInSql = generateAndInConditions("box", includeNotebookIds);
     } else {
-        boxNotInSql = generateAndNotInConditions("box", excludeNotebookIds);
+        if (isArrayNotEmpty(includeNotebookIds)) {
+            boxInSql = generateAndInConditions("box", includeNotebookIds);
+        }
+        if (isArrayNotEmpty(excludeNotebookIds)) {
+            boxNotInSql = generateAndNotInConditions("box", excludeNotebookIds);
+        }
     }
 
-    // let contentOrLikeSql = generateOrLikeConditions("content", keywords);
-    // if (contentOrLikeSql) {
-    //     contentOrLikeSql = ` AND ( ${contentOrLikeSql} ) `;
-    // }
+    if (isArrayNotEmpty(includePath)) {
+        pathLikeSql = ` AND ( ${generateAndLikeConditions("hpath", includePath)} )`;
+    }
+    if (isArrayNotEmpty(excludePath)) {
+        pathNotLikeSql = ` AND ( ${generateAndNotLikeConditions("hpath", includePath)} )`;
+    }
+
+    if (isArrayNotEmpty(createdTimeArray)) {
+        createdTimeWhereSql = ` AND ${generateAndNumberConditions("created", createdTimeArray)} `;
+    }
+
+    if (isArrayNotEmpty(updatedTimeArray)) {
+        updatedTimeWhereSql = ` AND ${generateAndNumberConditions("updated", updatedTimeArray)} `;
+    }
+
+    let blockContentSqlArray = [];
+    let notTypeIncludeKeywords = [];
+    let notTypeExcludeKeywords = [];
+    let orIncludeTypes = [...includeTypes];
+    let existExlucde = false;
+    let existInclude = false;
+    let contentLikeFieldTemp = contentLikeField.replace("GROUP_CONCAT", "");
+    for (const condition of blockKeyWordConditionArray) {
+        // 必须存在type才能放入这里，否则聚合查询的时候，因为这里过滤掉了，聚合查询反而会出问题
+        let likeSql = null;
+        let notLikeSql = null;
+
+        let typeSql = ``;
+        if (isStrNotBlank(condition.type)) {
+            likeSql = generateAndLikeConditions(
+                ` ${contentLikeFieldTemp} `,
+                condition.include,
+            );
+            notLikeSql = generateAndNotLikeConditions(
+                ` ${contentLikeFieldTemp} `,
+                condition.exclude,
+            );
+
+            typeSql = ` type = '${condition.type}' `;
+            orIncludeTypes = arrayRemoveValue(orIncludeTypes, condition.type);
+        } else {
+            notTypeIncludeKeywords.push(...condition.include);
+            notTypeExcludeKeywords.push(...condition.exclude);
+        }
+        if (isStrNotBlank(likeSql)) {
+            existInclude = true;
+        }
+        if (isStrNotBlank(notLikeSql)) {
+            existExlucde = true;
+        }
+        const conditions = [typeSql, likeSql, notLikeSql].filter(isStrNotBlank);
+        if (isArrayNotEmpty(conditions)) {
+            const result = conditions.join(" AND ");
+            blockContentSqlArray.push(`( ${result} )`)
+        }
+    }
+    let contentLikeSql = " ";
+    if (isArrayNotEmpty(blockContentSqlArray)) {
+        let extraTypeSql = "";
+        // 只存在排除，不存在包含，就加上或则排除之外的类型。
+        if (existExlucde && !existInclude) {
+            extraTypeSql = ` OR (  ${generateInConditions("type", orIncludeTypes)} )`;
+        }
+        contentLikeSql = `AND ( ${blockContentSqlArray.join(" OR ")}  ${extraTypeSql})`;
+    }
+
+
     let aggregatedContentAndLikeSql = generateAndLikeConditions(
         ` ${contentLikeField} `,
-        includeKeywords,
+        notTypeIncludeKeywords,
     );
-    if (isStrNotEmpty(aggregatedContentAndLikeSql)) {
+    if (isStrNotBlank(aggregatedContentAndLikeSql)) {
         aggregatedContentAndLikeSql = ` AND ( ${aggregatedContentAndLikeSql} ) `;
     }
 
     let aggregatedContentAndNotLikeSql = generateAndNotLikeConditions(
         ` ${contentLikeField} `,
-        excludeKeywords,
+        notTypeExcludeKeywords,
     );
-    if (isStrNotEmpty(aggregatedContentAndNotLikeSql)) {
+    if (isStrNotBlank(aggregatedContentAndNotLikeSql)) {
         aggregatedContentAndNotLikeSql = ` AND ( ${aggregatedContentAndNotLikeSql} ) `;
     }
 
@@ -380,6 +578,11 @@ function generateDocumentContentLikeSql(
             ${rootIdInSql}
             ${boxInSql}
             ${boxNotInSql}
+            ${pathLikeSql}
+            ${pathNotLikeSql}
+            ${createdTimeWhereSql}
+            ${updatedTimeWhereSql}
+            ${contentLikeSql}
         GROUP BY
             root_id 
         HAVING
@@ -400,8 +603,14 @@ function generateDocumentContentLikeSql(
             ${rootIdInSql}
             ${boxInSql}
             ${boxNotInSql}
+            ${pathLikeSql}
+            ${pathNotLikeSql}
+            ${createdTimeWhereSql}
+            ${updatedTimeWhereSql}
+            ${contentLikeSql}
             ${aggregatedContentAndLikeSql}
             ${aggregatedContentAndNotLikeSql}
+            
         GROUP BY
             root_id 
         ${orderSql}
@@ -443,7 +652,7 @@ function generateOrLikeConditions(
     fieldName: string,
     params: string[],
 ): string {
-    if (params.length === 0) {
+    if (isArrayEmpty(params)) {
         return " ";
     }
 
@@ -459,13 +668,13 @@ function generateAndLikeConditions(
     fieldName: string,
     params: string[],
 ): string {
-    if (params.length === 0) {
+    if (isArrayEmpty(params)) {
         return " ";
     }
 
     const conditions = [];
     for (const param of params) {
-        if (isStrNotEmpty(param)) {
+        if (isStrNotNull(param)) {
             conditions.push(`${fieldName}  LIKE '%${param}%'`)
         }
     }
@@ -479,16 +688,15 @@ function generateAndNotLikeConditions(
     fieldName: string,
     params: string[],
 ): string {
-    if (params.length === 0) {
+    if (isArrayEmpty(params)) {
         return " ";
     }
     const conditions = [];
     for (const param of params) {
-        if (isStrNotEmpty(param)) {
+        if (isStrNotNull(param)) {
             conditions.push(`${fieldName} NOT LIKE '%${param}%'`);
         }
     }
-
 
     const result = conditions.join(" AND ");
 
@@ -496,18 +704,33 @@ function generateAndNotLikeConditions(
 }
 
 
-function generateAndInConditions(
+
+
+function generateInConditions(
     fieldName: string,
     params: string[],
 ): string {
-    if (!params || params.length === 0) {
+    if (isArrayEmpty(params)) {
         return " ";
     }
-    let result = ` AND ${fieldName} IN(`
+    let result = ` ${fieldName} IN(`
     const conditions = params.map(
         (param) => ` '${param}' `,
     );
     result = result + conditions.join(" , ") + " ) ";
+
+    return result;
+}
+
+function generateAndInConditions(
+    fieldName: string,
+    params: string[],
+): string {
+    if (isArrayEmpty(params)) {
+        return " ";
+    }
+
+    let result = ` AND ${generateInConditions(fieldName, params)}`
 
     return result;
 }
@@ -516,7 +739,7 @@ function generateAndNotInConditions(
     fieldName: string,
     params: string[],
 ): string {
-    if (!params || params.length === 0) {
+    if (isArrayEmpty(params)) {
         return " ";
     }
     let result = ` AND ${fieldName} NOT IN(`
@@ -524,6 +747,25 @@ function generateAndNotInConditions(
         (param) => ` '${param}' `,
     );
     result = result + conditions.join(" , ") + " ) ";
+
+    return result;
+}
+
+
+
+
+function generateAndNumberConditions(
+    fieldName: string,
+    compareCondition: CompareCondition[],
+): string {
+    if (isArrayEmpty(compareCondition)) {
+        return " ";
+    }
+    const conditions = [];
+    for (const condition of compareCondition) {
+        conditions.push(`${fieldName} ${condition.operator} '${condition.value}'`);
+    }
+    const result = conditions.join(" AND ");
 
     return result;
 }

@@ -285,8 +285,9 @@
         }
         previewProtyleMatchFocusIndex = -1;
         let docTab = await docTabPromise;
-        let lastDocumentContentElement = docTab.panelElement
-            .children[1] as HTMLElement;
+        let lastDocumentContentElement = docTab.panelElement.querySelector(
+            "div.protyle-content",
+        ) as HTMLElement;
 
         delayedTwiceRefresh(() => {
             highlightElementTextByCss(

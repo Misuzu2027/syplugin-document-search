@@ -387,8 +387,9 @@
         blockId: string,
     ) {
         let docTab = await docTabPromise;
-        lastDocumentContentElement = docTab.panelElement
-            .children[1] as HTMLElement;
+        lastDocumentContentElement = docTab.panelElement.querySelector(
+            "div.protyle-content",
+        ) as HTMLElement;
 
         delayedTwiceRefresh(() => {
             let matchFocusRangePromise = highlightElementTextByCss(

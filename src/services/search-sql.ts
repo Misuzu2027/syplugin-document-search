@@ -1,6 +1,6 @@
 import { BlockKeywordCondition, CompareCondition } from "@/config/search-model";
 import { arrayRemoveValue, arraysEqual, isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
-import { isStrEmpty, isStrNotBlank, isStrNotEmpty, isStrNotNull } from "@/utils/string-util";
+import { isStrBlank, isStrEmpty, isStrNotBlank, isStrNotEmpty, isStrNotNull } from "@/utils/string-util";
 
 export class DocumentQueryCriteria {
     includeKeywords: string[];
@@ -227,9 +227,16 @@ export function generateDocumentSearchSql(
             if (!includeTypesD.includes(condition.type)) {
                 includeTypesD.push(condition.type);
             }
-
+        } else {
+            typeSql = generateInConditions("type", includeTypesD);
+            likeSql = generateOrLikeConditions(
+                ` concatContent `,
+                condition.include,
+            );
         }
+
         if (isStrNotBlank(likeSql)) {
+            likeSql = ` ( ${likeSql} ) `;
             existInclude = true;
         }
         if (isStrNotBlank(notLikeSql)) {
@@ -250,9 +257,10 @@ export function generateDocumentSearchSql(
         }
         contentOrLikeSql = `AND ( ${blockKeywordSqlArray.join(" OR ")}  ${extraTypeSql})`;
     }
+    console.log("contentOrLikeSql ", contentOrLikeSql)
 
     let typeInSql = generateAndInConditions("type", includeTypesD);
-
+    typeInSql = " ";
 
     let orders = [];
     if (contentBlockSortMethod == 'type') { // type 类型
@@ -362,7 +370,7 @@ function generateDocumentIdContentTableSql(
     let excludeNotebookIds = queryCriteria.excludeNotebookIds;
 
     let concatDocumentConcatFieldSql = getConcatFieldSql(null, includeConcatFields);
-    let columns = ["root_id", `Max(CASE WHEN type = 'd' THEN ${concatDocumentConcatFieldSql} END) documentContent`]
+    let columns = ["root_id", `Max(CASE WHEN type = 'd' THEN ${concatDocumentConcatFieldSql} END) documentContent`, "GROUP_CONCAT(type,',') GCType"]
     let contentLikeField = concatDocumentConcatFieldSql;
     if (docFullTextSearch) {
         contentLikeField = `GROUP_CONCAT( ${contentLikeField} )`;
@@ -460,6 +468,7 @@ function generateDocumentContentLikeSql(
 
     let columnSql = columns.join(",");
     let typeInSql = generateAndInConditions("type", includeTypes);
+    typeInSql = " ";
     let rootIdInSql = " ";
     let pathLikeSql = " ";
     let pathNotLikeSql = " ";
@@ -496,6 +505,7 @@ function generateDocumentContentLikeSql(
     }
 
     let blockContentSqlArray = [];
+    let includeKeywordTypes = [];
     let notTypeIncludeKeywords = [];
     let notTypeExcludeKeywords = [];
     let orIncludeTypes = [...includeTypes];
@@ -521,11 +531,20 @@ function generateDocumentContentLikeSql(
             typeSql = ` type = '${condition.type}' `;
             orIncludeTypes = arrayRemoveValue(orIncludeTypes, condition.type);
         } else {
+            // typeSql = generateInConditions("type", includeTypes);
+            // likeSql = generateOrLikeConditions(
+            //     ` ${contentLikeFieldTemp} `,
+            //     condition.include,
+            // );
             notTypeIncludeKeywords.push(...condition.include);
             notTypeExcludeKeywords.push(...condition.exclude);
         }
         if (isStrNotBlank(likeSql)) {
             existInclude = true;
+            likeSql = ` ( ${likeSql} ) `;
+            if (isStrNotBlank(condition.type)) {
+                includeKeywordTypes.push(condition.type);
+            }
         }
         if (isStrNotBlank(notLikeSql)) {
             existExlucde = true;
@@ -546,6 +565,14 @@ function generateDocumentContentLikeSql(
         contentLikeSql = `AND ( ${blockContentSqlArray.join(" OR ")}  ${extraTypeSql})`;
     }
 
+
+    let aggregatedTypeCombinationSql = generateTypeLikeCombinationConditions(
+        ` GCType `,
+        includeKeywordTypes,
+    );
+    if (isStrNotBlank(aggregatedTypeCombinationSql)) {
+        aggregatedTypeCombinationSql = ` AND ( ${aggregatedTypeCombinationSql} ) `;
+    }
 
     let aggregatedContentAndLikeSql = generateAndLikeConditions(
         ` ${contentLikeField} `,
@@ -587,6 +614,7 @@ function generateDocumentContentLikeSql(
             root_id 
         HAVING
             1 = 1 
+            ${aggregatedTypeCombinationSql}
             ${aggregatedContentAndLikeSql}
             ${aggregatedContentAndNotLikeSql}
         ${orderSql}
@@ -826,6 +854,25 @@ function generateWhenCombination(columnName: string, keywords: string[], combina
         .join(" OR ");
 
     return ` WHEN ${queryString} THEN`;
+}
+
+
+function generateTypeLikeCombinationConditions(columnName: string, types: string[]): string {
+    if (isStrBlank(columnName) || isArrayEmpty(types)) {
+        return "";
+    }
+    const buildCondition = (type: string): string => {
+        const conditions = [
+            `${columnName} LIKE '%,${type},%'`,   // 包含在中间
+            `${columnName} LIKE '%,${type}'`,     // 包含在末尾
+            `${columnName} LIKE '${type},%'`,     // 包含在开头
+            `${columnName} = '${type}'`           // 单独存在
+        ].join(' OR ')
+        return `( ${conditions} )`;
+    };
+
+    let result = types.map(buildCondition).join(' AND ');
+    return result;
 }
 
 

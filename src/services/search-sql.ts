@@ -196,6 +196,7 @@ export function generateDocumentSearchSql(
     let contentBlockSortMethod = queryCriteria.contentBlockSortMethod;
     let includeTypes = queryCriteria.includeTypes;
     let includeConcatFields = queryCriteria.includeConcatFields;
+    let docFullTextSearch = queryCriteria.docFullTextSearch;
 
     let documentIdContentTableSql
         = generateDocumentIdContentTableSql(queryCriteria);
@@ -205,62 +206,70 @@ export function generateDocumentSearchSql(
     // 在查询块的时候，无论如何都需要包含文档块类型，否则不知道文档信息
     let includeTypesD: string[] = [...includeTypes, 'd'];
 
-    let blockKeywordSqlArray = [];
-    let orIncludeTypes = [...includeTypes];
-    let existExlucde = false;
-    let existInclude = false;
-    // console.log("blockKeywordCondition ", blockKeywordCondition)
-    for (const condition of blockKeywordCondition) {
-        let likeSql = generateAndLikeConditions(
-            ` concatContent `,
-            condition.include,
-        );
-        let notLikeSql = generateAndNotLikeConditions(
-            ` concatContent `,
-            condition.exclude,
-        );
+    // let blockKeywordSqlArray = [];
+    // let orIncludeTypes = [...includeTypes];
+    // let existInclude = false;
+    // let existExlucde = false;
+    // for (const condition of blockKeywordCondition) {
+    //     let likeSql = generateOrLikeConditions(
+    //         ` concatContent `,
+    //         condition.include,
+    //     );
+    //     if (!docFullTextSearch) {
+    //         likeSql = generateAndLikeConditions(
+    //             ` concatContent `,
+    //             condition.include,
+    //         );
+    //     }
+    //     let notLikeSql = generateAndNotLikeConditions(
+    //         ` concatContent `,
+    //         condition.exclude,
+    //     );
 
-        let typeSql = ``;
-        if (isStrNotBlank(condition.type)) {
-            typeSql = ` type = '${condition.type}' `;
-            orIncludeTypes = arrayRemoveValue(orIncludeTypes, condition.type);
-            if (!includeTypesD.includes(condition.type)) {
-                includeTypesD.push(condition.type);
-            }
-        } else {
-            typeSql = generateInConditions("type", includeTypesD);
-            likeSql = generateOrLikeConditions(
-                ` concatContent `,
-                condition.include,
-            );
-        }
+    //     let typeSql = ``;
+    //     if (isStrNotBlank(condition.type)) {
+    //         typeSql = ` type = '${condition.type}' `;
+    //         orIncludeTypes = arrayRemoveValue(orIncludeTypes, condition.type);
+    //         if (!includeTypesD.includes(condition.type)) {
+    //             includeTypesD.push(condition.type);
+    //         }
+    //     } else {
+    //         typeSql = generateInConditions("type", includeTypesD);
+    //     }
+    //     if (isStrNotBlank(likeSql)) {
+    //         likeSql = ` ( ${likeSql} ) `;
+    //         existInclude = true;
+    //     }
+    //     if (isStrNotBlank(notLikeSql)) {
+    //         // 如果一个类型只存在排除，比如 @tp段子 -@th作品 。
+    //         // 结果应该是只显示 or (type = 'p' and (content like '%段子%')) 的内容，
+    //         // 如果单独加上 or (type = 'h' and content not like '%作品%')  这个判断，会把所有不包含 '作品' 的标题展示出来。
+    //         // 所以如果想要显示上面结果，合理的语法应该是 ：`-@th作品 @tpcv @th`
+    //         if (isStrBlank(likeSql)) {
+    //             continue
+    //         }
+    //         existExlucde = true;
+    //     }
 
-        if (isStrNotBlank(likeSql)) {
-            likeSql = ` ( ${likeSql} ) `;
-            existInclude = true;
-        }
-        if (isStrNotBlank(notLikeSql)) {
-            existExlucde = true;
-        }
-        const conditions = [typeSql, likeSql, notLikeSql].filter(isStrNotBlank);
-        if (isArrayNotEmpty(conditions)) {
-            const result = conditions.join(" AND ");
-            blockKeywordSqlArray.push(`( ${result} )`)
-        }
-    }
-    let contentOrLikeSql = "";
-    if (isArrayNotEmpty(blockKeywordSqlArray)) {
-        let extraTypeSql = "";
-        // 只存在排除，不存在包含，就加上或则排除之外的类型。
-        if (existExlucde && !existInclude && !arraysEqual(orIncludeTypes, includeTypes)) {
-            extraTypeSql = ` OR (  ${generateInConditions("type", orIncludeTypes)} )`;
-        }
-        contentOrLikeSql = `AND ( ${blockKeywordSqlArray.join(" OR ")}  ${extraTypeSql})`;
-    }
-    console.log("contentOrLikeSql ", contentOrLikeSql)
+    //     const conditions = [typeSql, likeSql, notLikeSql].filter(isStrNotBlank);
+    //     if (isArrayNotEmpty(conditions)) {
+    //         const result = conditions.join(" AND ");
+    //         blockKeywordSqlArray.push(`( ${result} )`)
+    //     }
+    // }
+    // let blockTypeContentSql = "";
+    // if (isArrayNotEmpty(blockKeywordSqlArray)) {
+    //     let extraTypeSql = "";
+    //     // 只存在排除，不存在包含，就加上或则排除之外的类型。
+    //     if (existExlucde && !existInclude && !arraysEqual(orIncludeTypes, includeTypes)) {
+    //         extraTypeSql = ` OR (  ${generateInConditions("type", orIncludeTypes)} )`;
+    //     }
+    //     blockTypeContentSql = `AND ( ${blockKeywordSqlArray.join(" OR ")}  ${extraTypeSql})`;
+    // }
+    let blockTypeContentSql = generateBlockTypeAndContentSql(" concatContent ", includeTypes, docFullTextSearch, blockKeywordCondition);
+    console.log("blockTypeContentSql ", blockTypeContentSql)
 
     let typeInSql = generateAndInConditions("type", includeTypesD);
-    typeInSql = " ";
 
     let orders = [];
     if (contentBlockSortMethod == 'type') { // type 类型
@@ -301,7 +310,7 @@ export function generateDocumentSearchSql(
                 id IN (${documentTableIdPageSql})
                 OR (
                     root_id IN (${documentTableIdPageSql})
-                    ${contentOrLikeSql} 
+                    ${blockTypeContentSql} 
                 )
             )
         ${orderSql}
@@ -333,9 +342,9 @@ export function generateDocumentCountSql(queryCriteria: DocumentQueryCriteria) {
     // let orderCaseCombinationSql = generateOrderCaseCombination("documentContent", keywords) + " ASC ";
     // let orders = [orderCaseCombinationSql];
     let contentLikeField = "documentContent";
-    if (docFullTextSearch) {
-        contentLikeField = `GROUP_CONCAT( ${contentLikeField} )`;
-    }
+    // if (docFullTextSearch) {
+    //     contentLikeField = `( ${contentLikeField} )`;
+    // }
     let pages = [1, 99999999];
     let documentContentLikeCountSql = generateDocumentContentLikeSql(
         columns, includeKeywords, excludeKeywords,
@@ -370,10 +379,12 @@ function generateDocumentIdContentTableSql(
     let excludeNotebookIds = queryCriteria.excludeNotebookIds;
 
     let concatDocumentConcatFieldSql = getConcatFieldSql(null, includeConcatFields);
-    let columns = ["root_id", `Max(CASE WHEN type = 'd' THEN ${concatDocumentConcatFieldSql} END) documentContent`, "GROUP_CONCAT(type,',') GCType"]
     let contentLikeField = concatDocumentConcatFieldSql;
+    let columns = ["root_id"]
     if (docFullTextSearch) {
-        contentLikeField = `GROUP_CONCAT( ${contentLikeField} )`;
+        columns.push(`Max(CASE WHEN type = 'd' THEN ${concatDocumentConcatFieldSql} END) documentContent`);
+    } else {
+        columns.push(`(SELECT ( content || tag || alias || memo || name )  FROM blocks WHERE id = b.root_id) documentContent`);
     }
 
     let orders = [];
@@ -429,9 +440,9 @@ function generateDocumentIdTableSql(
     let concatDocumentConcatFieldSql = getConcatFieldSql(null, includeConcatFields);
     let columns = ["root_id"]
     let contentLikeField = concatDocumentConcatFieldSql;
-    if (docFullTextSearch) {
-        contentLikeField = `GROUP_CONCAT( ${contentLikeField} )`;
-    }
+    // if (docFullTextSearch) {
+    //     contentLikeField = `( ${contentLikeField} )`;
+    // }
 
 
     let orders = [];
@@ -468,7 +479,7 @@ function generateDocumentContentLikeSql(
 
     let columnSql = columns.join(",");
     let typeInSql = generateAndInConditions("type", includeTypes);
-    typeInSql = " ";
+    // typeInSql = " ";
     let rootIdInSql = " ";
     let pathLikeSql = " ";
     let pathNotLikeSql = " ";
@@ -503,91 +514,25 @@ function generateDocumentContentLikeSql(
     if (isArrayNotEmpty(updatedTimeArray)) {
         updatedTimeWhereSql = ` AND ${generateAndNumberConditions("updated", updatedTimeArray)} `;
     }
+    let blockTypeContentSql = " ";
 
-    let blockContentSqlArray = [];
-    let includeKeywordTypes = [];
-    let notTypeIncludeKeywords = [];
-    let notTypeExcludeKeywords = [];
-    let orIncludeTypes = [...includeTypes];
-    let existExlucde = false;
-    let existInclude = false;
-    let contentLikeFieldTemp = contentLikeField.replace("GROUP_CONCAT", "");
-    for (const condition of blockKeyWordConditionArray) {
-        // 必须存在type才能放入这里，否则聚合查询的时候，因为这里过滤掉了，聚合查询反而会出问题
-        let likeSql = null;
-        let notLikeSql = null;
-
-        let typeSql = ``;
-        if (isStrNotBlank(condition.type)) {
-            likeSql = generateAndLikeConditions(
-                ` ${contentLikeFieldTemp} `,
-                condition.include,
-            );
-            notLikeSql = generateAndNotLikeConditions(
-                ` ${contentLikeFieldTemp} `,
-                condition.exclude,
-            );
-
-            typeSql = ` type = '${condition.type}' `;
-            orIncludeTypes = arrayRemoveValue(orIncludeTypes, condition.type);
-        } else {
-            // typeSql = generateInConditions("type", includeTypes);
-            // likeSql = generateOrLikeConditions(
-            //     ` ${contentLikeFieldTemp} `,
-            //     condition.include,
-            // );
-            notTypeIncludeKeywords.push(...condition.include);
-            notTypeExcludeKeywords.push(...condition.exclude);
-        }
-        if (isStrNotBlank(likeSql)) {
-            existInclude = true;
-            likeSql = ` ( ${likeSql} ) `;
-            if (isStrNotBlank(condition.type)) {
-                includeKeywordTypes.push(condition.type);
-            }
-        }
-        if (isStrNotBlank(notLikeSql)) {
-            existExlucde = true;
-        }
-        const conditions = [typeSql, likeSql, notLikeSql].filter(isStrNotBlank);
-        if (isArrayNotEmpty(conditions)) {
-            const result = conditions.join(" AND ");
-            blockContentSqlArray.push(`( ${result} )`)
-        }
-    }
-    let contentLikeSql = " ";
-    if (isArrayNotEmpty(blockContentSqlArray)) {
-        let extraTypeSql = "";
-        // 只存在排除，不存在包含，就加上或则排除之外的类型。
-        if (existExlucde && !existInclude) {
-            extraTypeSql = ` OR (  ${generateInConditions("type", orIncludeTypes)} )`;
-        }
-        contentLikeSql = `AND ( ${blockContentSqlArray.join(" OR ")}  ${extraTypeSql})`;
-    }
-
-
-    let aggregatedTypeCombinationSql = generateTypeLikeCombinationConditions(
-        ` GCType `,
-        includeKeywordTypes,
-    );
-    if (isStrNotBlank(aggregatedTypeCombinationSql)) {
-        aggregatedTypeCombinationSql = ` AND ( ${aggregatedTypeCombinationSql} ) `;
-    }
-
-    let aggregatedContentAndLikeSql = generateAndLikeConditions(
-        ` ${contentLikeField} `,
-        notTypeIncludeKeywords,
-    );
-    if (isStrNotBlank(aggregatedContentAndLikeSql)) {
-        aggregatedContentAndLikeSql = ` AND ( ${aggregatedContentAndLikeSql} ) `;
-    }
-
-    let aggregatedContentAndNotLikeSql = generateAndNotLikeConditions(
-        ` ${contentLikeField} `,
-        notTypeExcludeKeywords,
-    );
-    if (isStrNotBlank(aggregatedContentAndNotLikeSql)) {
-        aggregatedContentAndNotLikeSql = ` AND ( ${aggregatedContentAndNotLikeSql} ) `;
+    if (docFullTextSearch) {
+        blockTypeContentSql = generateDocumentTypeAndContentSql(contentLikeField, blockKeyWordConditionArray)
+        // let blockTypeContentLikeSqlArray = [];
+        // for (const condition of blockKeyWordConditionArray) {
+        //     let type = condition.type;
+        //     for (const keyword of condition.include) {
+        //         blockTypeContentLikeSqlArray.push(generateTypeAndGroupConcatContentLikeSql(type, contentLikeField, keyword, true));
+        //     }
+        //     for (const keyword of condition.exclude) {
+        //         blockTypeContentLikeSqlArray.push(generateTypeAndGroupConcatContentLikeSql(type, contentLikeField, keyword, false));
+        //     }
+        // }
+        // if (isArrayNotEmpty(blockTypeContentLikeSqlArray)) {
+        //     blockTypeContentSql = " AND " + blockTypeContentLikeSqlArray.join(' AND ');
+        // }
+    } else {
+        blockTypeContentSql = generateBlockTypeAndContentSql(contentLikeField, includeTypes, false, blockKeyWordConditionArray)
     }
 
     let orderSql = generateOrderSql(orders);
@@ -598,7 +543,7 @@ function generateDocumentContentLikeSql(
         sql = `  
         SELECT ${columnSql} 
         FROM
-            blocks 
+            blocks b
         WHERE
             1 = 1 
             ${typeInSql}
@@ -609,14 +554,11 @@ function generateDocumentContentLikeSql(
             ${pathNotLikeSql}
             ${createdTimeWhereSql}
             ${updatedTimeWhereSql}
-            ${contentLikeSql}
         GROUP BY
             root_id 
         HAVING
             1 = 1 
-            ${aggregatedTypeCombinationSql}
-            ${aggregatedContentAndLikeSql}
-            ${aggregatedContentAndNotLikeSql}
+            ${blockTypeContentSql}
         ${orderSql}
         ${limitSql}
     `;
@@ -624,7 +566,7 @@ function generateDocumentContentLikeSql(
         sql = `  
         SELECT ${columnSql} 
         FROM
-            blocks 
+            blocks b
         WHERE
             1 = 1 
             ${typeInSql}
@@ -635,9 +577,7 @@ function generateDocumentContentLikeSql(
             ${pathNotLikeSql}
             ${createdTimeWhereSql}
             ${updatedTimeWhereSql}
-            ${contentLikeSql}
-            ${aggregatedContentAndLikeSql}
-            ${aggregatedContentAndNotLikeSql}
+            ${blockTypeContentSql}
             
         GROUP BY
             root_id 
@@ -796,6 +736,128 @@ function generateAndNumberConditions(
     const result = conditions.join(" AND ");
 
     return result;
+}
+
+
+
+function generateDocumentTypeAndContentSql(
+    fieldName: string,
+    blockKeyWordConditionArray: BlockKeywordCondition[]
+) {
+    let blockTypeContentSql = "";
+    let blockTypeContentLikeSqlArray = [];
+    for (const condition of blockKeyWordConditionArray) {
+        let type = condition.type;
+        for (const keyword of condition.include) {
+            blockTypeContentLikeSqlArray.push(generateTypeAndGroupConcatContentLikeSql(type, fieldName, keyword, true));
+        }
+        for (const keyword of condition.exclude) {
+            blockTypeContentLikeSqlArray.push(generateTypeAndGroupConcatContentLikeSql(type, fieldName, keyword, false));
+        }
+    }
+    if (isArrayNotEmpty(blockTypeContentLikeSqlArray)) {
+        blockTypeContentSql = " AND " + blockTypeContentLikeSqlArray.join(' AND ');
+    }
+    return blockTypeContentSql;
+}
+
+function generateTypeAndGroupConcatContentLikeSql(
+    type: string | undefined,
+    field: string,
+    // fieldGroupConcat: boolean,
+    keyword: string,
+    include: boolean
+): string {
+    // 1. 包含 & 不存在关键字：显示所有类型的块 
+    // 2. 包含 & 存在关键字：显示指定类型匹配关键字的块
+    // 3. 不包含 & 不存在关键字：排除有这个类型的块和文档。
+    // 4. 不包含 & 存在关键字：排除这个类型匹配关键字的块。
+
+    let concatExpr = type
+        ? `GROUP_CONCAT(CASE WHEN type = '${type}' THEN ${field} END)`
+        : `GROUP_CONCAT(${field})`;
+    // if (fieldGroupConcat) {
+    // concatExpr = ` GROUP_CONCAT${concatExpr} `
+    // }
+
+    const operator = include ? 'LIKE' : 'NOT LIKE';
+    let operatorKeyword = `${operator} '%${keyword}%'`;
+    if (isStrBlank(keyword)) {
+        if (include) {
+            operatorKeyword = "IS NOT NULL";
+        } else {
+            operatorKeyword = "IS NULL";
+        }
+    }
+    return `${concatExpr} ${operatorKeyword}`;
+
+}
+
+function generateBlockTypeAndContentSql(
+    fieldName: string,
+    includeTypes: string[],
+    docFullTextSearch: boolean,
+    blockKeyWordConditionArray: BlockKeywordCondition[]
+): string {
+    let blockKeywordSqlArray = [];
+    let includeTypesD: string[] = [...includeTypes, 'd'];
+    let orIncludeTypes = [...includeTypes];
+    let existInclude = false;
+    let existExlucde = false;
+    for (const condition of blockKeyWordConditionArray) {
+        let likeSql = generateOrLikeConditions(
+            ` ${fieldName} `,
+            condition.include,
+        );
+        if (!docFullTextSearch) {
+            likeSql = generateAndLikeConditions(
+                ` ${fieldName} `,
+                condition.include,
+            );
+        }
+        let notLikeSql = generateAndNotLikeConditions(
+            ` ${fieldName} `,
+            condition.exclude,
+        );
+
+        let typeSql = ``;
+        if (isStrNotBlank(condition.type)) {
+            typeSql = ` type = '${condition.type}' `;
+            orIncludeTypes = arrayRemoveValue(orIncludeTypes, condition.type);
+        } else {
+            typeSql = generateInConditions("type", includeTypesD);
+        }
+        if (isStrNotBlank(likeSql)) {
+            likeSql = ` ( ${likeSql} ) `;
+            existInclude = true;
+        }
+        if (isStrNotBlank(notLikeSql)) {
+            // 如果一个类型只存在排除，比如 @tp段子 -@th作品 。
+            // 结果应该是只显示 or (type = 'p' and (content like '%段子%')) 的内容，
+            // 如果单独加上 or (type = 'h' and content not like '%作品%')  这个判断，会把所有不包含 '作品' 的标题展示出来。
+            // 所以如果想要显示上面结果，合理的语法应该是 ：`-@th作品 @tpcv @th`
+            if (isStrBlank(likeSql)) {
+                continue
+            }
+            existExlucde = true;
+        }
+
+        const conditions = [typeSql, likeSql, notLikeSql].filter(isStrNotBlank);
+        if (isArrayNotEmpty(conditions)) {
+            const result = conditions.join(" AND ");
+            blockKeywordSqlArray.push(`( ${result} )`)
+        }
+    }
+    let blockTypeContentSql = "";
+    if (isArrayNotEmpty(blockKeywordSqlArray)) {
+        let extraTypeSql = "";
+        // 只存在排除，不存在包含，就加上或则排除之外的类型。
+        if (existExlucde && !existInclude && !arraysEqual(orIncludeTypes, includeTypes)) {
+            extraTypeSql = ` OR (  ${generateInConditions("type", orIncludeTypes)} )`;
+        }
+        blockTypeContentSql = `AND ( ${blockKeywordSqlArray.join(" OR ")}  ${extraTypeSql})`;
+    }
+    return blockTypeContentSql;
 }
 
 

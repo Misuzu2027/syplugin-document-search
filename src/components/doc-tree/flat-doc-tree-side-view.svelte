@@ -30,7 +30,6 @@
     import { SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
     import { getFileArialLabel } from "@/components/doc-tree/doc-tree-util";
     import { isElementHidden } from "@/utils/html-util";
-    import { splitKeywordStringToArray } from "@/utils/string-util";
     import {
         clearSyFileTreeItemFocus,
         determineOpenTabPosition,
@@ -39,6 +38,7 @@
     } from "@/utils/siyuan-util";
     import { hasClosestByTag } from "@/lib/siyuan/hasClosest";
     import { isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
+    import { isStrNotBlank } from "@/utils/string-util";
 
     let rootElement: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
@@ -46,6 +46,7 @@
     let inputChangeTimeoutId;
     let isSearching: number = 0;
     let searchInputKey: string = "";
+    let lastIncludeKeywords: string[] = [];
     let documentItems: DocumentTreeItemInfo[] = [];
     let flatDocTreeSortMethod: DocumentSortMethod = "modifiedDesc";
     let flatDocFullTextSearch: boolean = false;
@@ -240,8 +241,8 @@
         // 优化定位，搜索出来打开，第一次打开不定位，这样默认会是上一次的界面，防止一点开就定位到开头。;
         // 如果被查找节点不是聚焦状态，节点文档是当前查看文档，节点的文档element 存在，文档element 包含查找的节点
         let activeDocTab = getActiveTab();
-        let lastKeywords = splitKeywordStringToArray(searchInputKey);
-        if (isArrayNotEmpty(lastKeywords) && activeDocTab) {
+
+        if (isArrayNotEmpty(lastIncludeKeywords) && activeDocTab) {
             let activeDocContentElement = activeDocTab.querySelector(
                 "div.protyle-content",
             ) as HTMLElement;
@@ -251,7 +252,7 @@
             if (activeNodeId == blockId) {
                 let matchFocusRangePromise = highlightElementTextByCss(
                     activeDocContentElement,
-                    lastKeywords,
+                    lastIncludeKeywords,
                     null,
                     previewProtyleMatchFocusIndex,
                 );
@@ -279,8 +280,7 @@
     }
 
     async function afterOpenDocTab(docTabPromise: Promise<ITab>) {
-        let lastKeywords = splitKeywordStringToArray(searchInputKey);
-        if (isArrayEmpty(lastKeywords)) {
+        if (isArrayEmpty(lastIncludeKeywords)) {
             return;
         }
         previewProtyleMatchFocusIndex = -1;
@@ -292,7 +292,7 @@
         delayedTwiceRefresh(() => {
             highlightElementTextByCss(
                 lastDocumentContentElement,
-                lastKeywords,
+                lastIncludeKeywords,
                 null,
                 null,
             );
@@ -394,6 +394,7 @@
 
         let documentListSql = generateDocumentListSql(queryCriteria);
         let documentSearchResults: any[] = await sql(documentListSql);
+        lastIncludeKeywords = includeKeywords;
         documentItems = await processQueryResults(
             documentSearchResults,
             queryCriteria,
@@ -514,11 +515,14 @@
         return selectedItem;
     }
     function handleSearchInputChange(event) {
-        let inputValue = event.target.value;
-        if (searchInputKey == inputValue) {
+        let inputValue = event.target.value as string;
+        if (
+            isStrNotBlank(searchInputKey) &&
+            isStrNotBlank(inputValue) &&
+            searchInputKey.trim() == inputValue.trim()
+        ) {
             return;
         }
-
         // 更新输入值
         searchInputKey = inputValue;
         // 清除之前的定时器
@@ -527,6 +531,16 @@
         inputChangeTimeoutId = setTimeout(() => {
             refreshFileTree(inputValue, 1);
         }, 450);
+    }
+
+    function handleSearchInputKeydown(event) {
+        // 检测回车键
+        console.log("handleSearchInputKeydown event.key ", event.key);
+        if (event.key === "Enter" || event.keyCode === 13) {
+            event.preventDefault();
+
+            refreshFileTree(searchInputKey, 1);
+        }
     }
 
     function clearDocumentSearchInput() {
@@ -687,6 +701,7 @@
                     class="b3-text-field b3-text-field--text"
                     style="padding-right: 32px !important;"
                     on:input={handleSearchInputChange}
+                    on:keydown={handleSearchInputKeydown}
                     bind:value={searchInputKey}
                 />
                 <svg

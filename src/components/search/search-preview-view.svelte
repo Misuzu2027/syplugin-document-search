@@ -31,6 +31,7 @@
     } from "@/components/search/search-util";
     import { handleSearchDragMousdown } from "@/lib/SearchUtil";
     import { getBlockIsFolded, getNotebookMapByApi } from "@/utils/api";
+    import { isStrNotBlank } from "@/utils/string-util";
 
     export let currentTab: Custom;
 
@@ -199,11 +200,15 @@
     }
 
     function handleSearchInputChange(event) {
-        let inputValue = event.target.value;
-        if (searchInputKey == inputValue) {
+        let inputValue = event.target.value as string;
+
+        if (
+            isStrNotBlank(searchInputKey) &&
+            isStrNotBlank(inputValue) &&
+            searchInputKey.trim() == inputValue.trim()
+        ) {
             return;
         }
-
         // 更新输入值
         searchInputKey = inputValue;
         // 清除之前的定时器
@@ -212,6 +217,16 @@
         inputChangeTimeoutId = setTimeout(() => {
             refreshSearch(inputValue, 1);
         }, 450);
+    }
+
+    function handleSearchInputKeydown(event) {
+        // 检测回车键
+        console.log("handleSearchInputKeydown event.key ", event.key);
+        if (event.key === "Enter" || event.keyCode === 13) {
+            event.preventDefault();
+
+            refreshSearch(searchInputKey, 1);
+        }
     }
 
     function pageTurning(page: number) {
@@ -678,6 +693,7 @@
                 class="b3-text-field b3-text-field--text"
                 style="padding-right: 32px !important;"
                 on:input={handleSearchInputChange}
+                on:keydown={handleSearchInputKeydown}
                 bind:value={searchInputKey}
             />
             <svg

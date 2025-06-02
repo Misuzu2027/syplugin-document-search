@@ -6,7 +6,8 @@ export interface CompareCondition {
 }
 
 export interface BlockKeywordCondition {
-    type?: BlockType; 
+    type?: BlockType;
+    subType?: BlockSubType;
     include: string[];
     exclude: string[];
 }

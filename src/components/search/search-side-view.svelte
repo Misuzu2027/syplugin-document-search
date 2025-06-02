@@ -101,6 +101,35 @@
     function handleKeyDownDefault() {}
 
     function handleKeyDownSelectItem(event: KeyboardEvent) {
+        let keydownKey = event.key;
+
+        if (event.altKey && keydownKey === "r") {
+            event.preventDefault();
+            event.stopPropagation();
+
+            docFullTextSearchChange();
+        } else if (event.ctrlKey && keydownKey == "ArrowUp") {
+            event.preventDefault();
+            event.stopPropagation();
+            clickCollapseAll();
+            return;
+        } else if (event.ctrlKey && keydownKey == "ArrowDown") {
+            event.preventDefault();
+            event.stopPropagation();
+            clickExpandAll();
+            return;
+        } else if (event.altKey && keydownKey == "ArrowLeft") {
+            event.preventDefault();
+            event.stopPropagation();
+            pageTurning(curPage - 1);
+            return;
+        } else if (event.altKey && keydownKey == "ArrowRight") {
+            event.preventDefault();
+            event.stopPropagation();
+            pageTurning(curPage + 1);
+            return;
+        }
+
         let selectedBlockItem = selectItemByArrowKeys(
             event,
             selectedItemIndex,
@@ -114,17 +143,10 @@
             expandSelectedItemDocument(selectedBlockItem);
             scrollToSelectedBlock(selectedBlockItem);
 
-            if (event.key === "Enter") {
+            if (keydownKey === "Enter") {
                 let block = selectedBlockItem.block;
                 openBlockTab(block.id, block.root_id);
             }
-        }
-
-        if (event.altKey && event.key === "r") {
-            event.preventDefault();
-            event.stopPropagation();
-
-            docFullTextSearchChange();
         }
     }
 
@@ -134,24 +156,25 @@
         if (!selectedItem || !documentItemSearchResult) {
             return;
         }
-        // 响应式有延迟，需要自己修改一下类样式。。。
-        let itemElements = rootElement.querySelectorAll(
-            `div[data-type="search-item"][data-root-id="${selectedItem.block.root_id}"]`,
-        );
-        itemElements.forEach((element) => {
-            element.classList.remove("fn__none");
-        });
         for (const item of documentItemSearchResult) {
             if (!item.isCollapsed) {
                 continue;
             }
-            if (item == selectedItem) {
-                item.isCollapsed = false;
-                return;
-            }
+            // if (item == selectedItem) {
+            //     item.isCollapsed = false;
+            //     return;
+            // }
             for (const subItem of item.subItems) {
-                if (subItem == selectedItem) {
+                if (subItem != item && subItem == selectedItem) {
                     item.isCollapsed = false;
+                    
+                    // 响应式有延迟，需要自己修改一下类样式。。。
+                    let itemElements = rootElement.querySelectorAll(
+                        `div[data-type="search-item"][data-root-id="${selectedItem.block.root_id}"]`,
+                    );
+                    itemElements.forEach((element) => {
+                        element.classList.remove("fn__none");
+                    });
                     return;
                 }
             }
@@ -170,7 +193,7 @@
             `div[data-type="search-item"][data-node-id="${selectedItem.block.id}"]`,
         ) as HTMLElement;
 
-        if (!focusItem) {
+        if (!focusItem || focusItem.classList.contains("fn__none")) {
             focusItem = rootElement.querySelector(
                 `div.b3-list-item[data-node-id="${selectedItem.block.id}"]`,
             ) as HTMLElement;
@@ -180,7 +203,6 @@
             return;
         }
 
-        // console.log("focusItem.offsetTop", focusItem.offsetTop);
         let scrollTop =
             focusItem.offsetTop - searchResultListElement.clientHeight / 2;
         if (focusItem.offsetTop > scrollTop) {
@@ -212,7 +234,7 @@
 
     function handleSearchInputKeydown(event) {
         // 检测回车键
-        console.log("handleSearchInputKeydown event.key ", event.key);
+        // console.log("handleSearchInputKeydown event.key ", event.key);
         if (event.key === "Enter" || event.keyCode === 13) {
             event.preventDefault();
 
@@ -247,7 +269,6 @@
             pageNum,
         );
 
-        console.log("refreshSearch ", documentQueryCriteria);
         if (documentQueryCriteria) {
             if (isSearchInCurrentDoc && EnvConfig.ins.lastViewedDocId) {
                 // 使用在当前文档搜索的时候，强制修改排序方式为原文排序

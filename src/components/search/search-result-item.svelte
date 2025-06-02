@@ -6,9 +6,10 @@
         blockItemsSort,
         blockSortSubMenu,
     } from "@/components/search/search-util";
-    import { MenuItem } from "@/lib/Menu";
+    import { MenuItem } from "@/lib/siyuan/menus/Menu";
     import { EnvConfig } from "@/config/env-config";
     import { SettingConfig } from "@/services/setting-config";
+    import { copySubMenu } from "@/lib/siyuan/menus/commonMenuItem";
 
     export let documentItemSearchResult: DocumentItem[];
     export let clickCallback: (event, item: BlockItem) => void;
@@ -105,6 +106,15 @@
         window.siyuan.menus.menu.remove();
         window.siyuan.menus.menu.append(
             new MenuItem({
+                id: "copy",
+                icon: "iconCopy",
+                label: window.siyuan.languages.copy,
+                type: "submenu",
+                submenu: copySubMenu([documentItem.block.id]),
+            }).element,
+        );
+        window.siyuan.menus.menu.append(
+            new MenuItem({
                 label: EnvConfig.ins.i18n.sort,
                 type: "submenu",
                 submenu: blockSortSubMenu(
@@ -113,6 +123,7 @@
                 ),
             }).element,
         );
+
         window.siyuan.menus.menu.append(
             new MenuItem({
                 label: window.siyuan.languages.openBy,

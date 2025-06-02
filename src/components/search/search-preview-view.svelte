@@ -102,6 +102,35 @@
     function handleKeyDownDefault() {}
 
     function handleKeyDownSelectItem(event: KeyboardEvent) {
+        let keydownKey = event.key;
+
+        if (event.altKey && keydownKey === "r") {
+            event.preventDefault();
+            event.stopPropagation();
+
+            docFullTextSearchChange();
+        } else if (event.ctrlKey && keydownKey == "ArrowUp") {
+            event.preventDefault();
+            event.stopPropagation();
+            clickCollapseAll();
+            return;
+        } else if (event.ctrlKey && keydownKey == "ArrowDown") {
+            event.preventDefault();
+            event.stopPropagation();
+            clickExpandAll();
+            return;
+        } else if (event.altKey && keydownKey == "ArrowLeft") {
+            event.preventDefault();
+            event.stopPropagation();
+            pageTurning(curPage - 1);
+            return;
+        } else if (event.altKey && keydownKey == "ArrowRight") {
+            event.preventDefault();
+            event.stopPropagation();
+            pageTurning(curPage + 1);
+            return;
+        }
+
         let selectedItem = selectItemByArrowKeys(
             event,
             selectedItemIndex,
@@ -128,13 +157,6 @@
                 openBlockTab(selectedItem.block.id);
             }
         }
-
-        if (event.altKey && event.key === "r") {
-            event.preventDefault();
-            event.stopPropagation();
-
-            docFullTextSearchChange();
-        }
     }
 
     function expandSelectedItemDocument(
@@ -143,24 +165,25 @@
         if (!selectedItem || !documentItemSearchResult) {
             return;
         }
-        // 响应式有延迟，需要自己修改一下类样式。。。
-        let itemElements = element.querySelectorAll(
-            `div[data-type="search-item"][data-root-id="${selectedItem.block.root_id}"]`,
-        );
-        itemElements.forEach((element) => {
-            element.classList.remove("fn__none");
-        });
         for (const item of documentItemSearchResult) {
             if (!item.isCollapsed) {
                 continue;
             }
-            if (item == selectedItem) {
-                item.isCollapsed = false;
-                return;
-            }
+            // if (item == selectedItem) {
+            //     item.isCollapsed = false;
+            //     return;
+            // }
             for (const subItem of item.subItems) {
                 if (subItem == selectedItem) {
                     item.isCollapsed = false;
+
+                    // 响应式有延迟，需要自己修改一下类样式。。。
+                    let itemElements = element.querySelectorAll(
+                        `div[data-type="search-item"][data-root-id="${selectedItem.block.root_id}"]`,
+                    );
+                    itemElements.forEach((element) => {
+                        element.classList.remove("fn__none");
+                    });
                     return;
                 }
             }

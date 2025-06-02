@@ -1,6 +1,6 @@
 import { DocumentItem, BlockItem, DocumentSqlQueryModel, BlockCriteria as CustomBlockCriteria, CompareCondition } from "@/config/search-model";
 import { SETTING_CONTENT_BLOCK_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
-import { DocumentQueryCriteria, generateDocumentSearchSql } from "@/services/search-sql";
+import { DocumentQueryCriteria, generateCurDocumentSearchSql, generateDocumentSearchSql } from "@/services/search-sql";
 import { SettingConfig } from "@/services/setting-config";
 import { getBlockIsFolded, getBlockIndex, getBlocksIndexes, sql, getNotebookMapByApi } from "@/utils/api";
 import { highlightBlockContent } from "@/utils/html-util";
@@ -51,6 +51,34 @@ export async function getDocumentSearchResult(documentSearchCriterion: DocumentQ
     return result;
 }
 
+
+
+export async function getCurDocumentSearchResult(documentSearchCriterion: DocumentQueryCriteria): Promise<BlockItem[]> {
+    const startTime = performance.now(); // 记录开始时间
+    
+
+    if (!documentSearchCriterion) {
+        // result.status = "param_null";
+        return null;
+    }
+
+    let documentSearchSql = generateCurDocumentSearchSql(
+        documentSearchCriterion,
+    );
+    let documentSearchResults: any[] = await sql(documentSearchSql);
+    // let documentItems: DocumentItem[] = await processSearchResults(
+    //     documentSearchResults,
+    //     documentSearchCriterion,
+    // );
+
+    const endTime = performance.now(); // 记录结束时间
+    const executionTime = endTime - startTime; // 计算时间差
+    console.log(
+        `获取和处理搜索结果消耗时间 : ${executionTime} ms, 内容大小 : ${getObjectSizeInKB(documentSearchResults)}`,
+    );
+    return documentSearchResults;
+}
+
 export function getNodeId(node: Node | null): string | null {
     if (!node) {
         return null;
@@ -95,19 +123,6 @@ export function getRangeByElement(element: Element): Range {
     return elementRange;
 }
 
-
-// export async function getNotebookMapByApi(showClosed: boolean): Promise<Map<string, Notebook>> {
-//     let notebookMap: Map<string, Notebook> = new Map();
-//     let notebooks: Notebook[] = (await lsNotebooks()).notebooks;
-//     for (const notebook of notebooks) {
-//         if (!showClosed && notebook.closed) {
-//             continue;
-//         }
-//         notebook.icon = getNotebookIcon(notebook.icon);
-//         notebookMap.set(notebook.id, notebook);
-//     }
-//     return notebookMap;
-// }
 
 
 export async function processSearchResults(
@@ -643,6 +658,9 @@ function calculateBlockRank(block: Block): number {
     let includeAttrFields = SettingConfig.ins.includeAttrFields;
     let rank = block.content.split("<mark>").length - 1;
 
+    if (isStrNotBlank(block.tag)) {
+        rank += block.tag.split("<mark>").length - 1;
+    }
     if (includeAttrFields.includes("name")) {
         rank += block.name.split("<mark>").length - 1;
     }
@@ -1049,48 +1067,6 @@ export const blockSortSubMenu = (documentItem: DocumentItem, sortCallback: Funct
         })
     }
     return menus;
-
-    // return [{
-    //     label: "类型",
-    //     click: () => {
-    //         sortCallback(documentItem, "type")
-    //     }
-    // }, {
-    //     label: "按原文内容顺序",
-    //     click: () => {
-    //         sortCallback(documentItem, "content")
-    //     }
-    // }, {
-    //     label: "相关度升序",
-    //     click: () => {
-    //         sortCallback(documentItem, "rankAsc")
-    //     }
-    // }, {
-    //     label: "相关度降序",
-    //     click: () => {
-    //         sortCallback(documentItem, "rankDesc")
-    //     }
-    // }, {
-    //     label: "修改时间升序",
-    //     click: () => {
-    //         sortCallback(documentItem, "modifiedAsc")
-    //     }
-    // }, {
-    //     label: "修改时间降序",
-    //     click: () => {
-    //         sortCallback(documentItem, "modifiedDesc")
-    //     }
-    // }, {
-    //     label: "创建时间升序",
-    //     click: () => {
-    //         sortCallback(documentItem, "createdAsc")
-    //     }
-    // }, {
-    //     label: "创建时间降序",
-    //     click: () => {
-    //         sortCallback(documentItem, "createdDesc")
-    //     }
-    // }];
 };
 
 
@@ -1107,10 +1083,10 @@ export function parseSearchCustomKeyword(input: string): CustomBlockCriteria {
     };
 
     // 处理关键字分组
-    const updateKeywordGroup = (type: any, value: string, exclude: boolean) => {
-        let group = condition.blockKeyWordConditionArray.find(g => g.type === type);
+    const updateKeywordGroup = (type: any, subType: any, value: string, exclude: boolean) => {
+        let group = condition.blockKeyWordConditionArray.find(g => g.type === type && g.subType == subType);
         if (!group) {
-            group = { type, include: [], exclude: [] };
+            group = { type, subType, include: [], exclude: [] };
             condition.blockKeyWordConditionArray.push(group);
         }
 
@@ -1187,15 +1163,32 @@ export function parseSearchCustomKeyword(input: string): CustomBlockCriteria {
             }
             isExclude ? condition.path.exclude.push(value) : condition.path.include.push(value);
         } else if (token.startsWith('@t')) {
-            let value = token.slice(3);
-            let type = token.charAt(2);
-            const patterns = ['query_embed', 'iframe', 'widget', 'audio', 'video', 'html', 'av', 'tb'];
-            const matched = patterns.find((pattern) => token.slice(2).startsWith(pattern));
-            if (matched) {
-                type = matched;
-                value = token.slice(2 + matched.length);
+            let value = "";
+            let type = undefined;
+            let subtype = undefined;
+            const typePatterns = ['query_embed', 'iframe', 'widget', 'audio', 'video', 'html', 'av', 'tb', 'p', 's', 'b', 't', 'm', 'c', 'i', 'l', 'h', 'd'];
+            const typeMatched = typePatterns.find((pattern) => token.slice(2).startsWith(pattern));
+            if (typeMatched) {
+                type = typeMatched;
+                value = token.slice(2 + typeMatched.length);
             }
-            updateKeywordGroup(type, value, isExclude);
+
+            if (isStrBlank(type) || type == "h") {
+                const subTypePatterns = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'o', 'u', 't'];
+                const subTypeMatched = subTypePatterns.find((pattern) => token.slice(2).startsWith(pattern));
+                if (subTypeMatched) {
+                    if (subTypeMatched.startsWith("h")) {
+                        type = "h";
+                    } else {
+                        type = "i";
+                    }
+                    subtype = subTypeMatched;
+                    value = token.slice(2 + subTypeMatched.length);
+                }
+            }
+            if (isStrNotBlank(type) || isStrNotBlank(subtype) || isStrNotBlank(value)) {
+                updateKeywordGroup(type, subtype, value, isExclude);
+            }
         } else if (token.startsWith('@c')) {
             const value = token.slice(2);
             let compareCondition = parseTime(value, isExclude);
@@ -1210,35 +1203,13 @@ export function parseSearchCustomKeyword(input: string): CustomBlockCriteria {
             }
         } else {
             // 默认普通关键字
-            updateKeywordGroup(undefined, token, isExclude);
+            updateKeywordGroup(undefined, undefined, token, isExclude);
         }
     }
 
     return condition;
 }
 
-// export function parseSearchSyntax(query: string): {
-//     includeKeywords: string[],
-//     excludeKeywords: string[],
-// } {
-//     const includeKeywords: string[] = [];
-//     const excludeKeywords: string[] = [];
-
-//     // 按空格拆分查询字符串
-//     const terms = splitKeywordStringToArray(query);
-
-//     for (const term of terms) {
-//         if (term.startsWith("-")) {
-//             // 以 `-` 开头的排除普通文本
-//             excludeKeywords.push(term.slice(1));
-//         } else {
-//             // 普通文本包含项
-//             includeKeywords.push(term);
-//         }
-//     }
-
-//     return { includeKeywords, excludeKeywords };
-// }
 
 /**
  * 将字符串补零至长度14（默认左侧补零）

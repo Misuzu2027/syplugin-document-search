@@ -18,6 +18,7 @@ export class DocumentQueryCriteria {
     includeTypes: string[];
     includeConcatFields: string[];
     includeRootIds: string[];
+    focusBlockId: string;
     includeNotebookIds: string[];
     excludeNotebookIds: string[];
 
@@ -56,6 +57,81 @@ export class DocumentQueryCriteria {
     }
 }
 
+
+export function generateDocumentSearchSql(
+    queryCriteria: DocumentQueryCriteria,
+): string {
+
+    let includeKeywords = queryCriteria.includeKeywords;
+    let excludeKeywords = queryCriteria.excludeKeywords;
+    let blockKeywordCondition = queryCriteria.blockKeywordCondition;
+    let pages = queryCriteria.pages;
+    let contentBlockSortMethod = queryCriteria.contentBlockSortMethod;
+    let includeTypes = queryCriteria.includeTypes;
+    let includeConcatFields = queryCriteria.includeConcatFields;
+    let docFullTextSearch = queryCriteria.docFullTextSearch;
+
+    let documentIdContentTableSql
+        = generateDocumentIdContentTableSql(queryCriteria);
+    let documentCountColumnSql = " (SELECT count( 1 ) FROM document_id_temp) as documentCount "
+    let documentTableIdPageSql = " SELECT root_id FROM document_id_temp " + generateLimitSql(pages);
+    let concatConcatFieldSql = getConcatFieldSql("concatContent", includeConcatFields);
+    // 在查询块的时候，无论如何都需要包含文档块类型，否则不知道文档信息
+    let includeTypesD: string[] = [...includeTypes, 'd'];
+
+    let blockTypeContentSql = generateBlockTypeAndContentSql(" concatContent ", includeTypes, docFullTextSearch, blockKeywordCondition);
+    // console.log("blockTypeContentSql ", blockTypeContentSql)
+
+    let typeInSql = generateAndInConditions("type", includeTypesD);
+
+    let orders = [];
+    if (contentBlockSortMethod == 'type') { // type 类型
+        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", includeKeywords, false);
+        orders = [" sort ASC ", orderCaseCombinationSql, " updated DESC "];
+    } else if (contentBlockSortMethod == 'modifiedAsc') {
+        orders = [" updated ASC "]
+    } else if (contentBlockSortMethod == 'modifiedDesc') {
+        orders = [" updated DESC "]
+    } else if (contentBlockSortMethod == 'createdAsc') {
+        orders = [" created ASC "]
+    } else if (contentBlockSortMethod == 'createdDesc') {
+        orders = [" created DESC "]
+    } else if (contentBlockSortMethod == 'rankAsc') {
+        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", includeKeywords, true);
+        orders = [orderCaseCombinationSql, " sort ASC ", " updated DESC "]
+    } else if (contentBlockSortMethod == 'rankDesc') {
+        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", includeKeywords, false);
+        orders = [orderCaseCombinationSql, " sort ASC ", " updated DESC "]
+    } else if (contentBlockSortMethod == 'alphabeticAsc') {
+        orders = ["concatContent ASC", " updated DESC "]
+    } else if (contentBlockSortMethod == 'alphabeticDesc') {
+        orders = ["concatContent DESC", " updated DESC "]
+    }
+    let orderSql = generateOrderSql(orders);
+
+
+    let basicSql = `	
+        WITH document_id_temp AS (
+            ${documentIdContentTableSql}
+        )
+        SELECT *, ${concatConcatFieldSql}, ${documentCountColumnSql}
+        FROM blocks
+        WHERE
+            1 = 1
+            ${typeInSql}
+            AND (
+                id IN (${documentTableIdPageSql})
+                OR (
+                    root_id IN (${documentTableIdPageSql})
+                    ${blockTypeContentSql} 
+                )
+            )
+        ${orderSql}
+        LIMIT 99999999;
+    `;
+    return cleanSpaceText(basicSql);
+    // return basicSql;
+}
 
 
 export function generateDocumentListSql(
@@ -185,10 +261,9 @@ export function generateDocumentListSql(
 }
 
 
-export function generateDocumentSearchSql(
+export function generateCurDocumentSearchSql(
     queryCriteria: DocumentQueryCriteria,
 ): string {
-
     let includeKeywords = queryCriteria.includeKeywords;
     let excludeKeywords = queryCriteria.excludeKeywords;
     let blockKeywordCondition = queryCriteria.blockKeywordCondition;
@@ -197,79 +272,37 @@ export function generateDocumentSearchSql(
     let includeTypes = queryCriteria.includeTypes;
     let includeConcatFields = queryCriteria.includeConcatFields;
     let docFullTextSearch = queryCriteria.docFullTextSearch;
+    let includeRootIds = queryCriteria.includeRootIds;
+    let focusBlockId = queryCriteria.focusBlockId;
 
-    let documentIdContentTableSql
-        = generateDocumentIdContentTableSql(queryCriteria);
-    let documentCountColumnSql = " (SELECT count( 1 ) FROM document_id_temp) as documentCount "
-    let documentTableIdPageSql = " SELECT root_id FROM document_id_temp " + generateLimitSql(pages);
+    let foucsBlocksTbSql = ``;
+    let tableName = ` blocks `;
+    let whereRootIdSql = ` `;
+    if (isStrNotBlank(focusBlockId)) {
+        foucsBlocksTbSql = `
+WITH RECURSIVE focuseBlocksTb AS (
+	SELECT *  FROM blocks 
+	WHERE id = '${focusBlockId}'
+UNION ALL
+	SELECT t.* 
+	FROM blocks t
+		INNER JOIN focuseBlocksTb ON t.parent_id = focuseBlocksTb.id 
+) 
+`;
+        tableName = ` focuseBlocksTb `;
+    } else {
+        whereRootIdSql = generateAndInConditions("root_id", includeRootIds);;
+    }
+
+
     let concatConcatFieldSql = getConcatFieldSql("concatContent", includeConcatFields);
     // 在查询块的时候，无论如何都需要包含文档块类型，否则不知道文档信息
-    let includeTypesD: string[] = [...includeTypes, 'd'];
+    // let includeTypesD: string[] = [...includeTypes, 'd'];
 
-    // let blockKeywordSqlArray = [];
-    // let orIncludeTypes = [...includeTypes];
-    // let existInclude = false;
-    // let existExlucde = false;
-    // for (const condition of blockKeywordCondition) {
-    //     let likeSql = generateOrLikeConditions(
-    //         ` concatContent `,
-    //         condition.include,
-    //     );
-    //     if (!docFullTextSearch) {
-    //         likeSql = generateAndLikeConditions(
-    //             ` concatContent `,
-    //             condition.include,
-    //         );
-    //     }
-    //     let notLikeSql = generateAndNotLikeConditions(
-    //         ` concatContent `,
-    //         condition.exclude,
-    //     );
-
-    //     let typeSql = ``;
-    //     if (isStrNotBlank(condition.type)) {
-    //         typeSql = ` type = '${condition.type}' `;
-    //         orIncludeTypes = arrayRemoveValue(orIncludeTypes, condition.type);
-    //         if (!includeTypesD.includes(condition.type)) {
-    //             includeTypesD.push(condition.type);
-    //         }
-    //     } else {
-    //         typeSql = generateInConditions("type", includeTypesD);
-    //     }
-    //     if (isStrNotBlank(likeSql)) {
-    //         likeSql = ` ( ${likeSql} ) `;
-    //         existInclude = true;
-    //     }
-    //     if (isStrNotBlank(notLikeSql)) {
-    //         // 如果一个类型只存在排除，比如 @tp段子 -@th作品 。
-    //         // 结果应该是只显示 or (type = 'p' and (content like '%段子%')) 的内容，
-    //         // 如果单独加上 or (type = 'h' and content not like '%作品%')  这个判断，会把所有不包含 '作品' 的标题展示出来。
-    //         // 所以如果想要显示上面结果，合理的语法应该是 ：`-@th作品 @tpcv @th`
-    //         if (isStrBlank(likeSql)) {
-    //             continue
-    //         }
-    //         existExlucde = true;
-    //     }
-
-    //     const conditions = [typeSql, likeSql, notLikeSql].filter(isStrNotBlank);
-    //     if (isArrayNotEmpty(conditions)) {
-    //         const result = conditions.join(" AND ");
-    //         blockKeywordSqlArray.push(`( ${result} )`)
-    //     }
-    // }
-    // let blockTypeContentSql = "";
-    // if (isArrayNotEmpty(blockKeywordSqlArray)) {
-    //     let extraTypeSql = "";
-    //     // 只存在排除，不存在包含，就加上或则排除之外的类型。
-    //     if (existExlucde && !existInclude && !arraysEqual(orIncludeTypes, includeTypes)) {
-    //         extraTypeSql = ` OR (  ${generateInConditions("type", orIncludeTypes)} )`;
-    //     }
-    //     blockTypeContentSql = `AND ( ${blockKeywordSqlArray.join(" OR ")}  ${extraTypeSql})`;
-    // }
     let blockTypeContentSql = generateBlockTypeAndContentSql(" concatContent ", includeTypes, docFullTextSearch, blockKeywordCondition);
-    console.log("blockTypeContentSql ", blockTypeContentSql)
+    // console.log("blockTypeContentSql ", blockTypeContentSql)
 
-    let typeInSql = generateAndInConditions("type", includeTypesD);
+    // let typeInSql = generateAndInConditions("type", includeTypesD);
 
     let orders = [];
     if (contentBlockSortMethod == 'type') { // type 类型
@@ -283,12 +316,6 @@ export function generateDocumentSearchSql(
         orders = [" created ASC "]
     } else if (contentBlockSortMethod == 'createdDesc') {
         orders = [" created DESC "]
-    } else if (contentBlockSortMethod == 'rankAsc') {
-        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", includeKeywords, true);
-        orders = [orderCaseCombinationSql, " sort ASC ", " updated DESC "]
-    } else if (contentBlockSortMethod == 'rankDesc') {
-        let orderCaseCombinationSql = generateRelevanceOrderSql("concatContent", includeKeywords, false);
-        orders = [orderCaseCombinationSql, " sort ASC ", " updated DESC "]
     } else if (contentBlockSortMethod == 'alphabeticAsc') {
         orders = ["concatContent ASC", " updated DESC "]
     } else if (contentBlockSortMethod == 'alphabeticDesc') {
@@ -298,26 +325,16 @@ export function generateDocumentSearchSql(
 
 
     let basicSql = `	
-        WITH document_id_temp AS (
-            ${documentIdContentTableSql}
-        )
-        SELECT *, ${concatConcatFieldSql}, ${documentCountColumnSql}
-        FROM blocks
-        WHERE
-            1 = 1
-            ${typeInSql}
-            AND (
-                id IN (${documentTableIdPageSql})
-                OR (
-                    root_id IN (${documentTableIdPageSql})
-                    ${blockTypeContentSql} 
-                )
-            )
-        ${orderSql}
-        LIMIT 99999999;
+        ${foucsBlocksTbSql}
+SELECT *, ${concatConcatFieldSql}
+FROM ${tableName}
+WHERE 1 = 1
+    ${whereRootIdSql}
+    ${blockTypeContentSql} 
+LIMIT 99999999;
     `;
     return cleanSpaceText(basicSql);
-    // return basicSql;
+
 }
 
 // 暂时不用，把计数很查询合并到一个sql中了
@@ -748,11 +765,12 @@ function generateDocumentTypeAndContentSql(
     let blockTypeContentLikeSqlArray = [];
     for (const condition of blockKeyWordConditionArray) {
         let type = condition.type;
+        let subType = condition.subType;
         for (const keyword of condition.include) {
-            blockTypeContentLikeSqlArray.push(generateTypeAndGroupConcatContentLikeSql(type, fieldName, keyword, true));
+            blockTypeContentLikeSqlArray.push(generateTypeAndGroupConcatContentLikeSql(type, subType, fieldName, keyword, true));
         }
         for (const keyword of condition.exclude) {
-            blockTypeContentLikeSqlArray.push(generateTypeAndGroupConcatContentLikeSql(type, fieldName, keyword, false));
+            blockTypeContentLikeSqlArray.push(generateTypeAndGroupConcatContentLikeSql(type, subType, fieldName, keyword, false));
         }
     }
     if (isArrayNotEmpty(blockTypeContentLikeSqlArray)) {
@@ -763,6 +781,7 @@ function generateDocumentTypeAndContentSql(
 
 function generateTypeAndGroupConcatContentLikeSql(
     type: string | undefined,
+    subType: string | undefined,
     field: string,
     // fieldGroupConcat: boolean,
     keyword: string,
@@ -776,6 +795,13 @@ function generateTypeAndGroupConcatContentLikeSql(
     let concatExpr = type
         ? `GROUP_CONCAT(CASE WHEN type = '${type}' THEN ${field} END)`
         : `GROUP_CONCAT(${field})`;
+    if (type && subType) {
+        concatExpr = `GROUP_CONCAT(CASE WHEN type = '${type}' AND subtype = '${subType}' THEN ${field} END)`
+    } else if (type && !subType) {
+        concatExpr = `GROUP_CONCAT(CASE WHEN type = '${type}' THEN ${field} END)`;
+    } else if (!type) {
+        concatExpr = `GROUP_CONCAT(${field})`;
+    }
     // if (fieldGroupConcat) {
     // concatExpr = ` GROUP_CONCAT${concatExpr} `
     // }
@@ -821,11 +847,15 @@ function generateBlockTypeAndContentSql(
         );
 
         let typeSql = ``;
+        let subTypeSql = ``;
         if (isStrNotBlank(condition.type)) {
             typeSql = ` type = '${condition.type}' `;
             orIncludeTypes = arrayRemoveValue(orIncludeTypes, condition.type);
         } else {
             typeSql = generateInConditions("type", includeTypesD);
+        }
+        if (isStrNotBlank(condition.subType)) {
+            subTypeSql = ` subtype = '${condition.subType}' `;
         }
         if (isStrNotBlank(likeSql)) {
             likeSql = ` ( ${likeSql} ) `;
@@ -842,7 +872,7 @@ function generateBlockTypeAndContentSql(
             existExlucde = true;
         }
 
-        const conditions = [typeSql, likeSql, notLikeSql].filter(isStrNotBlank);
+        const conditions = [typeSql, subTypeSql, likeSql, notLikeSql].filter(isStrNotBlank);
         if (isArrayNotEmpty(conditions)) {
             const result = conditions.join(" AND ");
             blockKeywordSqlArray.push(`( ${result} )`)

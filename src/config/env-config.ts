@@ -47,7 +47,7 @@ export class EnvConfig {
 
     docSearchDock: { config: IPluginDockTab, model: Dock };
     flatDocTreeDock: { config: IPluginDockTab, model: Dock };
-
+    curDocSearchDock: { config: IPluginDockTab, model: Dock };
     private _notebookMap: Map<string, Notebook> = new Map();
     public get notebookMap(): Map<string, Notebook> {
         if (!this._notebookMap || this._notebookMap.size == 0) {
@@ -58,7 +58,7 @@ export class EnvConfig {
     }
 
     public async refreshNotebookMap(): Promise<Map<string, Notebook>> {
-        this._notebookMap = await getNotebookMapByApi();
+        this._notebookMap = await getNotebookMapByApi(false);
         return this._notebookMap;
     }
 

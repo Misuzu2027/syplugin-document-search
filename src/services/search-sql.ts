@@ -70,6 +70,8 @@ export function generateDocumentSearchSql(
     let includeTypes = queryCriteria.includeTypes;
     let includeConcatFields = queryCriteria.includeConcatFields;
     let docFullTextSearch = queryCriteria.docFullTextSearch;
+    let createdTimeArray = queryCriteria.createdTimeArray;
+    let updatedTimeArray = queryCriteria.updatedTimeArray;
 
     let documentIdContentTableSql
         = generateDocumentIdContentTableSql(queryCriteria);
@@ -82,6 +84,17 @@ export function generateDocumentSearchSql(
     let blockTypeContentSql = generateBlockTypeAndContentSql(" concatContent ", includeTypes, docFullTextSearch, blockKeywordCondition);
     // console.log("blockTypeContentSql ", blockTypeContentSql)
 
+    // 生成时间条件SQL
+    let createdTimeWhereSql = "";
+    let updatedTimeWhereSql = "";
+    // if (!docFullTextSearch) {
+    if (isArrayNotEmpty(createdTimeArray)) {
+        createdTimeWhereSql = ` AND ${generateAndNumberConditions("created", createdTimeArray)} `;
+    }
+    if (isArrayNotEmpty(updatedTimeArray)) {
+        updatedTimeWhereSql = ` AND ${generateAndNumberConditions("updated", updatedTimeArray)} `;
+    }
+    // }
     let typeInSql = generateAndInConditions("type", includeTypesD);
 
     let orders = [];
@@ -110,10 +123,10 @@ export function generateDocumentSearchSql(
     let orderSql = generateOrderSql(orders);
 
 
-    let basicSql = `	
+    let basicSql = `
         WITH document_id_temp AS (
             ${documentIdContentTableSql}
-        )
+            )
         SELECT *, ${concatConcatFieldSql}, ${documentCountColumnSql}
         FROM blocks
         WHERE
@@ -121,13 +134,15 @@ export function generateDocumentSearchSql(
             ${typeInSql}
             AND (
                 id IN (${documentTableIdPageSql})
-                OR (
-                    root_id IN (${documentTableIdPageSql})
-                    ${blockTypeContentSql} 
-                )
+           OR (
+            root_id IN (${documentTableIdPageSql})
+            ${blockTypeContentSql}
+            ${createdTimeWhereSql}
+            ${updatedTimeWhereSql}
             )
-        ${orderSql}
-        LIMIT 99999999;
+            )
+            ${orderSql}
+            LIMIT 99999999;
     `;
     return cleanSpaceText(basicSql);
     // return basicSql;
@@ -238,23 +253,23 @@ export function generateDocumentListSql(
     */
 
     let basicSql = `
-    SELECT
-      ${columnSql}
+        SELECT
+            ${columnSql}
 
-    FROM
-        blocks 
-    WHERE
-        type = 'd' 
-        ${contentParamSql}
-        ${boxInSql}
-        ${boxNotInSql}
-        ${pathLikeSql}
-        ${pathNotLikeSql}
-        ${createdTimeWhereSql}
-        ${updatedTimeWhereSql}
+        FROM
+            blocks
+        WHERE
+            type = 'd'
+            ${contentParamSql}
+            ${boxInSql}
+            ${boxNotInSql}
+            ${pathLikeSql}
+            ${pathNotLikeSql}
+            ${createdTimeWhereSql}
+            ${updatedTimeWhereSql}
 
-    ${orderSql}
-    ${limitSql}
+            ${orderSql}
+            ${limitSql}
     `
 
     return cleanSpaceText(basicSql);
@@ -280,15 +295,15 @@ export function generateCurDocumentSearchSql(
     let whereRootIdSql = ` `;
     if (isStrNotBlank(focusBlockId)) {
         foucsBlocksTbSql = `
-WITH RECURSIVE focuseBlocksTb AS (
-	SELECT *  FROM blocks 
-	WHERE id = '${focusBlockId}'
-UNION ALL
-	SELECT t.* 
-	FROM blocks t
-		INNER JOIN focuseBlocksTb ON t.parent_id = focuseBlocksTb.id 
-) 
-`;
+            WITH RECURSIVE focuseBlocksTb AS (
+                SELECT *  FROM blocks
+                WHERE id = '${focusBlockId}'
+                UNION ALL
+                SELECT t.*
+                FROM blocks t
+                         INNER JOIN focuseBlocksTb ON t.parent_id = focuseBlocksTb.id
+            )
+        `;
         tableName = ` focuseBlocksTb `;
     } else {
         whereRootIdSql = generateAndInConditions("root_id", includeRootIds);;
@@ -324,14 +339,14 @@ UNION ALL
     let orderSql = generateOrderSql(orders);
 
 
-    let basicSql = `	
+    let basicSql = `
         ${foucsBlocksTbSql}
-SELECT *, ${concatConcatFieldSql}
-FROM ${tableName}
-WHERE 1 = 1
-    ${whereRootIdSql}
-    ${blockTypeContentSql} 
-LIMIT 99999999;
+        SELECT *, ${concatConcatFieldSql}
+        FROM ${tableName}
+        WHERE 1 = 1
+            ${whereRootIdSql}
+              ${blockTypeContentSql}
+            LIMIT 99999999;
     `;
     return cleanSpaceText(basicSql);
 
@@ -557,50 +572,50 @@ function generateDocumentContentLikeSql(
     let limitSql = generateLimitSql(pages);
     let sql = ``;
     if (docFullTextSearch) {
-        sql = `  
-        SELECT ${columnSql} 
-        FROM
-            blocks b
-        WHERE
-            1 = 1 
-            ${typeInSql}
-            ${rootIdInSql}
-            ${boxInSql}
-            ${boxNotInSql}
-            ${pathLikeSql}
-            ${pathNotLikeSql}
-            ${createdTimeWhereSql}
-            ${updatedTimeWhereSql}
-        GROUP BY
-            root_id 
-        HAVING
-            1 = 1 
-            ${blockTypeContentSql}
-        ${orderSql}
-        ${limitSql}
-    `;
+        sql = `
+            SELECT ${columnSql}
+            FROM
+                blocks b
+            WHERE
+                1 = 1
+                ${typeInSql}
+                ${rootIdInSql}
+                ${boxInSql}
+                ${boxNotInSql}
+                ${pathLikeSql}
+                ${pathNotLikeSql}
+                ${createdTimeWhereSql}
+                ${updatedTimeWhereSql}
+            GROUP BY
+                root_id
+            HAVING
+                1 = 1
+                ${blockTypeContentSql}
+                ${orderSql}
+                ${limitSql}
+        `;
     } else {
-        sql = `  
-        SELECT ${columnSql} 
-        FROM
-            blocks b
-        WHERE
-            1 = 1 
-            ${typeInSql}
-            ${rootIdInSql}
-            ${boxInSql}
-            ${boxNotInSql}
-            ${pathLikeSql}
-            ${pathNotLikeSql}
-            ${createdTimeWhereSql}
-            ${updatedTimeWhereSql}
-            ${blockTypeContentSql}
-            
-        GROUP BY
-            root_id 
-        ${orderSql}
-        ${limitSql}
-    `;
+        sql = `
+            SELECT ${columnSql}
+            FROM
+                blocks b
+            WHERE
+                1 = 1
+                ${typeInSql}
+                ${rootIdInSql}
+                ${boxInSql}
+                ${boxNotInSql}
+                ${pathLikeSql}
+                ${pathNotLikeSql}
+                ${createdTimeWhereSql}
+                ${updatedTimeWhereSql}
+                ${blockTypeContentSql}
+
+            GROUP BY
+                root_id
+                ${orderSql}
+                ${limitSql}
+        `;
     }
 
 

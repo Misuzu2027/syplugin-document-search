@@ -67,9 +67,6 @@ function addDocSearchDock() {
             if (ele) {
                 ele.click();
             }
-            if (docSearchSvelet) {
-                docSearchSvelet.iconClick();
-            }
         },
     });
 
@@ -133,9 +130,6 @@ function addFlatDocTreeDock() {
             ) as HTMLElement;
             if (ele) {
                 ele.click();
-            }
-            if (flatDocTreeSvelte) {
-                flatDocTreeSvelte.iconClick();
             }
         },
     });

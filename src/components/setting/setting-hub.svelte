@@ -4,10 +4,11 @@
     import SettingAttr from "@/components/setting/setting-attr.svelte";
     import SettingType from "@/components/setting/setting-type.svelte";
     import SettingNotebook from "@/components/setting/setting-notebook.svelte";
+    import SettingLayout from "@/components/setting/setting-layout.svelte";
     import { EnvConfig } from "@/config/env-config";
     import SettingFlatDocTree from "./setting-flat-doc-tree.svelte";
 
-    let groups = [
+    const groups = [
         {
             title: EnvConfig.ins.i18n.settingDock,
             type: "settingDock",
@@ -29,75 +30,35 @@
             type: "settingOther",
         },
         {
-            title: "扁平化文档树设置",
+            title: EnvConfig.ins.i18n.settingFlatDocTree,
             type: "settingFlatDocTree",
         },
     ];
-    let focusGroup = groups[0];
 
-    /********** Events **********/
-    // interface ChangeEvent {
-    //     group: string;
-    //     key: string;
-    //     value: any;
-    // }
-
-    // const onGroupClick = (group) => {
-    //     if (detail.group === groups[0]) {
-    //         // setting.set(detail.key, detail.value);
-    //     }
-    // };
+    let activeTab = groups[0].type;
+    $: tabs = groups.map((g) => ({ key: g.type, label: g.title }));
 </script>
 
-<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-<div class="fn__flex-1 fn__flex config__panel">
-    <ul class="b3-tab-bar b3-list b3-list--background">
-        {#each groups as group}
-            <li
-                data-name="editor"
-                class:b3-list-item--focus={group === focusGroup}
-                class="b3-list-item"
-                on:click={() => {
-                    focusGroup = group;
-                }}
-                on:keydown={() => {}}
-            >
-                <span class="b3-list-item__text">{group.title}</span>
-            </li>
-        {/each}
-    </ul>
-    <div class="config__tab-wrap">
-        <div class="config__tab-container">
-            {#if focusGroup.type == "settingDock"}
-                <SettingDock />
-            {/if}
-            {#if focusGroup.type == "settingNotebook"}
-                <SettingNotebook />
-            {/if}
-
-            {#if focusGroup.type == "settingType"}
-                <SettingType />
-            {/if}
-
-            {#if focusGroup.type == "settingAttr"}
-                <SettingAttr />
-            {/if}
-
-            {#if focusGroup.type == "settingOther"}
-                <SettingOther />
-            {/if}
-            {#if focusGroup.type == "settingFlatDocTree"}
-                <SettingFlatDocTree />
-            {/if}
-        </div>
-    </div>
+<div class="ds-setting-hub">
+    <SettingLayout bind:activeTab {tabs}>
+        {#if activeTab === "settingDock"}
+            <SettingDock />
+        {:else if activeTab === "settingNotebook"}
+            <SettingNotebook />
+        {:else if activeTab === "settingType"}
+            <SettingType />
+        {:else if activeTab === "settingAttr"}
+            <SettingAttr />
+        {:else if activeTab === "settingOther"}
+            <SettingOther />
+        {:else if activeTab === "settingFlatDocTree"}
+            <SettingFlatDocTree />
+        {/if}
+    </SettingLayout>
 </div>
 
 <style lang="scss">
-    .config__panel {
+    .ds-setting-hub {
         height: 100%;
-    }
-    .config__panel > ul > li {
-        padding-left: 1rem;
     }
 </style>

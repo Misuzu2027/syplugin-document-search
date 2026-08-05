@@ -28,44 +28,46 @@ export function openSettingsDialog(dialogType: SettingDialogType) {
             return;
     }
 
-    let dialog = new Dialog({
+    const isHub = dialogType === "settingHub";
+    let settingSvelte: { $destroy: () => void } | null = null;
+
+    const dialog = new Dialog({
         title: dialogTitle,
-        content: `<div id="${dialogType}" class="b3-dialog__content" ></div>`,
-        width: EnvConfig.ins.isMobile ? "92vw" : "600px",
+        content: `<div id="${dialogType}" class="b3-dialog__content"></div>`,
+        width: EnvConfig.ins.isMobile ? "92vw" : isHub ? "720px" : "600px",
         height: "70vh",
-        destroyCallback: (options) => {
-            console.log("destroyCallback", options);
+        destroyCallback: () => {
+            settingSvelte?.$destroy();
+            settingSvelte = null;
         },
     });
-    let settingSvelteOptions = {
-        target: dialog.element.querySelector(`#${dialogType}`),
-    };
+
+    const target = dialog.element.querySelector(
+        `#${dialogType}`,
+    ) as HTMLElement | null;
+    if (!target) return;
+
+    const settingSvelteOptions = { target };
 
     switch (dialogType) {
         case "settingNotebook":
-            new SettingNotebook(settingSvelteOptions);
+            settingSvelte = new SettingNotebook(settingSvelteOptions);
             break;
         case "settingType":
-            new SettingType(settingSvelteOptions);
+            settingSvelte = new SettingType(settingSvelteOptions);
             break;
         case "settingAttr":
-            new SettingAttr(settingSvelteOptions);
+            settingSvelte = new SettingAttr(settingSvelteOptions);
             break;
         case "settingOther":
-            new SettingOther(settingSvelteOptions);
+            settingSvelte = new SettingOther(settingSvelteOptions);
             break;
         case "settingHub":
-            let dialogElement = settingSvelteOptions.target as HTMLElement;
-            dialogElement.classList.remove("b3-dialog__content");
-            dialogElement.style.height = "100%";
-
-
-            new SettingHub(settingSvelteOptions);
+            target.classList.remove("b3-dialog__content");
+            target.style.height = "100%";
+            settingSvelte = new SettingHub(settingSvelteOptions);
             break;
         default:
             return;
     }
-
 }
-
-

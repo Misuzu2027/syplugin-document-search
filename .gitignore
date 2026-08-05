@@ -8,3 +8,4 @@ dev
 dist
 build
 tmp
+scripts/link-config.json

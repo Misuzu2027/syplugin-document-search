@@ -63,6 +63,7 @@
     "settingType": "🌈 Type",
     "settingAttr": "🌈 Attribute",
     "settingOther": "🌈 Other",
+    "settingFlatDocTree": "🌈 Flat Document Tree",
     "docSortMethod": "Document Sorting Method",
     "contentBlockSortMethod": "Content Block Sorting Method",
     "documentsPerPage": "Documents Per Page",

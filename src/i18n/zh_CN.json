@@ -63,6 +63,7 @@
     "settingType": "🌈 类型",
     "settingAttr": "🌈 属性",
     "settingOther": "🌈 其他",
+    "settingFlatDocTree": "🌈 扁平化文档树",
     "docSortMethod": "文档排序方式",
     "contentBlockSortMethod": "内容块排序方式",
     "documentsPerPage": "每页文档数量",

@@ -29,6 +29,10 @@
     import { SettingConfig } from "@/services/setting-config";
     import { SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
     import { getFileArialLabel } from "@/components/doc-tree/doc-tree-util";
+    import {
+        prepareNativeFileTreeMenu,
+        suspendDragForContextMenu,
+    } from "@/components/doc-tree/native-file-menu-util";
     import { isElementHidden } from "@/utils/html-util";
     import {
         clearSyFileTreeItemFocus,
@@ -548,6 +552,24 @@
         refreshFileTree(searchInputKey, 1);
     }
 
+    function handleItemMouseDown(event: MouseEvent) {
+        if (event.button !== 2) {
+            return;
+        }
+        const row = event.currentTarget as HTMLElement;
+        if (row) {
+            suspendDragForContextMenu(row);
+        }
+    }
+
+    function handleItemContextMenu(event: MouseEvent) {
+        const row = event.currentTarget as HTMLElement;
+        if (!row) {
+            return;
+        }
+        prepareNativeFileTreeMenu(row);
+    }
+
     /**拖拽*/
     function docListItemDragstartEvent(event: any) {
         let syFileTreeElement = document.querySelector(
@@ -568,7 +590,7 @@
         // 下面全抄官方的，把 this.element 换成了 rootElement
         // https://github.com/siyuan-note/siyuan/blob/f3b0ee51d5fb505c852c7378ba85776d15e22b86/app/src/layout/dock/Files.ts#L371
         event as DragEvent & { target: HTMLElement };
-        if (isTouchDevice()) {
+        if (isTouchDevice() || event.buttons === 2) {
             event.stopPropagation();
             event.preventDefault();
             return;
@@ -742,6 +764,7 @@
                     data-node-id={item.block.id}
                     data-name={escapeAttr(item.block.content) + ".sy"}
                     data-type="navigation-file"
+                    data-count="0"
                     style="--file-toggle-width:40px;height:32px;padding:2px 5px;"
                     class="b3-list-item {item.index === selectedItemIndex
                         ? 'b3-list-item--focus'
@@ -750,6 +773,8 @@
                     data-flat-doc-tree="true"
                     draggable="true"
                     on:click={(event) => itemClick(event, item)}
+                    on:mousedown={handleItemMouseDown}
+                    on:contextmenu={handleItemContextMenu}
                     on:keydown={handleKeyDownDefault}
                     on:dragstart={docListItemDragstartEvent}
                     on:dragend={docListItemDragendEvent}

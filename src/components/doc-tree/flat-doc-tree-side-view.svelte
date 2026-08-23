@@ -30,6 +30,7 @@
     import { SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
     import { getFileArialLabel } from "@/components/doc-tree/doc-tree-util";
     import {
+        getNotebookSortMode,
         prepareNativeFileTreeMenu,
         suspendDragForContextMenu,
     } from "@/components/doc-tree/native-file-menu-util";
@@ -759,6 +760,7 @@
             <ul
                 class="b3-list b3-list--background file-tree"
                 data-url={item.block.box}
+                data-sortmode={getNotebookSortMode(item.block.box)}
             >
                 <li
                     data-node-id={item.block.id}

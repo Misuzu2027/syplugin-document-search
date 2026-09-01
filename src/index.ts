@@ -18,7 +18,7 @@ const SEARCH_TAB_TYPE = "search_home_tab";
 
 export default class PluginSample extends Plugin {
 
-    private documentSearchTab: SearchPreviewSvelte;
+    private documentSearchTab: SearchPreviewSvelte | undefined;
 
     async onload() {
         EnvConfig.ins.init(this);
@@ -100,6 +100,8 @@ export default class PluginSample extends Plugin {
             beforeDestroy() {
             },
             destroy() {
+                _this.documentSearchTab?.$destroy();
+                _this.documentSearchTab = undefined;
             },
             resize() {
                 if (_this.documentSearchTab) {

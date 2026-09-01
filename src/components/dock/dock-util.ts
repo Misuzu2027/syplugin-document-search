@@ -53,6 +53,8 @@ function addDocSearchDock() {
             });
         },
         destroy() {
+            docSearchSvelet?.$destroy();
+            docSearchSvelet = undefined;
         }
     });
 
@@ -117,6 +119,8 @@ function addFlatDocTreeDock() {
             }
         },
         destroy() {
+            flatDocTreeSvelte?.$destroy();
+            flatDocTreeSvelte = undefined;
         }
     });
 

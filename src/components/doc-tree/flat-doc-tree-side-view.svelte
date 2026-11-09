@@ -6,17 +6,14 @@
     import { onDestroy, onMount } from "svelte";
     import { getNotebookMapByApi, sql } from "@/utils/api";
     import { DocumentTreeItemInfo } from "@/config/document-model";
+    import { highlightBlockContent, scrollByRange } from "@/utils/html-util";
     import {
-        escapeAttr,
-        highlightBlockContent,
-        scrollByRange,
-    } from "@/utils/html-util";
-    import {
-        TProtyleAction,
-        openMobileFileById,
-        openTab,
         Constants,
         ITab,
+        TProtyleAction,
+        openDocTreeMenu,
+        openMobileFileById,
+        openTab,
     } from "siyuan";
     import { EnvConfig } from "@/config/env-config";
     import {
@@ -29,11 +26,7 @@
     import { SettingConfig } from "@/services/setting-config";
     import { SETTING_FLAT_DOCUMENT_TREE_SORT_METHOD_ELEMENT } from "@/config/setting-constant";
     import { getFileArialLabel } from "@/components/doc-tree/doc-tree-util";
-    import {
-        getNotebookSortMode,
-        prepareNativeFileTreeMenu,
-        suspendDragForContextMenu,
-    } from "@/components/doc-tree/native-file-menu-util";
+    import { suspendDragForContextMenu } from "@/components/doc-tree/native-file-menu-util";
     import { isElementHidden } from "@/utils/html-util";
     import {
         clearSyFileTreeItemFocus,
@@ -43,7 +36,7 @@
     } from "@/utils/siyuan-util";
     import { hasClosestByTag } from "@/lib/siyuan/hasClosest";
     import { isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
-    import { isStrNotBlank } from "@/utils/string-util";
+    import { isStrBlank, isStrNotBlank } from "@/utils/string-util";
 
     let rootElement: HTMLElement;
     let documentSearchInputElement: HTMLInputElement;
@@ -563,12 +556,38 @@
         }
     }
 
-    function handleItemContextMenu(event: MouseEvent) {
-        const row = event.currentTarget as HTMLElement;
-        if (!row) {
+    async function handleItemContextMenu(event: MouseEvent) {
+        if (event.shiftKey) {
             return;
         }
-        prepareNativeFileTreeMenu(row);
+        event.preventDefault();
+        event.stopPropagation();
+
+        const target = event.currentTarget as HTMLElement;
+        if (!target) {
+            return;
+        }
+        const focused = Array.from(
+            rootElement.querySelectorAll("li.b3-list-item--focus"),
+        ) as HTMLElement[];
+        const rows =
+            focused.includes(target) && focused.length > 1 ? focused : [target];
+        const items = rows.flatMap((row) => {
+            const notebookId = row.parentElement?.getAttribute("data-url");
+            const id = row.getAttribute("data-node-id");
+            if (isStrBlank(notebookId) || isStrBlank(id)) {
+                return [];
+            }
+            return [{ notebookId, id }];
+        });
+        if (items.length === 0) {
+            return;
+        }
+
+        await openDocTreeMenu({
+            position: { x: event.clientX, y: event.clientY },
+            items,
+        });
     }
 
     /**拖拽*/
@@ -625,6 +644,7 @@
                 let hideListElement = item.cloneNode(true) as HTMLElement;
                 hideListElement.style.display = "none";
                 hideListElement.classList.add("misuzu-drag-hide-doc-list");
+                hideListElement.setAttribute("data-type", "navigation-file");
                 syFileTreeElement.append(hideListElement);
             });
             ghostElement.setAttribute(
@@ -760,12 +780,9 @@
             <ul
                 class="b3-list b3-list--background file-tree"
                 data-url={item.block.box}
-                data-sortmode={getNotebookSortMode(item.block.box)}
             >
                 <li
                     data-node-id={item.block.id}
-                    data-name={escapeAttr(item.block.content) + ".sy"}
-                    data-type="navigation-file"
                     data-count="0"
                     style="--file-toggle-width:40px;height:32px;padding:2px 5px;"
                     class="b3-list-item {item.index === selectedItemIndex

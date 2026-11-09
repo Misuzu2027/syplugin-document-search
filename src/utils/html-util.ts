@@ -2,10 +2,6 @@ import { findScrollingElement } from "@/components/search/search-util";
 import { isStrEmpty, isStrNotEmpty, isStrNotBlank } from "./string-util";
 import { isArrayEmpty } from "./array-util";
 
-export const escapeAttr = (html: string) => {
-    return html.replace(/"/g, "&quot;").replace(/'/g, "&apos;");
-};
-
 export function highlightBlockContent(block: Block, keywords: string[]) {
     if (!block) {
         return;

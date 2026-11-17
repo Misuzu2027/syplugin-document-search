@@ -1,4 +1,5 @@
 <script lang="ts">
+    import SearchLoading from "@/components/search/search-loading.svelte";
     import { onDestroy, onMount } from "svelte";
     import {
         Protyle,
@@ -738,7 +739,7 @@
             <span
                 id="documentSearchRefresh"
                 aria-label={EnvConfig.ins.i18n.refresh}
-                class="block__icon ariaLabel"
+                class="block__icon block__icon--show ariaLabel"
                 data-position="9bottom"
                 on:click|stopPropagation={() => {
                     refreshSearch(searchInputKey, curPage);
@@ -789,13 +790,7 @@
         ></div>
     </div>
 </div>
-<div
-    class="fn__loading fn__loading--top {isSearching > 0 ? '' : 'fn__none'}"
-    style="top:85px"
->
-    <!-- svelte-ignore a11y-missing-attribute -->
-    <img width="120px" src="/stage/loading-pure.svg" />
-</div>
+<SearchLoading active={isSearching > 0} top={85} />
 
 <style lang="scss">
     .label-selected {
